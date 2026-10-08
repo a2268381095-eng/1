@@ -1,0 +1,65 @@
+/* 提示条、弹窗按主题换样子和出场方式（<html data-paper> 是现在的主题）。
+   魔法少女：粉色胶囊，弹出来带一点转；水手服：黄便签贴一条胶带，啪地贴上；古风：宣纸条，左边一枚朱砂印，横着展开；
+   哥特：黑底酒红框，从暗处浮出来；侦探：打字纸条，红图钉，一个字一个字打出来；冒险者：羊皮纸，木框，从上面掉下来弹一下。 */
+
+/* ---------- 提示条 ---------- */
+:root[data-paper="magical"] .toast { border-radius: 999px; background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, #fff), var(--accent)); color: var(--accent-ink);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 40%, transparent); padding-left: 12px; }
+:root[data-paper="magical"] .toast::before { content: ""; width: 7px; height: 7px; flex: 0 0 auto; background: var(--mark-img) center / 7px 7px no-repeat; filter: brightness(10); image-rendering: pixelated; }
+:root[data-paper="magical"] .toast-act { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+
+:root[data-paper="sailor"] .toast { position: relative; border-radius: 2px; background: #fff6b3; color: #1f2a3d; rotate: -1deg; box-shadow: 2px 3px 0 rgba(31, 42, 61, .25); }
+:root[data-paper="sailor"] .toast::before { content: ""; position: absolute; left: 50%; top: -7px; width: 54px; height: 14px; margin-left: -27px; rotate: 3deg;
+  background: repeating-linear-gradient(90deg, rgba(91, 127, 214, .55) 0 6px, rgba(91, 127, 214, .35) 6px 12px); }
+:root[data-paper="sailor"] .toast-act { color: #c8333f; }
+:root[data-paper="sailor"] .toast-act:hover, :root[data-paper="sailor"] .toast-x:hover { background: rgba(31, 42, 61, .08); }
+
+:root[data-paper="hanfu"] .toast { border-radius: 1px; background: #f6efde; color: #2b2622; border-top: 1px solid #2b2622; border-bottom: 1px solid #2b2622;
+  font-family: "LXGW WenKai TC", "KaiTi", serif; padding-left: 10px; box-shadow: 0 4px 14px rgba(43, 38, 34, .25); }
+:root[data-paper="hanfu"] .toast::before { content: "墨"; display: grid; place-items: center; width: 18px; height: 18px; flex: 0 0 auto; border-radius: 2px;
+  background: #b8432f; color: #fff; font-size: 11px; line-height: 1; }
+:root[data-paper="hanfu"] .toast-act { color: #b8432f; }
+:root[data-paper="hanfu"] .toast-act:hover, :root[data-paper="hanfu"] .toast-x:hover { background: rgba(43, 38, 34, .08); }
+
+:root[data-paper="gothic"] .toast { border-radius: 0; background: #19121b; color: #eadfee; border: 1px solid #8e2a4f;
+  box-shadow: 0 0 16px rgba(224, 87, 127, .35), inset 0 0 0 3px #19121b, inset 0 0 0 4px rgba(224, 87, 127, .35); }
+:root[data-paper="gothic"] .toast-act { color: #ff8fb1; }
+
+:root[data-paper="detective"] .toast { position: relative; border-radius: 1px; background: #fdf5d8; color: #2e2620; font-family: "Courier New", "Noto Serif SC", monospace;
+  padding-left: 22px; box-shadow: 2px 3px 0 rgba(0, 0, 0, .15); border: 1px solid #c9b78a; }
+:root[data-paper="detective"] .toast::before { content: ""; position: absolute; left: 7px; top: 50%; width: 9px; height: 9px; margin-top: -5px; border-radius: 50%;
+  background: #c8333f; box-shadow: inset -2px -2px 0 rgba(0, 0, 0, .25); }
+:root[data-paper="detective"] .toast-act { color: #2f6b5a; }
+:root[data-paper="detective"] .toast-act:hover, :root[data-paper="detective"] .toast-x:hover { background: rgba(46, 38, 32, .08); }
+
+:root[data-paper="adventurer"] .toast { border-radius: 6px; background: #f3e6c4; color: #3a2a18; border: 2px solid #8a5a32; box-shadow: 3px 3px 0 rgba(138, 90, 50, .35); }
+:root[data-paper="adventurer"] .toast-act { color: #a63d2a; }
+:root[data-paper="adventurer"] .toast-act:hover, :root[data-paper="adventurer"] .toast-x:hover { background: rgba(58, 42, 24, .08); }
+
+/* 提示条出场 */
+:root[data-paper="magical"][data-motion="full"] .toast { animation: tst-magic .42s cubic-bezier(.2, 1.5, .4, 1); }
+@keyframes tst-magic { from { opacity: 0; transform: scale(.5) rotate(-8deg); } 60% { opacity: 1; } }
+:root[data-paper="sailor"][data-motion="full"] .toast { animation: tst-stick .38s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes tst-stick { from { opacity: 0; transform: translateY(-18px) rotate(6deg) scale(1.08); } 70% { opacity: 1; } }
+:root[data-paper="hanfu"][data-motion="full"] .toast { animation: tst-unroll .5s ease-out; }
+@keyframes tst-unroll { from { clip-path: inset(0 50% 0 50%); opacity: .4; } to { clip-path: inset(0 0 0 0); opacity: 1; } }
+:root[data-paper="gothic"][data-motion="full"] .toast { animation: tst-dark .6s ease-out; }
+@keyframes tst-dark { from { opacity: 0; filter: brightness(0) blur(3px); transform: translateY(6px); } }
+:root[data-paper="detective"][data-motion="full"] .toast { animation: tst-type .55s steps(14); }
+@keyframes tst-type { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+:root[data-paper="adventurer"][data-motion="full"] .toast { animation: tst-drop .55s cubic-bezier(.3, 1.4, .5, 1); }
+@keyframes tst-drop { from { opacity: 0; transform: translateY(-40px); } 50% { opacity: 1; transform: translateY(5px); } 75% { transform: translateY(-2px); } }
+
+/* ---------- 弹窗出场 ---------- */
+:root[data-paper="magical"][data-motion="full"] .modal { animation: mdl-magic .32s cubic-bezier(.2, 1.4, .4, 1); }
+@keyframes mdl-magic { from { opacity: 0; transform: scale(.82) rotate(-1.5deg); } 60% { opacity: 1; } }
+:root[data-paper="sailor"][data-motion="full"] .modal { animation: mdl-flip .34s cubic-bezier(.2, 1.2, .4, 1); transform-origin: top center; }
+@keyframes mdl-flip { from { opacity: 0; transform: perspective(900px) rotateX(-55deg); } }
+:root[data-paper="hanfu"][data-motion="full"] .modal { animation: mdl-unroll .42s ease-out; }
+@keyframes mdl-unroll { from { clip-path: inset(48% 0 48% 0); opacity: .5; } to { clip-path: inset(0 0 0 0); opacity: 1; } }
+:root[data-paper="gothic"][data-motion="full"] .modal { animation: mdl-dark .5s ease-out; }
+@keyframes mdl-dark { from { opacity: 0; filter: brightness(0) blur(4px); transform: scale(.97); } }
+:root[data-paper="detective"][data-motion="full"] .modal { animation: mdl-file .34s cubic-bezier(.2, 1.1, .4, 1); }
+@keyframes mdl-file { from { opacity: 0; transform: translateX(-40px) rotate(-2deg); } }
+:root[data-paper="adventurer"][data-motion="full"] .modal { animation: mdl-drop .5s cubic-bezier(.3, 1.4, .5, 1); }
+@keyframes mdl-drop { from { opacity: 0; transform: translateY(-46px); } 55% { opacity: 1; transform: translateY(6px); } 80% { transform: translateY(-2px); } }
