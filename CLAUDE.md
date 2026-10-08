@@ -20,6 +20,7 @@ https://claude.ai/artifact/5qDbaq5hUWxRFzHuvwhaEL
 - 台词：**小恶魔的个性永远是核心**，每套服装是同一个小恶魔的不同表现（元气、文雅、腹黑……），不能变成另一个人。写作相关的内容（字数、章节、伏笔、节奏、排版）适量加入，不能盖过她的个性。
 - 预览页「小恶魔衣橱」：https://claude.ai/artifact/GgLruVPhDvngsmqvfhhBEo（`assistant_sprite/wardrobe.html`，用 `tools/make_wardrobe_page.py` 生成，改完在原路径重新发布）。
 - 画风规矩、文件格式和工具用法见 `assistant_sprite/styles/README.md`。
+- 说话气泡里只放台词，不显示名字。
 
 ## 软件原则
 

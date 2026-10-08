@@ -1,0 +1,36 @@
+/* 小恶魔：右下角常驻，气泡在她头上 */
+.demon { position: fixed; right: 14px; bottom: 34px; z-index: 60; display: grid; justify-items: end; pointer-events: none; --demon-scale: 1; }
+.demon > * { pointer-events: auto; }
+.demon.off .demon-poke, .demon.off .demon-help, .demon.off .demon-hide, .demon.off .demon-bubble { display: none; }
+.demon:not(.off) .demon-show { display: none; }
+.demon.focus-hidden { display: none; }
+.demon-poke { border: 0; padding: 0; background: transparent; cursor: pointer; line-height: 0; }
+.demon-canvas { width: calc(128px * var(--demon-scale)); height: calc(224px * var(--demon-scale)); filter: drop-shadow(0 4px 6px rgba(58, 26, 44, .18)); }
+.demon-poke:active .demon-canvas { transform: translateY(1px); }
+.demon-bubble { position: relative; max-width: 240px; margin-bottom: 6px; margin-right: 18px; padding: 8px 12px; border: 2px solid var(--bubble-line);
+  border-radius: 8px; background: var(--bubble); color: var(--bubble-ink); font-size: 13.5px; line-height: 1.6; box-shadow: 3px 3px 0 var(--accent-soft);
+  opacity: 0; transform: translateY(4px); transition: opacity .15s ease, transform .15s ease; pointer-events: none; min-height: 1em; }
+.demon-bubble.on { opacity: 1; transform: none; pointer-events: auto; }
+.demon-bubble::after { content: ""; position: absolute; right: 44px; bottom: -8px; width: 12px; height: 12px; background: var(--bubble);
+  border-right: 2px solid var(--bubble-line); border-bottom: 2px solid var(--bubble-line); transform: rotate(45deg); }
+.demon-help, .demon-hide { position: absolute; width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--surface);
+  color: var(--muted); cursor: pointer; display: grid; place-items: center; font-weight: 700; font-size: 13px; opacity: .0; transition: opacity .15s; }
+.demon-help { right: -4px; bottom: calc(224px * var(--demon-scale) - 36px); opacity: .85; }
+.demon-hide { right: -4px; bottom: calc(224px * var(--demon-scale) - 64px); }
+.demon-hide .ico svg { width: 12px; height: 12px; }
+.demon:hover .demon-hide, .demon-hide:focus-visible { opacity: .85; }
+.demon-help:hover, .demon-hide:hover { opacity: 1; color: var(--accent); border-color: var(--accent); }
+.demon-show { border: 1px solid var(--line-strong); background: var(--surface); color: var(--accent); border-radius: 999px; padding: 4px 12px; cursor: pointer;
+  font-size: 12.5px; box-shadow: var(--shadow-s); }
+
+/* 找功能面板 */
+.help-pop { position: absolute; right: 0; bottom: calc(224px * var(--demon-scale) + 8px); width: 320px; max-width: calc(100vw - 28px); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: 10px; display: grid; gap: 8px; z-index: 2; }
+.help-head { display: flex; align-items: center; justify-content: space-between; }
+.help-list { display: grid; gap: 2px; max-height: 320px; overflow: auto; }
+.help-item { display: grid; grid-template-columns: 1fr auto; gap: 0 8px; text-align: left; padding: 7px 9px; border: 0; border-radius: 6px; background: transparent; cursor: pointer; }
+.help-item .help-t { font-weight: 500; }
+.help-item .help-h { grid-column: 1; color: var(--muted); font-size: 12px; }
+.help-item .kbd { grid-column: 2; grid-row: 1; align-self: center; }
+.help-item:hover, .help-item.sel { background: var(--accent-soft); }
+@media (max-width: 640px) { .demon { --demon-scale: .6 !important; right: 6px; } .demon-bubble { max-width: 200px; font-size: 13px; } }

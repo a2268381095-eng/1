@@ -1,0 +1,42 @@
+/* 书架 */
+.brand { font-family: var(--f-title); font-size: 19px; color: var(--accent); letter-spacing: .04em; padding-left: 4px; }
+.shelf-main { flex: 1; overflow: auto; padding: 24px; }
+.shelf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; max-width: 1280px; margin: 0 auto; }
+.book-card { position: relative; display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 14px; padding: 12px; border: 1px solid var(--line);
+  border-radius: 10px; background: var(--surface); cursor: pointer; transition: box-shadow .15s, border-color .15s; }
+.book-card:hover { border-color: var(--line-strong); box-shadow: var(--shadow-s); }
+.book-cover { width: 96px; height: 128px; object-fit: cover; border-radius: 4px; box-shadow: 0 1px 4px rgba(0, 0, 0, .15); background: var(--side); }
+.book-meta { display: grid; align-content: start; gap: 6px; min-width: 0; padding-right: 26px; }
+.book-title { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.book-intro { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.65; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.book-time { margin: 0; color: var(--faint); font-size: 12px; }
+.book-more { position: absolute; top: 8px; right: 8px; }
+.shelf-empty { display: grid; justify-items: center; gap: 10px; padding: 80px 16px; text-align: center; }
+.shelf-empty p { margin: 0; }
+.shelf-empty-t { font-size: 18px; font-weight: 600; }
+
+.book-pop { position: fixed; z-index: 90; display: grid; grid-template-columns: 180px minmax(0, 260px); gap: 14px; padding: 12px; background: var(--surface);
+  border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); pointer-events: none; }
+.book-pop-cover { width: 180px; height: 240px; object-fit: cover; border-radius: 4px; }
+.book-pop-meta { display: grid; align-content: start; gap: 8px; }
+.book-pop-meta h3 { margin: 0; font-size: 16px; }
+.book-pop-meta p { margin: 0; }
+.book-pop-intro { font-size: 13px; line-height: 1.7; max-height: 170px; overflow: hidden; white-space: pre-wrap; }
+
+.menu { position: fixed; z-index: 95; min-width: 180px; padding: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow); display: grid; }
+.menu-item { text-align: left; padding: 7px 10px; border: 0; background: transparent; border-radius: 5px; cursor: pointer; font-size: 13.5px; }
+.menu-item:hover, .menu-item:focus-visible { background: var(--hover); }
+.menu-item.danger { color: var(--danger); }
+.menu-sep { height: 1px; background: var(--line); margin: 4px 2px; }
+
+/* 新建作品表单 */
+.book-form { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 18px; }
+@media (max-width: 560px) { .book-form { grid-template-columns: minmax(0, 1fr); } }
+.cover-col { display: grid; gap: 6px; align-content: start; justify-items: start; }
+.cover-prev { width: 150px; height: 200px; object-fit: cover; border-radius: 4px; border: 1px solid var(--line); }
+.small-note { margin: 0; font-size: 12px; }
+.book-fields { display: grid; gap: 12px; align-content: start; }
+.tag-pick { gap: 6px; }
+.tag { border: 1px solid var(--line-strong); background: var(--paper); border-radius: 999px; padding: 2px 10px; cursor: pointer; font-size: 12.5px; }
+.tag.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.tag-add { width: 150px; padding: 3px 8px; font-size: 12.5px; }

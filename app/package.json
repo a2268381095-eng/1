@@ -1,0 +1,22 @@
+{
+  "name": "xiaoemo-wenshu",
+  "private": true,
+  "version": "0.1.0",
+  "description": "小恶魔文书：本地中文写作软件",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs --watch"
+  },
+  "devDependencies": {
+    "esbuild": "0.24.0"
+  },
+  "dependencies": {
+    "@codemirror/commands": "6.7.1",
+    "@codemirror/language": "6.10.6",
+    "@codemirror/search": "6.5.8",
+    "@codemirror/state": "6.4.1",
+    "@codemirror/view": "6.35.0",
+    "diff-match-patch": "1.0.5"
+  }
+}

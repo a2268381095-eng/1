@@ -1,0 +1,98 @@
+/* 写作界面布局：左章节 | 中正文 | 右侧栏 */
+.ws-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 236px minmax(0, 1fr) 260px; grid-template-areas: "left center right"; }
+.side-left { grid-area: left; }
+.center { grid-area: center; }
+.side-right { grid-area: right; }
+.ws.no-right .ws-body { grid-template-columns: 236px minmax(0, 1fr) 0; }
+.ws.no-right .side-right { display: none; }
+.ws.wide-right .ws-body { grid-template-columns: 236px minmax(0, 1fr) 380px; }
+.side-left { border-right: 1px solid var(--line); }
+.side-right { border-left: 1px solid var(--line); }
+.center { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--paper); }
+@media (max-width: 1000px) {
+  .ws-body, .ws.no-right .ws-body { grid-template-columns: 200px minmax(0, 1fr) 0; }
+  .side-right { display: none; }
+  .ws.wide-right .ws-body { grid-template-columns: 0 minmax(0, 1fr) 340px; }
+  .ws.wide-right .side-right { display: flex; }
+  .ws.wide-right .side-left { display: none; }
+}
+@media (max-width: 640px) {
+  .ws-body, .ws.no-right .ws-body, .ws.wide-right .ws-body { grid-template-columns: 0 minmax(0, 1fr) 0; }
+  .side-left, .ws.wide-right .side-right { display: none; }
+  .tb-t { display: none; }
+  .ws .topbar { overflow-x: auto; scrollbar-width: none; }
+  .book-name { max-width: 120px; flex: 0 1 auto; }
+  .ch-head { padding: 18px 16px 0; }
+}
+.ws .topbar > * { flex-shrink: 0; }
+.ws .topbar > .book-name { flex-shrink: 1; min-width: 40px; }
+
+.tb-sep { width: 1px; height: 18px; background: var(--line-strong); margin: 0 4px; }
+.book-name { border: 0; background: transparent; font-weight: 600; font-size: 14.5px; cursor: pointer; padding: 4px 8px; border-radius: 6px;
+  max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.book-name:hover { background: var(--hover); }
+
+/* 专注模式 */
+.ws.focus .topbar, .ws.focus .side-left, .ws.focus .side-right, .ws.focus .statusbar { display: none; }
+.ws.focus .ws-body { grid-template-columns: 0 minmax(0, 1fr) 0 !important; }
+
+/* 章节列表 */
+.ch-list { flex: 1; overflow: auto; padding: 6px; }
+.ch-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 6px; align-items: center; padding: 6px 8px; border-radius: 6px;
+  cursor: pointer; font-size: 13.5px; color: var(--muted); border: 1px solid transparent; }
+.ch-item:hover { background: var(--hover); color: var(--ink); }
+.ch-item.cur { background: var(--paper); color: var(--ink); box-shadow: var(--shadow-s); font-weight: 500; }
+.ch-item.sel { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
+.ch-item.dragging { opacity: .4; }
+.ch-item.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+.ch-item.drop-after { box-shadow: inset 0 -2px 0 var(--accent); }
+.ch-item-no { white-space: nowrap; }
+.ch-item-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ch-item-w { font-size: 11.5px; color: var(--faint); font-variant-numeric: tabular-nums; }
+.pt-badge { font-size: 11px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--warn-soft); color: var(--warn);
+  display: inline-grid; place-items: center; font-weight: 600; }
+.vol-head { padding: 10px 8px 4px; font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .06em; border-radius: 6px; }
+.vol-head.drop { background: var(--accent-soft); }
+.sel-bar { display: flex; align-items: center; gap: 6px; padding: 6px 8px; font-size: 12.5px; background: var(--accent-soft); flex-wrap: wrap; }
+.sel-bar[hidden] { display: none; }
+.sel-bar .spacer { flex: 1; }
+
+/* 正文区 */
+.ch-head { display: flex; align-items: baseline; gap: 12px; max-width: var(--text-width); width: 100%; margin: 0 auto; padding: 26px 32px 0; }
+.ch-no { font-family: var(--f-text); font-size: 20px; font-weight: 600; white-space: nowrap; color: var(--ink); }
+.ch-title { flex: 1; min-width: 0; border: 0; border-bottom: 1px dashed transparent; background: transparent; font-family: var(--f-text); font-size: 20px;
+  font-weight: 600; padding: 2px 0; }
+.ch-title:hover { border-bottom-color: var(--line-strong); }
+.ch-title:focus { outline: none; border-bottom-color: var(--accent); }
+.ch-title::placeholder { color: var(--faint); font-weight: 400; }
+.ed-host { flex: 1; min-height: 0; }
+.ed-host .cm-editor { height: 100%; background: transparent; color: var(--ink); }
+.ed-host .cm-editor.cm-focused { outline: none; }
+.ed-host .cm-scroller { font-family: var(--f-text); }
+.ed-host .cm-content { caret-color: var(--accent); }
+.ed-host .cm-cursor { border-left: 2px solid var(--accent); }
+.ed-host .cm-selectionBackground { background: var(--accent-soft) !important; }
+.ed-host .cm-focused .cm-selectionBackground { background: color-mix(in srgb, var(--accent) 22%, transparent) !important; }
+.ed-host .cm-placeholder { color: var(--faint); }
+.cm-find { background: var(--mark); border-radius: 2px; }
+.cm-find-cur { background: var(--mark-cur); border-radius: 2px; box-shadow: 0 0 0 1px var(--mark-cur); }
+.cm-del { background: var(--danger-soft); text-decoration: line-through; text-decoration-color: var(--danger); }
+.cm-ins { background: var(--ok-soft); }
+
+.statusbar .goal-done { color: var(--ok); font-weight: 600; }
+
+/* 要点 */
+.pt-body { display: grid; align-content: start; gap: 8px; }
+.pt-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.pt-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 6px; align-items: start; padding: 6px 6px 6px 8px; border-radius: 6px; background: var(--paper);
+  border: 1px solid var(--line); }
+.pt-item.drop-before { box-shadow: inset 0 2px 0 var(--accent); }
+.pt-item .check { padding-top: 3px; }
+.pt-text { font-size: 13.5px; line-height: 1.6; outline: none; min-width: 0; overflow-wrap: anywhere; cursor: text; }
+.pt-item.done .pt-text { color: var(--faint); text-decoration: line-through; }
+.pt-del { width: 22px; height: 22px; opacity: 0; }
+.pt-item:hover .pt-del, .pt-del:focus-visible { opacity: 1; }
+.pt-del .ico svg { width: 13px; height: 13px; }
+.pt-empty { font-size: 13px; padding: 4px 2px; }
+.pt-count { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.pt-note { margin: 0; font-size: 12px; line-height: 1.6; }
