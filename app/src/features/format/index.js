@@ -5,7 +5,8 @@ import { bus } from "../../core/bus.js";
 import { commands } from "../../core/commands.js";
 import { undo as appUndo } from "../../core/undo.js";
 import { db } from "../../core/db.js";
-import { h, icon, toast, notice, pushLayer, prompt, confirm } from "../../core/ui.js";
+import { h, icon, toast, notice, pushLayer, topLayer, prompt, confirm } from "../../core/ui.js";
+import { undo as cmUndo, redo as cmRedo, undoDepth, redoDepth } from "@codemirror/commands";
 import { tip } from "../demon/demon.js";
 import { RULES, formatText, getSchemes, saveScheme, deleteScheme, getUserSchemes, setUserSchemes,
   normalizeRules, sameRules, isBuiltinScheme } from "./engine.js";
@@ -80,7 +81,9 @@ async function openFormat(opts = {}) {
     if (!ws.book || !ws.els()) return;
     const sel = ws.selectedIds();
     const scope = (opts && opts.scope) || (sel.length >= 2 ? "selected" : "current");
-    const rules = last && last.rules ? normalizeRules(last.rules) : effective(schemes[0]);
+    // 上次用的是「默认」：段间空行照样跟着作品设置走（作品设置可能改过）
+    const lastBuiltin = last && schemes.find((s) => s.builtin && s.name === last.scheme);
+    const rules = lastBuiltin ? effective(lastBuiltin) : last && last.rules ? normalizeRules(last.rules) : effective(schemes[0]);
     build({ scope, rules, scheme: last ? last.scheme || "" : schemes[0].name, schemes });
   } finally { opening = false; }
   tip("format-first", "排版只动空白和标点，不改字。先在这里看改动，点「写回」才生效，按一次撤销能全部还原。");
@@ -114,11 +117,16 @@ function build(st) {
   center.classList.add("fmt-on");
   center.append(box);
   setPressed(true);
+  // 盖住的章名和正文不让键盘摸到（不然 Tab 能跳进去打字，预览就对不上了）
+  const hidden = [center.querySelector(".ch-head"), ws.els().edHost].filter(Boolean);
+  hidden.forEach((el) => { el.inert = true; });
+  closeX.focus();
 
   const offs = [];
   const layer = pushLayer({
     onClose: () => {
       box.remove();
+      hidden.forEach((el) => { el.inert = false; });
       center.classList.remove("fmt-on");
       offs.forEach((off) => off());
       cur = null;
@@ -222,7 +230,7 @@ function build(st) {
     const before = await getUserSchemes();
     if (before.some((s) => s.name === name) && !(await confirm(`已经有「${name}」了`, "用现在的规则覆盖它吗？", "覆盖"))) return;
     try { await saveScheme(name, st.rules); }
-    catch (e) { schemeError("方案没能存上。", e); return; }
+    catch (e) { schemeError("方案没能存上。", e, () => saveBtn.click()); return; }
     const after = await getUserSchemes();
     const entry = appUndo.push({
       label: "保存排版方案",
@@ -239,7 +247,7 @@ function build(st) {
     if (!name || isBuiltinScheme(name)) return;
     const before = await getUserSchemes();
     try { await deleteScheme(name); }
-    catch (e) { schemeError("方案没能删掉。", e); return; }
+    catch (e) { schemeError("方案没能删掉。", e, () => delBtn.click()); return; }
     const after = await getUserSchemes();
     const entry = appUndo.push({
       label: "删除排版方案",
@@ -250,12 +258,12 @@ function build(st) {
     toast(`已删除方案「${name}」`, { action: { label: "撤销", run: () => appUndo.undoEntry(entry) } });
   });
 
-  function schemeError(what, e) {
+  function schemeError(what, e, retry) {
     notice({
       what,
       why: "本地存储出错，可能磁盘满了或者浏览器限制了存储。现在的规则还在，可以直接写回。",
       detail: e && (e.stack || e.message || e),
-      actions: [{ label: "再试一次", primary: true, run: () => saveBtn.click() }],
+      actions: [{ label: "再试一次", primary: true, run: retry }],
     });
   }
 
@@ -271,16 +279,20 @@ function build(st) {
     okBtn.disabled = true;
     sum.textContent = "正在看……";
     const res = [];
+    let tick = performance.now();
     for (let k = 0; k < ids.length; k++) {
       const c = ws.chapters.find((x) => x.id === ids[k]);
       if (!c) continue;
       const before = ws.textOf(c.id);
       const after = formatText(before, st.rules);
       const d = after === before ? { parts: null, count: 0 } : diffParts(before, after);
-      res.push({ id: c.id, title: ws.fullTitle(c), count: d.count, parts: d.parts });
-      if (k % 25 === 24) {
+      res.push({ id: c.id, title: ws.fullTitle(c), count: d.count, parts: d.parts, before, after });
+      // 章多、章长的时候隔一会儿让出界面，不卡住
+      if (performance.now() - tick > 40 && k + 1 < ids.length) {
+        sum.textContent = `正在看…… ${k + 1} / ${ids.length} 章`;
         await new Promise((r) => setTimeout(r, 0));
         if (g !== st.gen || cur !== api) return;
+        tick = performance.now();
       }
     }
     if (g !== st.gen || cur !== api) return;
@@ -352,20 +364,25 @@ function build(st) {
     st.busy = true;
     okBtn.disabled = true;
     try { await ws.editor.flush(); } catch (_) { /* 保存失败另有提示 */ }
-    const ids = new Set(st.results.filter((r) => r.count && !st.skip.has(r.id)).map((r) => r.id));
-    const changes = [], befores = new Map();
+    const picked = new Map(st.results.filter((r) => r.count && !st.skip.has(r.id)).map((r) => [r.id, r]));
+    const changes = [], befores = new Map(), afters = new Map(), depths = {};
     let count = 0;
     for (const c of ws.chapters) {
-      if (!ids.has(c.id)) continue;
-      const before = ws.textOf(c.id), after = formatText(before, st.rules);
+      const r = picked.get(c.id);
+      if (!r) continue;
+      // 预览算过的直接用；正文在预览之后又变了就重新排
+      const before = ws.textOf(c.id), same = r.before === before;
+      const after = same ? r.after : formatText(before, st.rules);
       if (after === before) continue;
       befores.set(c.id, before);
+      afters.set(c.id, after);
+      depths[c.id] = ws.editor.depthOf(c.id);
       changes.push({ chapterId: c.id, after });
-      count += diffParts(before, after).count;
+      count += same ? r.count : diffParts(before, after).count;
     }
     if (!changes.length) { st.busy = false; toast("很整齐，没有要改的"); close(); return; }
     let entry;
-    try { entry = await ws.applyBatch("一键排版", changes); }
+    try { entry = await ws.applyBatch("一键排版", changes); if (entry) tidyUndo(entry, befores, afters, depths); }
     catch (e) {
       st.busy = false;
       updateSum();
@@ -405,16 +422,35 @@ function build(st) {
   }
 
   // ---- 跟着外面的变化 ----
+  const again = () => { renderScope(); compute(); };
   offs.push(
     bus.on("chapter:opened", () => { renderScope(); if (st.scope === "current") compute(); }),
+    bus.on("chapter:created", again),
+    bus.on("chapter:deleted", again),
+    bus.on("replace:done", again),
     bus.on("undo", () => compute()),
     bus.on("redo", () => compute()),
     bus.on("route", () => close()),
   );
+  // 章节列表里改了多选：范围按钮上的章数跟着变，正在看「选中的几章」就重新算
+  const side = ws.els().list.closest("aside") || ws.els().list;
+  let nSel = ws.selectedIds().length;
+  const onSide = () => setTimeout(() => {
+    if (cur !== api) return;
+    const n = ws.selectedIds().length;
+    if (n === nSel) return;
+    nSel = n;
+    const was = st.scope;
+    renderScope();
+    if (was === "selected" || st.scope !== was) compute();
+  }, 0);
+  side.addEventListener("click", onSide);
+  offs.push(() => side.removeEventListener("click", onSide));
 
   const api = {
     setScope: (id) => { renderScope(); if (id === "selected" && ws.selectedIds().length < 2) return; setScope(id); },
-    focus: () => (okBtn.disabled ? closeX : okBtn).focus(),
+    // 上面还盖着别的弹窗（比如存方案的输入框）时不抢焦点，免得回车点到「写回」
+    focus: () => { if (topLayer() === layer) (okBtn.disabled ? closeX : okBtn).focus(); },
     close,
     reloadSchemes,
   };
@@ -423,6 +459,41 @@ function build(st) {
   renderRules();
   renderSchemes();
   compute().then(() => { if (cur === api) api.focus(); });
+}
+
+/**
+ * ws.applyBatch 撤销时是往编辑器里再写一笔，历史里会留下「排版」「还原」两步，
+ * 之后在正文里按 Ctrl+Z 会把排版又改回来，连着排两次再撤两次也回不到原文。这里补两件事：
+ *   · 打开着的那一章，最近一步就是这次排版时，改用编辑器自己的撤销 / 重做，历史里不多出一步；
+ *   · 其他章：上一条批量操作记的撤销深度接到现在，正文里按 Ctrl+Z 还能接着整体撤销。
+ * depths：写回之前各章的撤销深度（重做时更新）。
+ */
+function tidyUndo(entry, befores, afters, depths) {
+  const undo0 = entry.undo, redo0 = entry.redo;
+  const step = (back) => {
+    const view = ws.editor && ws.editor.view, id = ws.current && ws.current.id;
+    const from = back ? afters : befores, to = back ? befores : afters;
+    if (!view || !id || !from.has(id) || view.state.doc.toString() !== from.get(id)) return;
+    if (back ? undoDepth(view.state) !== entry.chapters[id] : !redoDepth(view.state)) return;
+    (back ? cmUndo : cmRedo)(view);
+    // 对不上（中间有别的改动）就退回去，照原来的办法写
+    if (view.state.doc.toString() !== to.get(id)) (back ? cmRedo : cmUndo)(view);
+  };
+  entry.undo = async () => {
+    const prev = appUndo.peek();   // 这一条已经出栈，peek 到的是上一条
+    step(true);
+    await undo0();
+    if (prev && prev !== entry && prev.chapters) {
+      for (const [id, d] of Object.entries(entry.chapters || {})) {
+        if (depths[id] >= 0 && prev.chapters[id] === depths[id]) prev.chapters[id] = d;
+      }
+    }
+  };
+  entry.redo = async () => {
+    for (const id of afters.keys()) depths[id] = ws.editor ? ws.editor.depthOf(id) : -1;
+    step(false);
+    await redo0();
+  };
 }
 
 /** 撤销、重做方案改动时，预览开着就刷新下拉框 */
