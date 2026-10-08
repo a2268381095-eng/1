@@ -1,5 +1,5 @@
-# 桌面版安装包：推送 app/ 的改动后自动在 Windows 上打包，安装包在这次运行的 Artifacts 里下载。
-# macOS 包比较费构建时间，需要时在 Actions 页面手动运行并勾选「同时打 macOS 包」。
+# 桌面版安装包：提交说明里带 [desktop] 的推送会在 Windows 上打包，安装包在这次运行的 Artifacts 里下载。
+# 也可以在 Actions 页面手动运行；macOS 包比较费构建时间，手动运行时勾选「同时打 macOS 包」才打。
 name: 桌面版安装包
 
 on:
@@ -17,10 +17,11 @@ on:
 
 concurrency:
   group: desktop-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   windows:
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[desktop]') }}
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
