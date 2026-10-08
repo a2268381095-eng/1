@@ -77,36 +77,65 @@ function metal(m) {
 }
 
 // ---------------- 铁艺包角（左上角那只，其余三只翻过来） ----------------
-function cornerShape() {
+/** 一笔：按顺序的浮点坐标 → 像素路径（去重、去掉拐角多出来的那一格，线是干净的一像素） */
+function stroke(pts) {
+  const p = [];
+  for (const [x, y] of pts) { const q = [Math.round(x), Math.round(y)], l = p[p.length - 1]; if (!l || l[0] !== q[0] || l[1] !== q[1]) p.push(q); }
+  const out = [];
+  for (let i = 0; i < p.length; i++) {
+    const a = out[out.length - 1], c = p[i + 1];
+    if (a && c && Math.abs(a[0] - c[0]) === 1 && Math.abs(a[1] - c[1]) === 1) continue;
+    out.push(p[i]);
+  }
+  return out;
+}
+/** 卷草：从角度 a0 开始，半径从 r0 均匀收到 r1，转 turns 圈（dir 1 顺时针） */
+function spiral(cx, cy, r0, r1, a0, turns, dir = 1) {
+  const pts = [], T = turns * Math.PI * 2;
+  for (let t = 0; t <= T; t += 0.004) { const r = r0 + (r1 - r0) * t / T, a = a0 + dir * t; pts.push([cx + Math.cos(a) * r, cy + Math.sin(a) * r]); }
+  return stroke(pts);
+}
+function line(x0, y0, x1, y1) {
+  const pts = [], n = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0)) * 4;
+  for (let i = 0; i <= n; i++) pts.push([x0 + (x1 - x0) * i / n, y0 + (y1 - y0) * i / n]);
+  return stroke(pts);
+}
+function cornerMask() {
   const N = 30, m = Array.from({ length: N }, () => Array(N).fill(0));
-  const put = (x, y, v = 1) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && y >= 0 && x < N && y < N && m[y][x] !== 2) m[y][x] = v; };
-  // 角片：直角三角，斜边挖成一道内凹的弧
-  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (x + y <= 12 && (x - 12.5) ** 2 + (y - 12.5) ** 2 >= 9.2 ** 2) put(x, y);
-  // 沿两条边的铁条，末端一个小矛尖
-  for (let x = 0; x <= 21; x++) { put(x, 0); put(x, 1); }
-  for (let y = 0; y <= 21; y++) { put(0, y); put(1, y); }
-  for (const [a, b] of [[22, 0], [22, 1], [23, 0], [23, 1], [24, 0], [22, 2], [23, 2]]) { put(a, b); put(b, a); }
-  // 对角线上一根铁杆，尖上是百合花
-  for (let k = 5; k <= 15; k += 0.5) { put(k, k); put(k + 1, k); }
-  const lily = [[16, 16], [17, 17], [16, 17], [17, 16], [18, 18], [19, 19], [15, 18], [14, 19], [18, 15], [19, 14], [13, 19], [19, 13], [17, 18], [18, 17]];
-  for (const [x, y] of lily) put(x, y);
-  // 两道卷草：从铁杆上分出去，各卷一个圈
-  const scroll = (sx, sy, ex, ey, cx, cy, r, a0, turns, dir) => {
-    for (let t = 0; t <= 1; t += 0.02) put(sx + (ex - sx) * t, sy + (ey - sy) * t);
-    for (let t = 0; t <= turns; t += 0.01) {
-      const a = a0 + dir * t * Math.PI * 2, rr = r * (1 - t / (turns + .35));
-      put(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr);
-    }
-  };
-  scroll(10, 10, 16, 5, 19, 6.5, 3, Math.PI, 1.1, 1);
-  scroll(10, 10, 5, 16, 6.5, 19, 3, -Math.PI / 2, 1.1, -1);
-  // 铆钉
-  m[3][3] = 2; m[3][4] = 1; m[4][3] = 1;
-  m[0][12] = 1; m[12][0] = 1;
+  const put = (x, y, v) => { if (x >= 0 && y >= 0 && x < N && y < N && m[y][x] !== 3) m[y][x] = v === 0 ? 0 : Math.max(m[y][x], v); };
+  const path = (pts, v = 2) => pts.forEach(([x, y]) => put(x, y, v));
+  // 角上一块扇形的铁片，中间一颗圆头铆钉；外面隔开一点再箍一道细圈
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) if (x >= 1 && y >= 1 && (x - 1) ** 2 + (y - 1) ** 2 <= 6.3 ** 2) put(x, y, 1);
+  const rim = [];
+  for (let a = 0; a <= Math.PI / 2 + 1e-6; a += 0.004) rim.push([1 + Math.cos(a) * 9.4, 1 + Math.sin(a) * 9.4]);
+  path(stroke(rim));
+  m[3][3] = 3; m[3][4] = 4; m[4][3] = 4; m[4][4] = 4;
+  // 两根贴边的铁条（两像素粗），末端往里卷成一个圈
+  for (let i = 1; i <= 19; i++) for (const k of [1, 2]) { put(i, k, 1); put(k, i, 1); }
+  const curl = spiral(19.5, 7, 5.5, 1.3, -Math.PI / 2, 1.15, 1);
+  path(curl); path(curl.map(([x, y]) => [y, x]));
+  // 斜着伸出一根铁杆，头上一个矛尖
+  path(line(8, 8, 13, 13));
+  for (let y = 13; y <= 17; y++) for (let x = 13; x <= 17; x++) if (x + y >= 30 && (x >= 15 || y >= 15) && x + y <= 34) put(x, y, 1);
+  // 铁条上的小铆钉
+  for (const i of [12]) { m[1][i] = 3; m[i][1] = 3; }
   return m;
 }
-const CORNER = metal(cornerShape());
-const IRON_L = { o: "#1a1220", b: "#3a2c42", h: "#6f5c79", s: "#2a1f30", r: "#d9cde0", d: "rgba(60, 30, 20, .28)" };
+/** 形状 → 上色：光从左上来（翻转以后再上色，四个角的光一致） */
+function shade(m) {
+  const H = m.length, W = m[0].length, on = (x, y) => y >= 0 && y < H && x >= 0 && x < W && m[y][x] > 0;
+  return m.map((r, y) => r.map((v, x) => {
+    if (v === 3) return "r";
+    if (v === 4) return "o";
+    if (v === 2) return on(x - 1, y - 1) && on(x + 1, y + 1) && !on(x, y - 1) ? "h" : "b";
+    if (v === 1) return !on(x, y + 1) || !on(x + 1, y) ? "o" : !on(x, y - 1) || !on(x - 1, y) ? "h" : "b";
+    return on(x - 1, y - 1) && !on(x - 1, y) || on(x - 1, y - 1) && !on(x, y - 1) || on(x, y - 1) && on(x - 1, y) ? "d" : ".";
+  }).join(""));
+}
+const CMASK = cornerMask();
+const mFlipX = (m) => m.map((r) => [...r].reverse()), mFlipY = (m) => [...m].reverse();
+const CORNER = shade(CMASK);
+const IRON_L = { o: "#1a1220", b: "#3a2c42", h: "#6f5c79", s: "#2a1f30", r: "#d9cde0", d: "rgba(70, 36, 20, .2)" };
 const IRON_D = { o: "#6d6480", b: "#a49cb4", h: "#ece7f4", s: "#857c96", r: "#ffffff", d: "rgba(0, 0, 0, .55)" };
 
 // ---------------- 顶上的蝙蝠（翅膀张开，压在框线中间） ----------------
@@ -269,9 +298,9 @@ export default {
   edgeL: edge("L"), edgeR: edge("R"), edgeT: edge("T"), edgeB: edge("B"),
   // 四角铁艺
   cornerTL: sprite(CORNER, IRON_L, IRON_D, 2),
-  cornerTR: sprite(flipX(CORNER), IRON_L, IRON_D, 2),
-  cornerBL: sprite(flipY(CORNER), IRON_L, IRON_D, 2),
-  cornerBR: sprite(flipY(flipX(CORNER)), IRON_L, IRON_D, 2),
+  cornerTR: sprite(shade(mFlipX(CMASK)), IRON_L, IRON_D, 2),
+  cornerBL: sprite(shade(mFlipY(CMASK)), IRON_L, IRON_D, 2),
+  cornerBR: sprite(shade(mFlipY(mFlipX(CMASK))), IRON_L, IRON_D, 2),
   bat: sprite(BAT, { k: "#2a1a30", e: "#d23a5a" }, { k: "#0c070e", e: "#ff5a7a" }, 2),
   seal: sprite(SEAL, { w: "#6a0f22", R: "#a3182f", l: "#c8384c", p: "#7c1023", P: "#5e0a1a", g: "#3f7a46" },
     { w: "#5a0b1c", R: "#93162c", l: "#c43a50", p: "#6e0e20", P: "#4e0816", g: "#4f8a56" }, 2),

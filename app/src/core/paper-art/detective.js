@@ -47,9 +47,9 @@ function fiber(g, w, h, t, rnd) {
       else if (n < .3) px(x, y, pale, (.3 - n) * (dark ? .5 : .55));
     }
     // 纤维：一根根短而弯，浅色的多、深色的少
-    for (let i = 0; i < 260; i++) {
-      let x = rnd() * w, y = rnd() * h, a = rnd() * Math.PI, len = 3 + rnd() * 9;
-      const col = rnd() < .62 ? brown : pale, al = col === brown ? (dark ? .07 : .09) + rnd() * .07 : .16 + rnd() * .14;
+    for (let i = 0; i < 240; i++) {
+      let x = rnd() * w, y = rnd() * h, a = rnd() * Math.PI, len = 2 + rnd() * 5;
+      const col = rnd() < .6 ? brown : pale, al = col === brown ? (dark ? .04 : .06) + rnd() * .05 : (dark ? .12 : .08) + rnd() * .07;
       for (let k = 0; k < len; k++) { px(x, y, col, al); a += (rnd() - .5) * .5; x += Math.cos(a); y += Math.sin(a); }
     }
     // 墨点和杂屑
@@ -71,7 +71,7 @@ function rule(g, w, h, t) {
 // 咖啡杯印：一圈边沿深、里面淡，圈不太圆，有一段断开；旁边还有半圈（杯子挪过一次）和一滴
 function ring(g, w, h, t, rnd) {
   const dark = isDark(g, t);
-  const col = dark ? [196, 142, 82] : [136, 86, 38], k = dark ? .2 : .3;
+  const col = dark ? [196, 142, 82] : [136, 86, 38], k = dark ? .3 : .5;
   const wob = [rnd() * 6, rnd() * 6, rnd() * 6];
   const r0 = (a) => 18.5 + Math.sin(a * 2 + wob[0]) * .9 + Math.sin(a * 3 + wob[1]) * .6 + Math.sin(a * 5 + wob[2]) * .3;
   pixels(g, w, h, (px) => {

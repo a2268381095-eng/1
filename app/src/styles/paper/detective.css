@@ -3,7 +3,7 @@
    纸面有纤维和墨屑，台灯从上方打下来一团暖光，边上旧得发黄；正文外面右上盖一枚歪着的红色「卷宗」章，右下角留一圈咖啡杯印。
    正文底下一行一道打字机点线。醒来：打字机把这页一行一行打出来，色带跟着字走，打完「叮」一声回车。 */
 :root[data-paper="detective"] {
-  --dt-top: 28px; --dt-tint: rgba(222, 190, 128, .16); --dt-age: rgba(150, 100, 40, .24); --dt-lamp: rgba(255, 238, 196, .42);
+  --dt-top: 28px; --dt-tint: rgba(222, 190, 128, .16); --dt-age: rgba(150, 100, 40, .24); --dt-lamp: rgba(255, 238, 196, .3);
   --dt-shade: rgba(70, 46, 20, .1); --dt-board: #c9a063; --dt-board-e: #8f6a3a; --dt-edge: rgba(120, 88, 50, .28); --dt-lip: rgba(255, 255, 255, .55);
   --dt-ink: #2e2620; --dt-red: #b3262e; }
 :root[data-paper="detective"][data-dark] {
@@ -143,7 +143,7 @@
   box-shadow: inset 0 0 0 1px #d8c9a4; }
 /* 卷筒 + 计数轮：深绿漆的铁壳，里面每一位一格米色轮子，上下压暗成圆柱 */
 .demon[data-style="detective"] .demon-combo .dc-num { position: relative; z-index: 1; overflow: hidden; padding: 4px 6px; border-radius: 3px;
-  font: bold 22px/1.1 "Courier New", "Courier", monospace; letter-spacing: 0; color: transparent; -webkit-text-stroke: 0;
+  font: bold 24px/1.1 "Courier New", "Courier", monospace; letter-spacing: 0; color: transparent; -webkit-text-stroke: 0;
   text-shadow: 0 var(--dt-roll) 0 var(--dt-c), 0 calc(var(--dt-roll) - 1.2em) 0 var(--dt-c);
   background: linear-gradient(rgba(0, 0, 0, .34), rgba(0, 0, 0, 0) 30%, rgba(255, 255, 255, .28) 46%, rgba(0, 0, 0, 0) 62%, rgba(0, 0, 0, .38)) content-box,
     repeating-linear-gradient(90deg, #f6eed6 0 calc(1ch - 2px), #7c6a50 calc(1ch - 2px) 1ch) content-box, #213a32;
@@ -166,7 +166,7 @@
 .demon[data-style="detective"] .demon-combo::before, .demon[data-style="detective"] .demon-combo::after { content: ""; position: absolute; z-index: 3; pointer-events: none; opacity: 0; transition: opacity .3s; }
 /* 镜片 */
 .demon[data-style="detective"] .demon-combo::before { left: 6px; top: calc(50% - 15px); width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%; border: 3px solid #c9a24a;
-  background: radial-gradient(circle at 34% 30%, rgba(255, 255, 255, .7) 0 14%, rgba(220, 240, 255, .18) 18% 100%); box-shadow: 0 0 0 1px #6b4f1c, inset 0 0 0 1px #6b4f1c; }
+  background: radial-gradient(circle at 30% 28%, rgba(255, 255, 255, .75) 0 9%, rgba(220, 240, 255, .06) 12% 100%); box-shadow: 0 0 0 1px #6b4f1c, inset 0 0 0 1px #6b4f1c; }
 /* 镜柄 */
 .demon[data-style="detective"] .demon-combo::after { left: 23px; top: calc(50% + 4px); width: 4px; height: 13px; border-radius: 1px; background: #5a3a1e; box-shadow: 0 0 0 1px #2a1a0c; rotate: -40deg; transform-origin: 50% 0; }
 .demon[data-style="detective"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"])::before,

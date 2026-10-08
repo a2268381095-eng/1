@@ -90,7 +90,11 @@ function stampMark(g, t, motion) {
   const x0 = 13, y0 = 4;
   const fade = motion === "off" ? 1 : 0.86 + 0.14 * Math.sin(t * 3);
   g.globalAlpha = fade;
-  const put = (x, y) => px(g, x0 + x, y0 + y - Math.floor(x / 7), RED);
+  const put = (x, y) => px(g, x0 + x, y0 + y - Math.floor(Math.max(0, x) / 7), RED);
+  // 底下垫一张米色结案单，章才看得清
+  g.globalAlpha = 1;
+  for (let x = -2; x <= 18; x++) for (let y = -2; y <= 8; y++) px(g, x0 + x, y0 + y - Math.floor(Math.max(0, x) / 7), x === -2 || x === 18 || y === -2 || y === 8 ? CARD_D : CARD);
+  g.globalAlpha = fade;
   for (let x = -1; x <= 17; x++) { put(x, -1); put(x, 7); }
   for (let y = -1; y <= 7; y++) { put(-1, y); put(17, y); }
   JIE.forEach((r, y) => [...r].forEach((ch, x) => ch === "#" && put(x + 0, y)));
