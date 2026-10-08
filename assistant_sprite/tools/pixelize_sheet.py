@@ -33,7 +33,17 @@ def foreground(src):
     edge = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
     bg = np.isin(lab, list(edge)) & near_white
     fg = (~bg).astype(np.uint8)
-    return cv2.morphologyEx(fg, cv2.MORPH_OPEN, np.ones((2, 2), np.uint8)).astype(bool)
+    fg = cv2.morphologyEx(fg, cv2.MORPH_OPEN, np.ones((2, 2), np.uint8)).astype(bool)
+    # 剥掉 GPT 画在人物外面的那圈白边（实测 1–2 像素）：只剥纯白、最多 3 层，
+    # 白袜、白袖子这些衣服里面也是纯白，剥深了会缺一块；剩下的一点由最外圈描边盖住
+    pale = (src.min(2) > 238) & ((src.max(2) - src.min(2)) < 20)
+    for _ in range(3):
+        edge = fg & cv2.dilate((~fg).astype(np.uint8), np.ones((3, 3), np.uint8)).astype(bool)
+        peel = edge & pale
+        if not peel.any():
+            break
+        fg &= ~peel
+    return fg
 
 
 def split_runs(profile, parts, min_gap_frac=0.15):
@@ -81,28 +91,46 @@ def split_body(src, body, parts):
         a[:, cut:] = False
         b[:, :cut] = False
         return [a, b][:parts]
-    # 只在身体内部，从各个躯干同时一圈圈往外长，先到先得（不看颜色，背景漫不进来）
-    owner = np.zeros(body.shape, np.int32)
+    # 按「离轮廓多远」从厚到薄往外淹：躯干最厚处先淹，两边在连接最细的地方相遇，
+    # 翅膀尖碰到隔壁头发这种情况，就在碰到的那一点切开
+    import heapq
+    H, W = body.shape
+    markers = np.zeros(body.shape, np.int32)
     for i, sd in enumerate(seeds):
-        owner[sd & body] = i + 1
-    kernel = np.ones((3, 3), np.uint8)
-    while True:
-        free = body & (owner == 0)
-        if not free.any():
-            break
-        grew = False
-        for i in range(parts):
-            ring = cv2.dilate((owner == i + 1).astype(np.uint8), kernel).astype(bool) & free
-            if ring.any():
-                owner[ring] = i + 1
-                free &= ~ring
-                grew = True
-        if not grew:          # 和种子不连通的碎块：归给离得最近的那一个
-            d = [cv2.distanceTransform((owner != i + 1).astype(np.uint8), cv2.DIST_L2, 3) for i in range(parts)]
-            owner[free] = np.argmin(np.stack([x[free] for x in d]), 0) + 1
-            break
-    markers = owner
+        markers[sd & body] = i + 1
+    heap = []
+    ys, xs = np.nonzero(markers)
+    for y, x in zip(ys, xs):
+        heap.append((-float(dt[y, x]), int(y), int(x), int(markers[y, x])))
+    heapq.heapify(heap)
+    while heap:
+        _, y, x, lab_ = heapq.heappop(heap)
+        for ny, nx in ((y + 1, x), (y - 1, x), (y, x + 1), (y, x - 1)):
+            if 0 <= ny < H and 0 <= nx < W and body[ny, nx] and markers[ny, nx] == 0:
+                markers[ny, nx] = lab_
+                heapq.heappush(heap, (-float(dt[ny, nx]), ny, nx, lab_))
     return [body & (markers == i + 1) for i in range(parts)]
+
+
+def give_back_strays(bodies):
+    """每个人物只留连在一起的主体；分出来的小块如果贴着别人的身体，就是别人的头发、衣角，还给对方。"""
+    kernel = np.ones((3, 3), np.uint8)
+    for i in range(len(bodies)):
+        n, lab, st, _ = cv2.connectedComponentsWithStats(bodies[i].astype(np.uint8), connectivity=8)
+        if n <= 2:
+            continue
+        main = 1 + int(np.argmax(st[1:, cv2.CC_STAT_AREA]))
+        for c in range(1, n):
+            if c == main:
+                continue
+            piece = lab == c
+            ring = cv2.dilate(piece.astype(np.uint8), kernel).astype(bool) & ~piece
+            touch = [ (ring & bodies[j]).sum() if j != i else 0 for j in range(len(bodies))]
+            j = int(np.argmax(touch))
+            if touch[j] > 0:
+                bodies[i] = bodies[i] & ~piece
+                bodies[j] = bodies[j] | piece
+    return bodies
 
 
 def figure_masks(fg, rows, src):
@@ -132,6 +160,7 @@ def figure_masks(fg, rows, src):
         row_bodies.sort(key=lambda b: b.sum(), reverse=True)
         rest += row_bodies[k:]
         bodies += sorted(row_bodies[:k], key=lambda b: np.where(b)[1].mean())
+    bodies = give_back_strays(bodies)
     while rest:
         dist = [cv2.distanceTransform((~b).astype(np.uint8), cv2.DIST_L2, 3) for b in bodies]
         _, ri, j = min(((dist[j][r].min(), ri, j) for ri, r in enumerate(rest) for j in range(len(bodies))))
@@ -224,13 +253,12 @@ def main():
     for i, (rgb, alpha) in enumerate(poses):
         name = names[i] if i < len(names) else f"pose{i + 1}"
         idx = np.argmin(((rgb[..., None, :] - pal_arr[None, None]) ** 2).sum(-1), -1)
-        # 外描边：人物外面一圈透明像素涂成描边色
-        ring = np.zeros_like(alpha)
+        # 描边：人物最外一圈像素直接涂成描边色，轮廓是干净的 1 像素线
+        inside = alpha.copy()
         for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-            ring |= np.roll(np.roll(alpha, dy, 0), dx, 1)
-        ring &= ~alpha
-        idx[ring] = 0
-        solid = alpha | ring
+            inside &= np.roll(np.roll(alpha, dy, 0), dx, 1)
+        idx[alpha & ~inside] = 0
+        solid = alpha
         rows_txt = ["".join(CHARS[idx[y, x]] if solid[y, x] else "." for x in range(cw)) for y in range(ch)]
         (out / f"{name}.txt").write_text("\n".join(rows_txt) + "\n")
         img = np.zeros((ch, cw, 4), np.uint8)

@@ -132,7 +132,9 @@ def brighten(img, mask, amount):
 def find_eyes(img, box=None):
     """找青色瞳孔：返回每只眼的外框 (x0, y0, x1, y1)，从左到右。"""
     c = img[..., :3].astype(int)
-    teal = (c[..., 1] - c[..., 0] > 25) & (c[..., 2] - c[..., 0] > 15) & solid(img)
+    # 瞳孔是偏深、偏饱和的青绿色；浅青色的披帛、纱带亮度高，不算
+    teal = ((c[..., 1] - c[..., 0] > 35) & (c[..., 2] - c[..., 0] > 20) & (c.max(-1) < 215)
+            & solid(img))
     if box:
         x0, y0, x1, y1 = box
         m = np.zeros_like(teal)
@@ -146,7 +148,12 @@ def find_eyes(img, box=None):
     gaps = np.where(np.diff(xs) > 3)[0]
     eyes = []
     for part in np.split(np.arange(len(xs)), gaps + 1):
-        eyes.append((xs[part].min(), ys[part].min(), xs[part].max(), ys[part].max()))
+        box = (xs[part].min(), ys[part].min(), xs[part].max(), ys[part].max())
+        if box[2] - box[0] <= 7 and box[3] - box[1] <= 6:     # 眼睛只有几个像素大
+            eyes.append(box)
+    # 两只眼睛应该在同一高度附近、挨得不远；对不上就当没找到，不做眨眼
+    if len(eyes) != 2 or abs(eyes[0][1] - eyes[1][1]) > 4 or eyes[1][0] - eyes[0][2] > 16:
+        return []
     return eyes
 
 
