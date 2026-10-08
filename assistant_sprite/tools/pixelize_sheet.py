@@ -54,28 +54,43 @@ def split_runs(profile, parts, min_gap_frac=0.15):
     return [0] + sorted(cuts) + [n]
 
 
-def figure_windows(fg, rows):
-    """先按行切，再在每行里按列切，返回每个姿势的 (y0, y1, x0, x1)。"""
+def figure_masks(fg, rows):
+    """先按行切；每行里认出 k 个人物身体（连在一起的就在最空的竖线处切开），
+    再把魔法球、星星这类分离的小块分给离它最近的身体。"""
     ys = split_runs(fg.sum(1), len(rows), 0.2)
-    wins = []
+    masks = []
     for (y0, y1), k in zip(zip(ys[:-1], ys[1:]), rows):
-        xs = split_runs(fg[y0:y1].sum(0), k, 0.5 / k)
-        wins += [(y0, y1, a, b) for a, b in zip(xs[:-1], xs[1:])]
-    return wins
-
-
-def clean_window(fg, win):
-    """取窗口里的前景，去掉从隔壁姿势伸进来、贴着窗口左右边的小碎块。"""
-    y0, y1, a, b = win
-    m = np.zeros_like(fg)
-    m[y0:y1, a:b] = fg[y0:y1, a:b]
-    n, lab, st, _ = cv2.connectedComponentsWithStats(cv2.dilate(m.astype(np.uint8), np.ones((3, 3), np.uint8)), connectivity=8)
-    biggest = st[1:, cv2.CC_STAT_AREA].max() if n > 1 else 0
-    for i in range(1, n):
-        x, _, w, _, area = st[i]
-        if (x <= a + 1 or x + w >= b - 1) and area < biggest * 0.08:
-            m[lab == i] = False
-    return m
+        band = np.zeros_like(fg)
+        band[y0:y1] = fg[y0:y1]
+        n, lab, st, cen = cv2.connectedComponentsWithStats(
+            cv2.dilate(band.astype(np.uint8), np.ones((3, 3), np.uint8)), connectivity=8)
+        lab = lab * band
+        comps = list(range(1, n))
+        big = max(st[i, cv2.CC_STAT_AREA] for i in comps)
+        bodies = [lab == i for i in comps if st[i, cv2.CC_STAT_AREA] >= big * 0.25]
+        rest = [i for i in comps if st[i, cv2.CC_STAT_AREA] < big * 0.25]
+        while len(bodies) < k:      # 两个人挨在一起：在最宽那块里找最空的竖线切开
+            bodies.sort(key=lambda b: np.ptp(np.where(b)[1]))
+            b = bodies.pop()
+            xs = np.where(b.any(0))[0]
+            prof = b[:, xs[0]:xs[-1] + 1].sum(0).astype(float)
+            cut = xs[0] + split_runs(prof, 2, 0.25)[1]
+            left, right = b.copy(), b.copy()
+            left[:, cut:] = False
+            right[:, :cut] = False
+            bodies += [left, right]
+        bodies.sort(key=lambda b: b.sum(), reverse=True)
+        bodies = sorted(bodies[:k], key=lambda b: np.where(b)[1].mean())
+        # 特效逐个归队：每次把离某个人物（含已归入的特效）最近的那一块并进去，
+        # 下落线会先挂到魔法球上，再跟着球归到对的人物
+        rest = [lab == i for i in rest]
+        while rest:
+            dist = [cv2.distanceTransform((~b).astype(np.uint8), cv2.DIST_L2, 3) for b in bodies]
+            best = min(((dist[j][r].min(), ri, j) for ri, r in enumerate(rest) for j in range(len(bodies))))
+            _, ri, j = best
+            bodies[j] |= rest.pop(ri)
+        masks += bodies
+    return masks
 
 
 def pixelize_one(src, lum, m, scale, canvas):
@@ -143,7 +158,7 @@ def main():
     src = np.asarray(Image.open(a.image).convert("RGB")).astype(np.float32)
     lum = src @ np.array([0.299, 0.587, 0.114])
     fg = foreground(src)
-    masks = [clean_window(fg, w) for w in figure_windows(fg, rows)]
+    masks = figure_masks(fg, rows)
     heights = [np.ptp(np.where(m)[0]) + 1 for m in masks]
     widths = [np.ptp(np.where(m)[1]) + 1 for m in masks]
     scale = a.char_height / float(np.median(heights))
