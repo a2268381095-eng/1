@@ -1,0 +1,26 @@
+{
+  "frame_w": 59,
+  "frame_h": 81,
+  "animations": {
+    "idle": {
+      "row": 0,
+      "frames": 8,
+      "ms_per_frame": 160
+    },
+    "blink": {
+      "row": 1,
+      "frames": 8,
+      "ms_per_frame": 160
+    },
+    "talk": {
+      "row": 2,
+      "frames": 8,
+      "ms_per_frame": 120
+    },
+    "idea": {
+      "row": 3,
+      "frames": 8,
+      "ms_per_frame": 110
+    }
+  }
+}
