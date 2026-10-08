@@ -22,6 +22,14 @@ https://claude.ai/artifact/5qDbaq5hUWxRFzHuvwhaEL
 - 画风规矩、文件格式和工具用法见 `assistant_sprite/styles/README.md`。
 - 说话气泡里只放台词，不显示名字。
 
+## 写作软件（`app/`）
+
+- 第一版预览：https://claude.ai/artifact/11CP9vz8Rnka9HoJ6f5KWg（`app/dist/index.html`，`cd app && npm run build` 生成；发布时带上 `dist/sprites/` 里的 42 张图）。
+- 先做网页版（单文件 HTML，数据在 IndexedDB），以后套 Tauri 做桌面版；`src/core/db.js` 是唯一碰存储的地方。
+- 结构：`src/core/`（数据、返回、撤销、浮层、命令表），`src/features/<功能>/`（每个功能一个目录，export `register()`，在 `features/index.js` 登记）。
+- 编辑器 CodeMirror 6，每章一份撤销记录；批量改正文走 `ws.applyBatch`，算一步撤销。
+- 小恶魔的动画和台词在构建时从 `assistant_sprite/styles/*` 拷进来（`src/generated/sprites.json`）。
+
 ## 软件原则
 
 - 作者自由优先：模板、预设都只是起点；AI 调用前必须确认，不预设模型和提示词。

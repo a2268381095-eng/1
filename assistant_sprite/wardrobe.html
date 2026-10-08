@@ -111,7 +111,6 @@ button { font: inherit; color: inherit; }
 .bubble-in::after { content: ""; position: absolute; left: 50%; bottom: -8px; width: 12px; height: 12px; background: var(--surface);
   border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink); transform: translateX(-50%) rotate(45deg); }
 .bubble[data-on="false"] .bubble-in { opacity: 0; }
-.bubble .who { display: block; font-size: 11.5px; color: var(--accent); font-weight: 500; letter-spacing: 0.04em; }
 .caret { display: inline-block; width: 0.5em; color: var(--accent); }
 .poke { border: 0; padding: 0; background: transparent; cursor: pointer; display: block; max-width: 100%; }
 .poke:active canvas { transform: translateY(1px); }
@@ -145,7 +144,7 @@ button { font: inherit; color: inherit; }
   <section class="detail" aria-label="当前这套">
     <div class="stage">
       <div class="bubble" id="bubble" data-on="false">
-        <div class="bubble-in"><span class="who" id="b-who"></span><span id="b-text" aria-hidden="true"></span><span class="caret" id="b-caret" aria-hidden="true"></span></div>
+        <div class="bubble-in"><span id="b-text" aria-hidden="true"></span><span class="caret" id="b-caret" aria-hidden="true"></span></div>
         <span class="sr" id="b-live" role="status" aria-live="polite"></span>
       </div>
       <button type="button" class="poke" id="poke" aria-label="戳她一下"><canvas id="big" aria-hidden="true"></canvas></button>
@@ -397,9 +396,7 @@ button { font: inherit; color: inherit; }
   function say(text) {
     clearInterval(typeT); clearTimeout(hideT);
     if (!text) { hush(); return; }
-    const who = cur.name.split("·").pop();
-    $("b-who").textContent = who;
-    $("b-live").textContent = (who ? who + "：" : "") + text;
+    $("b-live").textContent = text;
     $("bubble").dataset.on = "true";
     const chars = [...text];
     if (reduce) { $("b-text").textContent = text; $("b-caret").textContent = ""; }
