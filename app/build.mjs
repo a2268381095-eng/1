@@ -13,6 +13,9 @@ const SRC = path.join(ROOT, "src");
 const outArg = process.argv.indexOf("--out");
 const DIST = outArg > 0 ? path.resolve(process.argv[outArg + 1]) : path.join(ROOT, "dist");
 const SPRITE_SRC = path.join(ROOT, "..", "assistant_sprite", "styles");
+// --bg <目录>：背景插画从别的目录取（测试时用）
+const bgArg = process.argv.indexOf("--bg");
+const BG_SRC = bgArg > 0 ? path.resolve(process.argv[bgArg + 1]) : path.join(ROOT, "assets", "bg");
 
 // 和 assistant_sprite/tools/make_wardrobe_page.py 里的一致
 const STYLES = [
@@ -50,6 +53,36 @@ function buildSprites() {
   return out.length;
 }
 
+// 背景插画：assets/bg/<风格>_out.png（外景）、<风格>_in.png（内景），各带一张 _dither 网点版。
+// 拷到 dist/bg/，再把有哪些图、推进的位置、动效（assets/bg/scenes.json）写进 src/generated/scenes.json。
+function buildScenes() {
+  const metaFile = path.join(ROOT, "assets", "bg", "scenes.json");
+  const meta = fs.existsSync(metaFile) ? JSON.parse(fs.readFileSync(metaFile, "utf8")) : {};
+  const out = {};
+  fs.mkdirSync(path.join(DIST, "bg"), { recursive: true });
+  let n = 0;
+  if (fs.existsSync(BG_SRC)) {
+    for (const f of fs.readdirSync(BG_SRC).sort()) {
+      const m = /^([a-z]+)_(out|in)\.png$/.exec(f);
+      if (!m) continue;
+      const [, id, kind] = m;
+      const dither = `${id}_${kind}_dither.png`;
+      fs.copyFileSync(path.join(BG_SRC, f), path.join(DIST, "bg", f));
+      const hasDither = fs.existsSync(path.join(BG_SRC, dither));
+      if (hasDither) fs.copyFileSync(path.join(BG_SRC, dither), path.join(DIST, "bg", dither));
+      const st = meta[id] || {};
+      out[id] = out[id] || { transition: st.transition || "mosaic" };
+      out[id][kind] = { focus: [192, 128], anchor: [0.5, 0.5], fx: [], ...(st[kind] || {}), dither: hasDither };
+      n++;
+    }
+  }
+  const gen = path.join(SRC, "generated", "scenes.json");
+  fs.mkdirSync(path.dirname(gen), { recursive: true });
+  const json = JSON.stringify(out);
+  if (!fs.existsSync(gen) || fs.readFileSync(gen, "utf8") !== json) fs.writeFileSync(gen, json);
+  return n;
+}
+
 function collectCss(dir) {
   const files = [];
   const walk = (d) => {
@@ -68,6 +101,7 @@ function collectCss(dir) {
 async function build() {
   fs.mkdirSync(DIST, { recursive: true });
   const n = buildSprites();
+  const nb = buildScenes();
   const js = await esbuild.build({
     entryPoints: [path.join(SRC, "main.js")],
     bundle: true,
@@ -84,7 +118,7 @@ async function build() {
   const html = tpl.replace("/*__CSS__*/", () => css).replace("/*__JS__*/", () => code);
   fs.writeFileSync(path.join(DIST, "index.html"), html);
   const kb = (s) => Math.round(Buffer.byteLength(s) / 1024);
-  console.log(`${path.relative(process.cwd(), path.join(DIST, "index.html"))}  js ${kb(code)}KB  css ${kb(css)}KB  sprites ${n} 套`);
+  console.log(`${path.relative(process.cwd(), path.join(DIST, "index.html"))}  js ${kb(code)}KB  css ${kb(css)}KB  sprites ${n} 套  背景 ${nb} 张`);
 }
 
 build().catch((e) => { console.error(e); process.exit(1); });
