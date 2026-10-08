@@ -99,33 +99,33 @@ async function afterChange(affect = {}) {
 }
 
 // ---------------- 撤销 ----------------
+// 撤销栈是全软件共用的。回收站的条目自己记着「现在是做了还是撤了」，不管是在哪个界面被撤销的。
 const mine = new WeakSet();     // 回收站推进撤销栈的条目
-const myUndone = [];            // 在这里撤销掉、还能重做的（只要别处没动过撤销栈）
-let selfOp = false;
+const myUndone = [];            // 撤销栈「可重做」那一头最上面连着的几条回收站条目（按顺序）
+let undoing = null, redoing = null, busy = false;
 
 function pushUndo(entry) {
+  const { undo, redo } = entry;
+  entry.live = true;
+  entry.undo = async () => { entry.live = false; undoing = entry; await undo(); };
+  entry.redo = async () => { entry.live = true; redoing = entry; await redo(); };
   mine.add(entry);
   return appUndo.push(entry);
 }
 
-/** 撤销：不给 target 就撤最近一步（必须是回收站的）；给了就撤到它为止 */
+/** 撤销：不给 target 就撤最近一步（必须是回收站的）；给了就撤到它为止（提示条上的「撤销」） */
 async function runUndo(target) {
-  if (target && !mine.has(appUndo.peek())) { myUndone.length = 0; await appUndo.undoEntry(target); return; }
-  selfOp = true;
-  try {
-    while (mine.has(appUndo.peek())) {
-      const e = await appUndo.undo();
-      myUndone.push(e);
-      if (!target || e === target) break;
-    }
-  } finally { selfOp = false; updateUndoBtns(); }
+  if (busy) return;
+  if (target ? !target.live : !mine.has(appUndo.peek())) return;
+  busy = true;
+  try { await (target && appUndo.peek() !== target ? appUndo.undoEntry(target) : appUndo.undo()); }
+  finally { busy = false; updateUndoBtns(); }
 }
 
 async function runRedo() {
-  if (!myUndone.length || !appUndo.canRedo()) return;
-  selfOp = true;
-  try { const e = await appUndo.redo(); if (e === myUndone[myUndone.length - 1]) myUndone.pop(); else myUndone.length = 0; }
-  finally { selfOp = false; updateUndoBtns(); }
+  if (busy || !canRedoHere()) return;
+  busy = true;
+  try { await appUndo.redo(); } finally { busy = false; updateUndoBtns(); }
 }
 
 const canUndoHere = () => mine.has(appUndo.peek());
@@ -158,6 +158,7 @@ function toastActs(msg, actions) {
   const t = toast(msg, { action: first, timeout: 9000 });
   const el = document.querySelector(".toasts .toast:last-child");
   if (el) {
+    el.classList.add("trash-toast");
     const x = el.querySelector(".toast-x");
     rest.forEach((a) => {
       const b = h("button.toast-act", { type: "button" }, a.label);
@@ -248,7 +249,7 @@ async function restore(entry) {
 function notGone(entry) {
   notice({
     what: nameOf(entry) + `已经不在${L()}里了。`,
-    why: "可能在另一个窗口里恢复或删除了，或者放满 30 天被清理了。",
+    why: `可能在另一个窗口里恢复或删除了，或者放满 ${KEEP_DAYS} 天被清理了。`,
     actions: [{ label: "刷新列表", primary: true, run: refresh }],
   });
 }
@@ -288,14 +289,18 @@ async function moveToBook(entry, books) {
   const place = async () => {
     const list = await listChapters(target.id);
     const last = list[list.length - 1];
-    const moved = structuredClone(snap);
+    const moved = structuredClone((await db.get("trash", snap.id)) || snap);
     moved.bookId = target.id;
     Object.assign(moved.data.chapter, { bookId: target.id, order: last ? last.order + 1 : 1, volumeId: target.useVolumes && last ? last.volumeId || null : null });
     await db.put("trash", moved);
     return restoreFromTrash(moved.id);
   };
   try { await place(); }
-  catch (e) { await refresh(); return failed("没能把这一章放进《" + target.title + "》。", e, () => moveToBook(entry, books)); }
+  catch (e) {
+    try { if (!(await getChapter(snap.data.chapter.id))) await db.put("trash", snap); } catch (_) { /* 尽量还原 */ }
+    await refresh();
+    return failed("没能把这一章放进《" + target.title + "》。", e, () => moveToBook(entry, books));
+  }
   const affect = { bookIds: [target.id] };
   const title = nameOf(snap);
   const u = pushUndo({
@@ -326,7 +331,7 @@ async function purge(entries, { all = false } = {}) {
   });
   bus.emit("trash:purged", { count: snaps.length, all });
   await refresh();
-  toast(all ? `已清空 ${snaps.length} 项` : "已删除" + nm, { action: { label: "撤销", run: () => runUndo(u) }, timeout: 9000 });
+  toastActs(all ? `已清空 ${snaps.length} 项` : "已删除" + nm, [{ label: "撤销", run: () => runUndo(u) }]);
   return u;
 }
 
@@ -401,7 +406,7 @@ async function renderTrash(params, restoreState, prev) {
   updateUndoBtns();
   await refresh();
   if (restoreState && restoreState.trashScroll) S.main.scrollTop = restoreState.trashScroll;
-  tip("trash-first", `删掉的作品和章节在这里放 ${KEEP_DAYS} 天，过了自动清理。点「恢复」放回原处，恢复了也能撤销。`);
+  tip("trash-first", `删掉的作品和章节在这里放 ${KEEP_DAYS} 天。点「恢复」放回原处，恢复了也能撤销。`);
 }
 
 async function refresh() {
@@ -420,8 +425,8 @@ async function refresh() {
   updateUndoBtns();
 }
 
-function seg(items, cur, onPick, cls = "") {
-  const box = h("div.trash-seg" + cls, { role: "group" });
+function seg(items, cur, onPick, cls, name) {
+  const box = h("div.trash-seg" + cls, { role: "group", "aria-label": name });
   items.forEach(([id, text]) => {
     const b = h("button", { type: "button", "aria-pressed": String(id === cur), "data-v": id }, text);
     b.addEventListener("click", () => { if (id !== cur) onPick(id); });
@@ -438,11 +443,11 @@ function renderBar() {
     const name = ctx && ctx.book ? "《" + ctx.book.title + "》" : "本书";
     if (live || S.bookId) {
       parts.push(seg([["book", name], ["all", "全部"]], S.bookId ? "book" : "all",
-        (v) => nav.go(v === "book" ? "/trash/" + S.fromBook : "/trash", { replace: true }), ".trash-scope"));
+        (v) => nav.go(v === "book" ? "/trash/" + S.fromBook : "/trash", { replace: true }), ".trash-scope", "范围"));
     }
   }
   const kinds = kindsIn(S.list);
-  if (kinds.length > 1) parts.push(seg([["all", "全部类型"], ...kinds.map((k) => [k, kindLabel(k)])], S.kind, (v) => { S.kind = v; renderBar(); renderList(); }, ".trash-kinds"));
+  if (kinds.length > 1) parts.push(seg([["all", "全部类型"], ...kinds.map((k) => [k, kindLabel(k)])], S.kind, (v) => { S.kind = v; renderBar(); renderList(); }, ".trash-kinds", "类型"));
   else S.kind = "all";
   const n = filterKind(S.list, S.kind).length;
   parts.push(h("span.trash-count.muted", {}, S.list.length ? `${n} 项 · 放 ${KEEP_DAYS} 天后自动清理` : ""));
@@ -501,8 +506,8 @@ export async function register() {
   nav.route("trash", "/trash/:bookId?", (params, restoreState, prev) => renderTrash(params, restoreState, prev));
   nav.onLeave(() => (onTrash() ? { trashScroll: S.main.scrollTop } : {}));
   bus.on("route", ({ name }) => { if (name !== "trash") { S.view = null; S.undoBtn = S.redoBtn = null; } });
-  bus.on("undo", () => { if (!selfOp) myUndone.length = 0; });
-  bus.on("redo", () => { if (!selfOp) myUndone.length = 0; });
+  bus.on("undo", () => { if (undoing) myUndone.push(undoing); else myUndone.length = 0; undoing = null; });
+  bus.on("redo", () => { if (redoing && myUndone[myUndone.length - 1] === redoing) myUndone.pop(); else myUndone.length = 0; redoing = null; });
   bus.on("undo:changed", () => { if (!appUndo.canRedo()) myUndone.length = 0; updateUndoBtns(); });
   bus.on("settings:changed", ({ patch }) => { if (patch && "themeNames" in patch && onTrash()) refresh(); });
 

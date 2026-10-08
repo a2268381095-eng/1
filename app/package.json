@@ -20,6 +20,7 @@
     "@codemirror/search": "6.5.8",
     "@codemirror/state": "6.4.1",
     "@codemirror/view": "6.35.0",
+    "@tauri-apps/plugin-http": "2.6.1",
     "diff-match-patch": "1.0.5"
   }
 }

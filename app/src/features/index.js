@@ -11,6 +11,7 @@ import * as versions from "./versions/index.js";
 import * as trash from "./trash/index.js";
 import * as io from "./io/index.js";
 import * as settings from "./settings/index.js";
+import * as ai from "./ai/index.js";
 
 const PENDING = [
   ["search.open", "查找替换", "找字 替换 搜索", "Mod-f"],
@@ -30,7 +31,7 @@ function stubView(title) {
 }
 
 export async function registerFeatures() {
-  const mods = [search, format, versions, trash, io, settings];
+  const mods = [search, format, versions, trash, io, settings, ai];
   for (const m of mods) {
     try { if (m && m.register) await m.register(); }
     catch (e) { console.error("功能模块启动失败", e); }

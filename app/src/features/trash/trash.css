@@ -36,6 +36,10 @@
 .trash-none p { margin: 0; line-height: 1.7; }
 .trash-none-t { font-size: 17px; font-weight: 600; }
 
+/* 提示条（只管回收站自己的） */
+.trash-toast .toast-act { white-space: nowrap; flex: 0 0 auto; }
+.trash-toast .toast-msg { min-width: 0; overflow-wrap: anywhere; }
+
 /* 看内容 */
 .trash-read { white-space: pre-wrap; font-family: var(--f-text); font-size: 15px; line-height: 1.9; max-height: 60vh; overflow: auto; padding: 12px 14px;
   background: var(--paper); border: 1px solid var(--line); border-radius: 8px; overflow-wrap: anywhere; }

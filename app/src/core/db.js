@@ -2,7 +2,7 @@
 // 以后换成桌面版（Tauri + SQLite）时，只需要换掉这个文件，接口不变。
 
 const DB_NAME = "xiaoemo-wenshu";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 // 表：
 //   books     作品          { id, title, intro, tags, cover, ... }
@@ -11,6 +11,10 @@ const DB_VERSION = 1;
 //   trash     回收站        { id, kind, bookId, title, data, deletedAt }             索引 bookId
 //   undo      每章撤销记录   { chapterId, json }
 //   kv        设置和杂项     { key, value }
+//   usage     AI 调用记账    { id, at, providerId, model, feature, bookId, input, output, cost, currency }   索引 bookId
+//   stash     暂存盒         { id, at, bookId, feature, kind: "text"|"image", ... }                     索引 bookId
+//   prompts   提示词库       { id, name, group, text, order, uses, pinned }
+//   chats     AI 对话        { id, bookId, feature, messages, parentId, ... }                           索引 bookId
 const SCHEMA = {
   books: { keyPath: "id" },
   chapters: { keyPath: "id", indexes: ["bookId"] },
@@ -18,6 +22,10 @@ const SCHEMA = {
   trash: { keyPath: "id", indexes: ["bookId"] },
   undo: { keyPath: "chapterId" },
   kv: { keyPath: "key" },
+  usage: { keyPath: "id", indexes: ["bookId"] },
+  stash: { keyPath: "id", indexes: ["bookId"] },
+  prompts: { keyPath: "id" },
+  chats: { keyPath: "id", indexes: ["bookId"] },
 };
 
 let dbp = null;

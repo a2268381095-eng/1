@@ -219,6 +219,18 @@ async function flows(dist, fails) {
   await lastToast(page, '已删除').locator('.toast-act', { hasText: '撤销' }).click();
   await page.waitForSelector('.trash-item[data-kind="chapter"]');
   check((await idb(page, 'all', 'trash')).length === 2, '「已删除 · 撤销」找回来', fails);
+  await page.click('.trash-item[data-kind="chapter"] .trash-purge');
+  await page.click('.modal-foot .btn.danger');
+  await page.waitForFunction(() => document.querySelectorAll('.trash-item').length === 1);
+  const stale = lastToast(page, '已删除第二章 旧信');
+  await page.keyboard.press('Control+z');
+  await page.waitForFunction(() => document.querySelectorAll('.trash-item').length === 2);
+  const topBefore = await page.getAttribute('.topbar [aria-label="撤销"]', 'title');
+  await stale.locator('.toast-act', { hasText: '撤销' }).click();
+  await pause(page, 400);
+  check((await idb(page, 'all', 'trash')).length === 2 && (await idb(page, 'all', 'books')).length === 0
+    && (await page.getAttribute('.topbar [aria-label="撤销"]', 'title')) === topBefore && !(await page.$('.modal')),
+  '已经撤销过的提示条再点「撤销」，不会去撤别的', fails);
 
   await page.click('.trash-empty-btn');
   await page.waitForSelector('.modal:has-text("2 项")');

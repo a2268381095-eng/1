@@ -222,8 +222,21 @@ async function clickToastUndo(page, has) {
   await page.waitForTimeout(700);
 }
 async function closeToasts(page) { for (const x of await page.$$('.toast-x')) await x.click().catch(() => {}); await page.waitForTimeout(250); }
-/** 假时钟往后拨 ms 毫秒（到点的定时器各跑一次），再等页面把数据库的事做完 */
-async function forward(page, ms) { await page.clock.fastForward(ms); await page.waitForTimeout(400); }
+/**
+ * 假时钟往后拨 ms 毫秒（到点的定时器各跑一次），再等页面把数据库的事做完。
+ * Playwright 的假时钟在「时间照常走」时偶尔会被同时进行的同步拨回去，所以拨完核对一下，没到就再拨。
+ */
+async function forward(page, ms) {
+  const now = () => page.evaluate(() => Date.now());
+  const target = (await now()) + ms;
+  for (let i = 0; i < 6; i++) {
+    const left = target - (await now());
+    if (left <= 0) break;
+    await page.clock.fastForward(left);
+    await page.waitForTimeout(120);
+  }
+  await page.waitForTimeout(300);
+}
 
 const para = (n, fn) => Array.from({ length: n }, (_, i) => fn(i + 1)).join('\n');
 const T1 = para(12, (i) => `　　第${i}段。雨下到第三天，林栀没有抬头。`);

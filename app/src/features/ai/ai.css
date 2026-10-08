@@ -1,0 +1,46 @@
+/* AI 接入 */
+.ai-view-main { flex: 1; overflow: auto; padding: 20px 16px 120px; }
+.ai-view-main > * { max-width: 760px; margin-inline: auto; }
+.ai-lead { margin-top: 0; margin-bottom: 14px; line-height: 1.7; }
+.ai-web-note { margin: 0 0 10px; padding: 8px 12px; border-radius: 8px; background: var(--warn-soft); color: var(--warn); font-size: 13px; line-height: 1.6; }
+.ai-prov-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+.ai-prov { display: grid; gap: 2px; text-align: left; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: pointer; }
+.ai-prov:hover { border-color: var(--line-strong); }
+.ai-prov[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.ai-prov-name { font-weight: 600; }
+.ai-prov-state { font-size: 12px; color: var(--muted); }
+.ai-prov.ok .ai-prov-state { color: var(--ok); }
+.ai-prov-note { font-size: 12px; color: var(--faint); line-height: 1.5; }
+.ai-more { grid-column: 1 / -1; }
+.ai-more summary { cursor: pointer; color: var(--muted); font-size: 13px; padding: 4px 0; }
+.ai-more .ai-prov { margin-top: 6px; max-width: 320px; }
+.ai-flow { margin-top: 16px; }
+.ai-steps { display: grid; gap: 12px; padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.ai-flow-title { margin: 0; font-size: 15px; }
+.ai-steps .field a { color: var(--accent); font-size: 12.5px; }
+.ai-steps .row .input { flex: 1 1 200px; }
+.ai-model-filter { max-width: 220px; }
+.ai-status { display: grid; gap: 2px; padding: 8px 12px; border-radius: 8px; font-size: 13px; line-height: 1.6; }
+.ai-status:empty { display: none; }
+.ai-status.busy { background: var(--side); color: var(--muted); }
+.ai-status.ok { background: var(--ok-soft); color: var(--ok); }
+.ai-status.err { background: var(--danger-soft); color: var(--danger); }
+.ai-setup-modal { margin-top: 8px; }
+
+/* 确认卡 */
+.ai-card { display: grid; gap: 10px; }
+.ai-preview { margin: 6px 0 0; white-space: pre-wrap; font-family: var(--f-ui); font-size: 12.5px; line-height: 1.6; max-height: 180px; overflow: auto;
+  background: var(--side); border-radius: 6px; padding: 8px; }
+.ai-input summary, .ai-full summary { cursor: pointer; font-size: 13px; color: var(--muted); }
+.ai-missing:empty { display: none; }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
+.ai-est { margin: 0; font-size: 13px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.ai-max { width: 120px; }
+.ai-max-f { max-width: 160px; }
+.ai-price { gap: 6px; }
+.ai-price[hidden] { display: none; }
+.ai-price .input { width: 100px; }
+.ai-price .select { width: 90px; }
+.ai-recent { gap: 6px; }
+.ai-recent-chip { border: 0; cursor: pointer; }
+.ai-stream { white-space: pre-wrap; line-height: 1.9; font-family: var(--f-text); font-size: 15px; max-height: 60vh; overflow: auto; }
