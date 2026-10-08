@@ -52,21 +52,22 @@ function fiber(g, w, h, t, rnd) {
   const tan = dark ? [10, 6, 2] : [150, 118, 76];
   pixels(g, w, h, (px) => {
     const strand = (x, y, len, a0, col, alpha) => {
-      let a = a0, curl = (rnd() - .5) * .04;
+      let a = a0, curl = (rnd() - .5) * .02;
       for (let i = 0; i < len; i++) {
         px(x, y, col, alpha * (1 - Math.abs(i / len - .5) * .9));
-        a += curl + (rnd() - .5) * .1;
-        if (rnd() < .015) curl = (rnd() - .5) * .08;
+        a += curl + (rnd() - .5) * .07;
+        if (rnd() < .01) curl = (rnd() - .5) * .04;
         x += Math.cos(a) * .8; y += Math.sin(a) * .8;
       }
     };
     // 细颗粒
     for (let i = 0; i < w * h * .06; i++) px(rnd() * w, rnd() * h, rnd() < .5 ? lite : tan, dark ? .05 + rnd() * .06 : .06 + rnd() * .08);
     // 长纤维：亮的多、黄褐的少
-    for (let i = 0; i < 60; i++) {
+    // 短而直，不打卷；长的少
+    for (let i = 0; i < 110; i++) {
       const pale = rnd() < .7;
-      strand(rnd() * w, rnd() * h, 24 + rnd() * 80, rnd() * Math.PI * 2, pale ? lite : tan,
-        pale ? (dark ? .07 + rnd() * .06 : .3 + rnd() * .22) : (dark ? .14 + rnd() * .1 : .08 + rnd() * .08));
+      strand(rnd() * w, rnd() * h, 8 + rnd() * (rnd() < .15 ? 60 : 26), rnd() * Math.PI * 2, pale ? lite : tan,
+        pale ? (dark ? .06 + rnd() * .05 : .2 + rnd() * .16) : (dark ? .12 + rnd() * .08 : .07 + rnd() * .07));
     }
     // 纤维团：一小团里十几根短丝绕着
     for (let k = 0; k < 6; k++) {
