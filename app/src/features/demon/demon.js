@@ -6,6 +6,8 @@ import { bus } from "../../core/bus.js";
 import { h, icon, pushLayer } from "../../core/ui.js";
 import { commands, keyOf, prettyKey } from "../../core/commands.js";
 import { getSettings, setSettings } from "../../core/settings.js";
+import { burst, burstAt, stream, setFxStyle } from "../../core/fx.js";
+import { todayWords } from "../../core/store.js";
 
 const W = 128, H = 224;
 const BY_ID = Object.fromEntries(SPRITES.map((s) => [s.id, s]));
@@ -16,6 +18,7 @@ const EVENT_ACT = {
   ai_wait: "think", ai_error: "shock", lost: "point", late: "doze", foreshadow: "think",
   format: "cheer", save: "idle", back: "wave", poke: "shock", poke_many: "shock",
   replace: "cheer", search_none: "think", restore: "wave", import: "cheer", export: "wave",
+  combo: "cheer", milestone: "cheer", chapter_len: "cheer", big_delete: "shock", rest: "wave",
 };
 // 不管多安静都要说的（你主动找她、或者要提醒你的）
 const IMPORTANT = new Set(["delete", "ai_error", "lost", "poke", "poke_many", "goal", "tip"]);
@@ -27,6 +30,7 @@ let bookCtx = null;
 const images = {};
 const player = { act: "idle", f: 0, acc: 0, until: 0, t: 0, then: null };
 let lastAuto = 0, typeTimer = 0, hideTimer = 0, pokes = [], pokeN = 0;
+let speed = 1;   // 动画快慢：码字连击越高越快
 const lastLine = {};
 
 // ---------------- 选风格 ----------------
@@ -45,6 +49,7 @@ export const currentStyleId = () => (style ? style.id : "magical");
 function setStyle(st) {
   if (st === style && images[st.id]) return;
   style = st;
+  setFxStyle(st.id);
   bus.emit("demon:style", { id: st.id });
   images[st.id] = images[st.id] || {};
   for (const a of Object.keys(st.actions)) {
@@ -79,7 +84,7 @@ function loop(t) {
   const a = actOf(player.act);
   if (a && !document.hidden) {
     player.t += dt;
-    player.acc += dt;
+    player.acc += dt * speed;
     let changed = false;
     while (player.acc >= a.ms[player.f]) {
       player.acc -= a.ms[player.f];
@@ -229,7 +234,10 @@ export function mountDemon(root) {
     ctl("bigger", "变大", "+", () => stepSize(1)),
     ctl("hide", "收起小恶魔", icon("close"), () => setSettings({ demonOn: false })));
   const grip = h("div.demon-grip", { title: "拖这里变大变小", "aria-hidden": "true" });
-  const body = h("div.demon-body", {}, poke, tools, grip);
+  badge = h("div.demon-badge", { "aria-hidden": "true", hidden: true },
+    h("span.db-label"), h("span.db-bar", {}, h("span.db-fill"), h("span.db-heart")));
+  comboEl = h("div.demon-combo", { "aria-hidden": "true" }, h("span.dc-label", {}, "连击"), h("span.dc-num"), h("span.dc-unit", {}, "字"));
+  const body = h("div.demon-body", {}, poke, tools, grip, comboEl, badge);
   const showBtn = h("button.demon-show", { type: "button", title: "叫小恶魔出来", "aria-label": "叫小恶魔出来" }, "小恶魔");
   showBtn.addEventListener("click", () => setSettings({ demonOn: true }));
   el = h("div.demon", {}, bubble, live, body, showBtn);
@@ -260,6 +268,7 @@ export function mountDemon(root) {
   setStyle(styleFor(null));
   requestAnimationFrame(loop);
   wireEvents();
+  wirePulse();
   commands.register({ id: "help.open", title: "找功能（问小恶魔）", keywords: "帮助 找不到 怎么 功能", hint: "搜功能名，直接点就能用", key: "F1", run: openHelp });
   commands.register({ id: "demon.reset", title: "小恶魔回到右下角", keywords: "小恶魔 位置 大小 找不到她 复位", hint: "位置和大小都恢复默认", run: () => { setSettings({ demonPos: null, demonScale: 1, demonOn: true }); } });
 }
@@ -404,6 +413,72 @@ function applySettings() {
 export function setDemonBook(book) {
   bookCtx = book;
   setStyle(styleFor(book));
+  refreshBadge();
+}
+
+// ---------------- 码字互动：字数牌子、连击 ----------------
+let badge = null, comboEl = null, todayN = 0, typedSinceSave = 0;
+
+async function refreshBadge(n) {
+  if (!badge) return;
+  const on = getSettings().demonPulse !== false && bookCtx && bookCtx.dailyGoal;
+  badge.hidden = !on;
+  if (!on) return;
+  if (n == null) { todayN = await todayWords(bookCtx.id); typedSinceSave = 0; } else todayN = n;
+  drawBadge();
+}
+
+function drawBadge() {
+  if (!badge || badge.hidden) return;
+  const goal = bookCtx.dailyGoal;
+  const now = Math.max(0, todayN + typedSinceSave);
+  const pct = Math.min(1, now / goal);
+  badge.querySelector(".db-label").textContent = `今日 ${now.toLocaleString()}/${goal.toLocaleString()}`;
+  badge.querySelector(".db-fill").style.width = (pct * 100).toFixed(1) + "%";
+  badge.querySelector(".db-heart").style.left = `calc(${(pct * 100).toFixed(1)}% - 5px)`;
+  badge.classList.toggle("done", pct >= 1);
+}
+
+function setCombo(n, level) {
+  if (!comboEl) return;
+  if (getSettings().demonPulse === false || n < 30) { comboEl.classList.remove("on"); return; }
+  comboEl.classList.add("on");
+  comboEl.dataset.level = String(level || 0);
+  comboEl.querySelector(".dc-num").textContent = "×" + n;
+  comboEl.classList.remove("bump");
+  void comboEl.offsetWidth;
+  comboEl.classList.add("bump");
+}
+
+function wirePulse() {
+  bus.on("typing:input", ({ ins, del }) => { typedSinceSave += ins - del; drawBadge(); });
+  bus.on("pulse:today", ({ words }) => { typedSinceSave = 0; refreshBadge(words); });
+  bus.on("pulse:combo", ({ n }) => {
+    const lv = [2000, 1000, 500, 200].find((x) => n >= x) || 0;
+    setCombo(n, lv);
+    // 连击越高动作越快、头上冒的道具越多
+    speed = lv >= 1000 ? 1.8 : lv >= 500 ? 1.5 : lv >= 200 ? 1.25 : 1;
+    if (getSettings().demonPulse !== false) stream(lv ? el.querySelector(".demon-body") : null, lv >= 1000 ? 6 : lv >= 500 ? 4 : lv >= 200 ? 2 : 0);
+  });
+  bus.on("pulse:combo-level", ({ level }) => {
+    if (getSettings().demonPulse === false) return;
+    burstAt(comboEl, "celebrate", level >= 1000 ? 22 : 12);
+    react("combo", { act: "cheer", force: level >= 1000 });
+  });
+  bus.on("pulse:combo-end", ({ n }) => {
+    speed = 1;
+    stream(null, 0);
+    if (!comboEl || !comboEl.classList.contains("on")) return;
+    comboEl.classList.add("end");
+    setTimeout(() => { comboEl.classList.remove("on", "end", "bump"); }, 900);
+  });
+  bus.on("pulse:milestone", () => { burstAt(badge && !badge.hidden ? badge : el.querySelector(".demon-body"), "celebrate", 24); react("milestone", { force: true }); });
+  bus.on("pulse:chapterlen", () => { burstAt(el.querySelector(".demon-body"), "celebrate", 14); react("chapter_len", { force: true }); });
+  bus.on("pulse:bigdelete", () => react("big_delete", { act: "shock", force: true }));
+  bus.on("pulse:rest", () => react("rest", { act: "wave", force: true }));
+  bus.on("goal:reached", () => { refreshBadge(); });
+  bus.on("book:updated", ({ book }) => { if (bookCtx && book.id === bookCtx.id) { bookCtx = book; refreshBadge(); } });
+  bus.on("settings:changed", ({ patch }) => { if (patch && "demonPulse" in patch) { refreshBadge(); if (!patch.demonPulse) { setCombo(0); stream(null, 0); } } });
 }
 
 export function setDemonVisible(v) { if (el) el.classList.toggle("focus-hidden", !v); }

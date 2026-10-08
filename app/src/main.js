@@ -8,6 +8,7 @@ import { purgeOldTrash } from "./core/store.js";
 import { notice, toast } from "./core/ui.js";
 import { mountDemon, currentStyleId } from "./features/demon/demon.js";
 import { mountFx } from "./core/fx.js";
+import { mountPulse } from "./core/pulse.js";
 import { patternURL } from "./core/pattern.js";
 import { resolvePalette, resolveDark, lookButton } from "./core/look.js";
 import { registerShelf } from "./features/shelf/shelf.js";
@@ -72,6 +73,7 @@ async function start() {
   setInterval(() => { const s = getSettings(); if (s.palette === "time" || s.palette === "season" || s.theme === "time") applyLook(); }, 60000);
   mountDemon(document.body);
   mountFx();
+  mountPulse();
   registerShelf();
   registerWorkspace();
   await registerFeatures();

@@ -112,7 +112,16 @@ export function createEditor(opts) {
       clearTimeout(undoTimer);
       undoTimer = setTimeout(() => persistUndo(id), 4000);
       const typed = u.transactions.some((t) => t.isUserEvent("input") || t.isUserEvent("delete"));
-      if (typed) noteTyping();
+      if (typed) {
+        noteTyping();
+        // 这次打了多少、删了多少（码字连击、大段删除用）
+        let ins = 0, del = 0;
+        for (const t of u.transactions) {
+          if (!(t.isUserEvent("input") || t.isUserEvent("delete"))) continue;
+          t.changes.iterChanges((fa, ta, fb, tb, inserted) => { del += ta - fa; ins += inserted.length; });
+        }
+        bus.emit("typing:input", { chapterId: id, ins, del });
+      }
     }),
   ];
 

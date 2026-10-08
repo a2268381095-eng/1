@@ -3,14 +3,37 @@
 import { getSettings } from "./settings.js";
 import { bus } from "./bus.js";
 
-const COLORS = { "#": "#3a1a2c", r: "#ec4870", p: "#f796ba", w: "#ffffff", y: "#ffd666", v: "#786ec8" };
+const COLORS = { "#": "#3a1a2c", r: "#ec4870", p: "#f796ba", w: "#ffffff", y: "#ffd666", v: "#786ec8",
+  b: "#5b7fd6", n: "#1f2a3d", k: "#2b2622", g: "#6aa84f", G: "#3f7a2c", o: "#e8a33d", O: "#b8741c", m: "#8e2a4f", u: "#4a2a5e" };
 const SPRITES = {
   heart: [".##.##.", "#pp#pp#", "#pwppp#", ".#ppp#.", "..#p#..", "...#..."],
   heartR: [".##.##.", "#rr#rr#", "#rwrrr#", ".#rrr#.", "..#r#..", "...#..."],
   star: ["...#...", "..#y#..", "##yyy##", ".#ywy#.", "..#y#..", ".#...#."],
   spark: ["..#..", ".#y#.", "#ywy#", ".#y#.", "..#.."],
   twinkle: [".w.", "wyw", ".w."],
+  // 各套风格自己的道具
+  note: ["...##.", "...#b#", "...#..", "...#..", ".###..", "#bb#..", ".##..."],
+  petal: [".##..", "#pp#.", "#ppp#", ".#pp#", "..##."],
+  inkdot: [".#.", "#k#", ".#."],
+  bat: ["#.......#", "##.#.#.##", "#mmmmmmm#", ".#mm.mm#.", "..#...#.."],
+  ques: [".###.", "#...#", "...#.", "..#..", ".....", "..#.."],
+  glint: ["..#..", "..w..", "#wyw#", "..w..", "..#.."],
+  coin: [".####.", "#oooO#", "#oyoO#", "#oyoO#", "#oooO#", ".####."],
+  leaf: ["...##", ".##g#", "#ggG#", "#gG#.", ".#..."],
+  star2: ["..#..", ".#v#.", "#vwv#", ".#v#.", "..#.."],
 };
+
+// 各套风格的粒子：点击（跟随小恶魔）、连击、庆祝都用这一套
+const STYLE_SETS = {
+  magical: ["heart", "star", "spark", "heartR"],
+  sailor: ["note", "star", "spark", "note"],
+  hanfu: ["petal", "inkdot", "petal", "twinkle"],
+  gothic: ["bat", "heartR", "star2", "twinkle"],
+  detective: ["ques", "glint", "twinkle", "ques"],
+  adventurer: ["coin", "leaf", "coin", "spark"],
+};
+let styleId = "magical";
+export function setFxStyle(id) { if (STYLE_SETS[id]) styleId = id; }
 const cache = {};
 function sprite(name) {
   if (cache[name]) return cache[name];
@@ -64,8 +87,9 @@ export function burst(x, y, kind = "hearts", n = 0) {
       parts.push({ type: "dot", x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, g: 0.18, life: 0, max: rnd(22, 34), size: Math.round(rnd(2, 4)) });
     }
   } else {
-    const count = n || (kind === "celebrate" ? 16 : 6);
-    const names = kind === "celebrate" ? ["heart", "heartR", "star", "spark", "twinkle"] : ["heart", "spark", "twinkle", "heartR"];
+    const count = n || (kind === "celebrate" ? 18 : 6);
+    const set = STYLE_SETS[styleId] || STYLE_SETS.magical;
+    const names = kind === "hearts" ? ["heart", "spark", "twinkle", "heartR"] : kind === "celebrate" ? [...set, "spark", "twinkle"] : set;
     for (let i = 0; i < count; i++) {
       const a = kind === "celebrate" ? rnd(-Math.PI * 0.95, -Math.PI * 0.05) : rnd(-Math.PI * 0.85, -Math.PI * 0.15);
       const sp = kind === "celebrate" ? rnd(2.5, 5.5) : rnd(1.6, 3.2);
@@ -74,6 +98,25 @@ export function burst(x, y, kind = "hearts", n = 0) {
     }
   }
   if (!raf) raf = requestAnimationFrame(tick);
+}
+
+let streamEl = null, streamRate = 0, streamTimer = 0;
+/** 从元素上方连续冒粒子；rate 每秒几个，0 停止 */
+export function stream(el, rate) {
+  streamEl = el; streamRate = rate;
+  clearInterval(streamTimer);
+  if (!el || !rate || motionOff()) return;
+  streamTimer = setInterval(() => {
+    if (!streamEl || !streamEl.isConnected || document.hidden) return;
+    const r = streamEl.getBoundingClientRect();
+    if (!r.width) return;
+    ensure();
+    const set = STYLE_SETS[styleId] || STYLE_SETS.magical;
+    const name = set[Math.floor(Math.random() * set.length)];
+    parts.push({ type: "sprite", name, x: r.left + r.width * rnd(0.25, 0.75), y: r.top + r.height * 0.12, vx: rnd(-0.6, 0.6), vy: rnd(-1.6, -0.8),
+      g: -0.005, life: 0, max: rnd(40, 64), s: 3 });
+    if (!raf) raf = requestAnimationFrame(tick);
+  }, Math.max(60, 1000 / rate));
 }
 
 /** 在某个元素上方撒一把（打勾、达成目标时用） */
@@ -131,7 +174,7 @@ function motionOff() {
 export function mountFx() {
   document.addEventListener("pointerdown", (e) => {
     if (e.button !== 0) return;
-    const kind = getSettings().clickFx || "hearts";
+    const kind = getSettings().clickFx || "style";
     if (kind === "off") return;
     const t = e.target;
     if (t.closest && t.closest(".cm-editor, input, textarea, select, [contenteditable], .fx-skip")) return;
