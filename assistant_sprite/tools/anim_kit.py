@@ -157,23 +157,35 @@ def find_eyes(img, box=None):
     return eyes
 
 
-def blink(img, eyes, level, skin, lash=None):
-    """level: "half" 半闭 / "closed" 闭上。
-    eyes 是 [(x0, y0, x1, y1), ...]，框住瞳孔和上方睫毛；skin 是肤色 RGB。"""
+def blink(img, eyes, level, skin=None, lash=None):
+    """level: "half" 半闭 / "closed" 闭上。eyes 是 [(x0, y0, x1, y1), ...]。
+    只换掉眼睛本身的像素（青色瞳孔、白色眼白和高光、深色睫毛），头发一个不碰；
+    换上去的颜色逐列取眼睛正下方的脸颊色，和原来的脸色、阴影接得上。skin 参数保留不用。"""
     out = img.copy()
     lash = OUTLINE if lash is None else np.array(list(lash) + [255], np.uint8)
+    H, W = img.shape[:2]
+    c = img[..., :3].astype(int)
+    lum = c @ np.array([0.299, 0.587, 0.114])
+    teal = (c[..., 1] - c[..., 0] > 25) & (c[..., 2] - c[..., 0] > 15)
+    eyeish = teal | (lum < 95) | ((c.min(-1) > 236) & (c.max(-1) - c.min(-1) < 14))
     for x0, y0, x1, y1 in eyes:
-        if level == "half":
-            mid = (y0 + y1) // 2
-            out[y0:mid + 1, x0:x1 + 1, :3] = skin
-            out[y0:mid + 1, x0:x1 + 1, 3] = 255
-            out[mid + 1, x0:x1 + 1] = lash
-        else:
-            out[y0:y1 + 1, x0:x1 + 1, :3] = skin
-            out[y0:y1 + 1, x0:x1 + 1, 3] = 255
-            out[y1, x0 + 1:x1] = lash          # 闭眼是一道往下弯的弧线
-            out[y1 - 1, x0] = lash
-            out[y1 - 1, x1] = lash
+        top = y0 if level == "closed" else (y0 + y1) // 2
+        for x in range(max(0, x0), min(W, x1 + 1)):
+            # 往下找第一个不是眼睛的像素，当作这一列的脸颊色
+            yy = y1 + 1
+            while yy < min(H, y1 + 5) and eyeish[yy, x]:
+                yy += 1
+            cheek = img[min(yy, H - 1), x].copy()
+            for y in range(max(0, top), min(H, y1 + 1)):
+                if eyeish[y, x]:
+                    out[y, x] = cheek
+        line_y = y1 if level == "closed" else min(H - 1, (y0 + y1) // 2 + 1)
+        for x in range(max(0, x0), min(W, x1 + 1)):
+            out[line_y, x] = lash
+        if level == "closed" and x1 - x0 >= 2:      # 两端往上翘一格，是闭着的弧线
+            out[line_y, x0] = img[line_y, x0] if not eyeish[line_y, x0] else out[line_y, x0]
+            out[line_y - 1, x0] = lash
+            out[line_y - 1, x1] = lash
     return out
 
 
