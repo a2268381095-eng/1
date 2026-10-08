@@ -14,6 +14,36 @@
   -webkit-mask-position: left top, right top, center; mask-position: left top, right top, center;
   box-shadow: none; }
 
+/* ---------- 珠光纸：粉 → 紫 → 天蓝 → 薄荷 → 一道白光 → 杏色，斜着铺一整页，慢慢流过去；
+   上面一层细珠光颗粒、零星星屑，纸里压着魔法阵的浮雕水印，右上角迎光一道高光。深色是黑珍珠：紫、玫瑰、孔雀绿 ---------- */
+:root[data-paper="magical"] {
+  --mg-i1: rgba(255, 166, 208, .30); --mg-i2: rgba(198, 168, 255, .26); --mg-i3: rgba(148, 212, 255, .24);
+  --mg-i4: rgba(162, 238, 220, .22); --mg-hi: rgba(255, 255, 255, .62); --mg-i5: rgba(255, 206, 176, .26);
+  --mg-core: color-mix(in srgb, var(--paper) 30%, transparent); --mg-rim: rgba(214, 92, 156, .16);
+  --mg-top: rgba(255, 255, 255, .85); --mg-bot: rgba(206, 110, 162, .34); }
+:root[data-paper="magical"][data-dark] {
+  --mg-i1: rgba(196, 70, 140, .20); --mg-i2: rgba(120, 82, 220, .20); --mg-i3: rgba(48, 150, 170, .17);
+  --mg-i4: rgba(70, 160, 130, .13); --mg-hi: rgba(214, 190, 255, .16); --mg-i5: rgba(200, 120, 160, .16);
+  --mg-core: color-mix(in srgb, var(--paper) 34%, transparent); --mg-rim: rgba(0, 0, 0, .28);
+  --mg-top: rgba(236, 200, 255, .26); --mg-bot: rgba(0, 0, 0, .4); }
+@property --mg-s { syntax: "<number>"; inherits: false; initial-value: 0; }
+:root[data-paper="magical"] body.has-scene .ws-body > .center::before {
+  /* 一圈珠光的周期 980px，115° 方向上走一个周期 = 横移 980 / sin115° ≈ 1081px，循环时接得上 */
+  background-image: var(--pa-dust), var(--pa-grain), var(--pa-shine), var(--pa-mark),
+    radial-gradient(ellipse 62% 56% at 50% 42%, var(--mg-core), transparent 100%),
+    repeating-linear-gradient(115deg, var(--mg-i1) 0, var(--mg-i2) 220px, var(--mg-i3) 430px, var(--mg-i4) 590px, var(--mg-hi) 680px, var(--mg-i5) 770px, var(--mg-i1) 980px);
+  background-size: var(--pa-dust-w) var(--pa-dust-h), var(--pa-grain-w) var(--pa-grain-h), var(--pa-shine-w) var(--pa-shine-h),
+    calc(var(--pa-mark-w) * 2) calc(var(--pa-mark-h) * 2), 100% 100%, calc(100% + 1082px) 100%;
+  background-position: 7px 11px, 0 0, right top, 50% 66%, center, calc(var(--mg-s) * -1081.3px) 0;
+  background-repeat: repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  image-rendering: pixelated;
+  box-shadow: inset 0 3px 0 var(--mg-top), inset 0 -3px 0 var(--mg-bot), inset 0 0 36px var(--mg-rim); }
+:root[data-paper="magical"][data-motion="full"] body.has-scene .ws-body > .center::before { animation: mg-sheen 150s steps(600) infinite; }
+@keyframes mg-sheen { to { --mg-s: 1; } }
+/* 停笔：珠光纸整张隐去 */
+:root[data-paper="magical"] body.has-scene.paper-rest .ws-body > .center::before { opacity: 0; }
+:root[data-paper="magical"] body.has-scene.paper-wake .ws-body > .center::before { transition-duration: .9s, 1.2s, 1.2s, .5s; }
+
 /* 纸上的装饰：比纸高出 14px，好让那枚心别在纸的上沿；花边线、星星、上下两道粉色晕染只画在纸的范围里（content-box）。
    晕染放在这一层，停笔时跟着装饰一起慢慢淡下去 */
 :root[data-paper="magical"] body.has-scene .ws-body > .center::after {
@@ -56,7 +86,7 @@
 
 /* 复写回来：魔法阵从纸中间转出来，纸从阵心按五角星的形状开满 */
 :root[data-paper="magical"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::before {
-  animation: mg-bloom .72s cubic-bezier(.3, .6, .4, 1) .1s both, mg-glow .82s ease-out both; }
+  animation: mg-bloom .72s cubic-bezier(.3, .6, .4, 1) .1s both, mg-glow .82s ease-out both, mg-sheen 150s steps(600) infinite; }
 :root[data-paper="magical"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::after {
   top: calc(18px + (100% - 30px) * .4 - var(--pa-circle-h) / 2); height: var(--pa-circle-h); width: var(--pa-circle-w); margin-left: calc(var(--pa-circle-w) / -2); padding: 0;
   background: var(--pa-circle) center / 100% 100% no-repeat; image-rendering: pixelated; opacity: 1;
