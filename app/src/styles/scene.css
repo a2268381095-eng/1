@@ -1,0 +1,77 @@
+/* 背景插画（core/scene.js）：一张盖满窗口的像素画布放在最底下，界面浮在上面。
+   书架整幅露出来；写字页中间一张透光的纸；顶栏、侧栏、卡片都是薄纱，浓淡可调。 */
+.scene-layer { position: fixed; left: 0; top: 0; z-index: 0; pointer-events: none; image-rendering: pixelated; will-change: transform; transition: filter .8s ease; }
+.scene-layer[hidden] { display: none; }
+/* 深色模式压暗一点；本来就是夜景的少压一点 */
+.scene-layer.dim { filter: brightness(.58) saturate(.92); }
+.scene-layer.dim.night { filter: brightness(.86); }
+
+body.has-scene .app { position: relative; z-index: 1; }
+
+/* ---------- 透光：画是主角，界面是叠在画上的薄纱 ----------
+   浓淡由设置里的「背景透出」决定（main.js 把下面几个变量写到 <html> 上）。字多的地方浓一点，空处直接露画。 */
+:root { --a-paper: 66%; --b-paper: 10px; --a-paper-typing: 80%; --a-side: 60%; --a-bar: 56%; --a-card: 74%; --halo: 70%; --b-side: 12px; --b-bar: 10px; }
+body.has-scene .shelf-main { background: transparent; }
+body.has-scene .topbar, body.has-scene .statusbar {
+  background-color: color-mix(in srgb, var(--bar) var(--a-bar), transparent); -webkit-backdrop-filter: blur(var(--b-bar)) saturate(1.2); backdrop-filter: blur(var(--b-bar)) saturate(1.2); }
+body.has-scene .side-left, body.has-scene .side-right {
+  background-color: color-mix(in srgb, var(--side) var(--a-side), transparent); -webkit-backdrop-filter: blur(var(--b-side)) saturate(1.2); backdrop-filter: blur(var(--b-side)) saturate(1.2); }
+
+body.has-scene .statusbar { background-color: color-mix(in srgb, var(--bar) calc(var(--a-bar) + 14%), transparent); color: color-mix(in srgb, var(--ink) 70%, var(--muted)); }
+/* 侧栏里的输入框、当前章节也透一点，不做成实心白块 */
+body.has-scene .side-left .input, body.has-scene .side-left .textarea, body.has-scene .side-right .input, body.has-scene .side-right .textarea,
+body.has-scene .pt-item, body.has-scene .ch-item.cur {
+  background-color: color-mix(in srgb, var(--paper) calc(var(--a-side) + 16%), transparent); }
+body.has-scene .ch-title::placeholder { color: color-mix(in srgb, var(--muted) 80%, var(--faint)); }
+
+/* 写字页：中间一张透光的纸。.center::before 是纸本身，.center::after 留给纸上的装饰（夹子、标签、印章……）。
+   每套风格的纸在 styles/paper/<风格>.css 里画，选择器用 :root[data-paper="<风格>"]。打字时纸浓一点，停笔几秒又变清。 */
+body.has-scene .ws-body > .center { background: transparent; }
+body.has-scene .ws-body > .center::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; z-index: 0; pointer-events: none;
+  width: min(100%, calc(var(--text-width) + 120px)); transform: translateX(-50%);
+  background-color: color-mix(in srgb, var(--paper) var(--a-paper), transparent);
+  -webkit-backdrop-filter: blur(var(--b-paper)) saturate(1.1); backdrop-filter: blur(var(--b-paper)) saturate(1.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, .16);
+  transition: background-color 1.2s ease, -webkit-backdrop-filter 1.6s ease, backdrop-filter 1.6s ease, opacity 1.6s ease; }
+body.has-scene .ws-body > .center::after { content: none; }
+body.has-scene.scene-typing .ws-body > .center::before { background-color: color-mix(in srgb, var(--paper) var(--a-paper-typing), transparent); transition-duration: .5s; }
+body.has-scene .ws-body > .center > * { position: relative; z-index: 1; }
+/* 字加一圈和纸同色的淡描边，画透过来也看得清 */
+body.has-scene .ed-host .cm-content, body.has-scene .ch-head { text-shadow: 0 0 2px color-mix(in srgb, var(--paper) var(--halo), transparent), 0 0 6px color-mix(in srgb, var(--paper) var(--halo), transparent); }
+body.has-scene .side-left, body.has-scene .side-right, body.has-scene .topbar, body.has-scene .statusbar {
+  text-shadow: 0 0 4px color-mix(in srgb, var(--side) var(--halo), transparent); }
+
+/* ---------- 停笔一阵：纸和侧栏淡下去，屏幕交给动态背景（core/paper.js） ---------- */
+body.has-scene.paper-rest { --a-paper: 10%; --a-paper-typing: 10%; --b-paper: 0px; --a-side: 14%; --a-bar: 14%; --b-side: 0px; --b-bar: 0px; }
+body.has-scene .ws .side-left, body.has-scene .ws .side-right, body.has-scene .ws .topbar, body.has-scene .ws .statusbar {
+  transition: background-color 1.6s ease, -webkit-backdrop-filter 1.6s ease, backdrop-filter 1.6s ease; }
+body.has-scene .ws .ed-host, body.has-scene .ws .ch-head, body.has-scene .ws .side-left > *, body.has-scene .ws .side-right > *,
+body.has-scene .ws .topbar > *, body.has-scene .ws .statusbar > * { transition: opacity .5s ease; }
+body.has-scene.paper-rest .ws .ed-host, body.has-scene.paper-rest .ws .ch-head { opacity: .42; transition-duration: 2s; }
+body.has-scene.paper-rest .ws .side-left > *, body.has-scene.paper-rest .ws .side-right > *, body.has-scene.paper-rest .ws .topbar > *,
+body.has-scene.paper-rest .ws .statusbar > * { opacity: .22; transition-duration: 2s; }
+body.has-scene.paper-rest .ws-body > .center::before { box-shadow: none; }
+body.has-scene.paper-rest .ws-body > .center::after { opacity: .2; transition: opacity 2s ease; }
+/* 动一下：纸复写回来。默认从上往下一行一行印出来；各套风格在自己的纸里换 animation-name */
+[data-motion="full"] body.has-scene.paper-wake .ws-body > .center::before { animation: paper-wake .8s steps(12) both; }
+@keyframes paper-wake { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
+
+/* 书架：书卡是玻璃片，浮在画上 */
+body.has-scene .book-card { background-color: color-mix(in srgb, var(--surface) var(--a-card), transparent); -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow: 0 6px 26px rgba(0, 0, 0, .16); }
+body.has-scene .book-card:hover { background-color: color-mix(in srgb, var(--surface) 92%, transparent); }
+body.has-scene .shelf-empty { background: color-mix(in srgb, var(--surface) 82%, transparent); -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2);
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent); border-radius: 12px; max-width: 520px; margin: 40px auto; box-shadow: 0 8px 30px rgba(0, 0, 0, .16); }
+
+/* 设置、回收站、AI 接入：整页蒙一层淡纱，分组卡片是玻璃，四周还看得见画 */
+body.has-scene .view.st, body.has-scene .view.trash, body.has-scene .view.ai-view { background: transparent; }
+body.has-scene .st-main, body.has-scene .trash-main {
+  background-color: color-mix(in srgb, var(--bg) 42%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+body.has-scene .ai-view-main { background-color: color-mix(in srgb, var(--bg) 74%, transparent); -webkit-backdrop-filter: blur(14px) saturate(1.15); backdrop-filter: blur(14px) saturate(1.15); }
+body.has-scene .st-group, body.has-scene .trash-item {
+  background-color: color-mix(in srgb, var(--surface) calc(var(--a-card) + 10%), transparent); -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2); box-shadow: 0 4px 18px rgba(0, 0, 0, .12); }
+body.has-scene .st-jump, body.has-scene .trash-bar:has(> :not([hidden]):not(:empty)), body.has-scene .trash-none { padding: 6px 10px; border-radius: 10px;
+  background-color: color-mix(in srgb, var(--surface) 82%, transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+body.has-scene .trash-none { padding: 36px 16px; max-width: 520px; width: 100%; margin: 24px auto 0; box-shadow: 0 8px 30px rgba(0, 0, 0, .14); }
+/* 鼠标停在画上能点的东西（灯、水面、花树……）上 */
+body.scene-hot .shelf-main, body.scene-hot .view.shelf, body.scene-hot .center, body.scene-hot .cm-scroller, body.scene-hot .ws-body { cursor: pointer; }

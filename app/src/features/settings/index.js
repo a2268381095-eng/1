@@ -3,6 +3,8 @@
 // 发出的事件：settings:changed（core 发）、book:updated（store 发）、
 //   settings:reset { group }、settings:font-added { font }、settings:font-removed { font }、settings:errlog-cleared { count }
 import { PALETTES } from "../../core/pattern.js";
+import { nextScene } from "../../core/scene.js";
+import { resolvePalette } from "../../core/look.js";
 import { getBook, updateBook, listChapters, updateChapter, DEFAULT_BOOK } from "../../core/store.js";
 import { db, uid } from "../../core/db.js";
 import { nav } from "../../core/nav.js";
@@ -13,7 +15,7 @@ import { getSettings, setSettings, label, DEFAULT_SETTINGS } from "../../core/se
 import { fmtTime } from "../../core/text.js";
 import { h, icon, toast, confirm, choose, notice, helpTip, hasLayers } from "../../core/ui.js";
 import { ws } from "../editor/workspace.js";
-import { tip, react, setDemonBook, styleFor, allStyles } from "../demon/demon.js";
+import { tip, react, setDemonBook, styleFor, allStyles, wantedStyle } from "../demon/demon.js";
 import { fontOptions, fontFileInfo, uniqueName, fmtSize, pick, clone, same, resetPatch, clampNum, checkKey, findConflicts,
   withKey, areaOf, mergeLog, removeLog, logText, BOOK_KEYS } from "./logic.js";
 import { loadAll, loadFace, unloadFace, readFont, writeFont, removeFont, broken } from "./fonts.js";
@@ -317,9 +319,25 @@ function renderLook(body) {
     row("主题", "跟随系统：电脑换成深色时，这里也跟着变。",
       seg("主题", [["auto", "跟随系统"], ["light", "浅色"], ["dark", "深色"], ["time", "随时间"]], () => s().theme,
         (v) => change({ theme: v }, { auto: "主题跟随系统", light: "换成浅色", dark: "换成深色", time: "明暗随时间" }[v]))),
-    row("配色", "「跟随小恶魔」：打开哪本书，界面就换成她这本书穿的那套风格的颜色。", palettePicker()),
+    row("配色", "「跟随小恶魔」：打开哪本书，界面就换成她这本书穿的那套风格的颜色。选了某一套配色，或者随时间、随季节换时，小恶魔也换上那一套衣服，背景插画也换成那一套。", palettePicker()),
     row("像素底纹", "书架这些空白处铺一层很淡的像素图案，写字的纸面不铺。",
       toggle("铺底纹", () => s().pixelBg, (v) => change({ pixelBg: v }, v ? "铺上像素底纹" : "去掉像素底纹"), "pixelBg")),
+    row("背景插画", "书架和写字页四周铺一幅像素插画，每套风格一张外景、一张内景。画里的水、旗子、灯火会动，点画上的灯、水面、花树会有反应，写到里程碑整幅画一起热闹。写字的纸面不铺。",
+      toggle("铺背景插画", () => s().sceneBg !== false, (v) => change({ sceneBg: v }, v ? "铺上背景插画" : "去掉背景插画"), "sceneBg")),
+    row("背景透出", "写字页的纸、侧栏、顶栏透出多少画。越大画越清楚，越小界面越实。打字时纸会自动浓一点，停笔几秒又变清。",
+      slider("背景透出", "sceneVeil", { min: 0, max: 100, step: 5 }, (v) => v + "%", "改背景透出")),
+    row("插画像素", "「干净」色块平整；「网点」加一层老游戏机那样的网点。",
+      seg("插画像素", [["clean", "干净"], ["dither", "网点"]], () => (s().sceneDither ? "dither" : "clean"),
+        (v) => change({ sceneDither: v === "dither" }, "插画改成" + (v === "dither" ? "网点" : "干净") + "像素"))),
+    row("内外轮换", "隔一段时间，镜头从外景走进内景，再退回外景，每套风格的转场不一样。正在打字时等你停下来再换。",
+      seg("内外轮换", [[0, "不轮换"], [5, "5 分钟"], [10, "10 分钟"], [30, "30 分钟"]], () => Number(s().sceneCycle) || 0,
+        (v) => change({ sceneCycle: v }, v ? `背景每 ${v} 分钟换一次` : "背景不再轮换")),
+      h("button.btn.small.st-scene-now", { type: "button", onclick: () => { if (!nextScene()) toast("现在这套风格只有一张背景图。"); } }, "现在换一次")),
+    row("停笔后变回背景", "写字页停笔、不动鼠标一阵以后，纸和侧栏淡下去，屏幕交给动态背景。一动鼠标或打字，纸按这套风格的方式复写回来。",
+      seg("停笔后变回背景", [[0, "不变"], [15, "15 秒"], [30, "30 秒"], [60, "1 分钟"], [180, "3 分钟"]], () => Number(s().paperRest) || 0,
+        (v) => change({ paperRest: v }, v ? `停笔 ${v >= 60 ? v / 60 + " 分钟" : v + " 秒"}后变回背景` : "停笔后不再变回背景"))),
+    row("走进作品", "打开一本书，镜头走进内景；回到书架，走回外景。",
+      toggle("打开作品时走进室内", () => s().sceneNav !== false, (v) => change({ sceneNav: v }, v ? "打开作品时走进室内" : "打开作品时不换背景"), "sceneNav")),
     row("界面动效", "按钮回弹、弹窗弹出、面板滑入这些动作。「简洁」只淡入淡出；系统设置了减少动态效果时「自动」会关掉。",
       seg("界面动效", [["auto", "自动"], ["full", "完整"], ["simple", "简洁"], ["off", "关闭"]], () => s().motion,
         (v) => change({ motion: v }, "界面动效改成" + { auto: "自动", full: "完整", simple: "简洁", off: "关闭" }[v]))),
@@ -475,11 +493,28 @@ function styleGrid(name, get, set, withAuto) {
   return box;
 }
 
+/** 配色没选「跟随小恶魔」时，她穿配色那一套，这里的选择先不生效：说清楚，给一个就地改的按钮 */
+function paletteLockNote() {
+  const text = h("span", {});
+  const btn = h("button.btn.small", { type: "button" }, "配色改成跟随小恶魔");
+  btn.addEventListener("click", () => change({ palette: "follow" }, "配色跟随小恶魔"));
+  const box = h("p.st-note.st-lock", {}, text, btn);
+  S.syncers.push(() => {
+    const p = getSettings().palette;
+    box.hidden = !p || p === "follow";
+    if (!box.hidden) {
+      const name = (PALETTES.find((x) => x.id === resolvePalette(getSettings(), "magical")) || {}).name || "";
+      text.textContent = (p === "time" ? "配色随时间换" : p === "season" ? "配色随季节换" : `配色固定成「${name}」`) + "，小恶魔跟着穿那一套，这里的选择等配色改回「跟随小恶魔」再生效。";
+    }
+  });
+  return box;
+}
+
 /** 换了风格就让她换上，打个招呼（气泡里只有台词） */
 async function withGreeting(fn) {
-  const before = styleFor(S.book || null).id;
+  const before = wantedStyle(S.book || null).id;
   const entry = await fn();
-  const now = styleFor(S.book || null);
+  const now = wantedStyle(S.book || null);
   if (entry && now.id !== before) {
     setDemonBook(S.book || null);
     react("open", { force: true, act: "wave" });
@@ -506,7 +541,7 @@ function renderDemon(body) {
         scaleNow,
         h("button.btn.small.ghost.st-demon-home", { type: "button", onclick: () => change({ demonPos: null }, "小恶魔放回右下角") }, "放回右下角"))),
     row("书架上穿哪套", "在书架、设置这些没打开作品的地方，她穿哪一套。打开作品以后按作品自己的设置。",
-      styleGrid("书架上穿哪套", () => s().demonStyle, (v) => withGreeting(() => change({ demonStyle: v }, "小恶魔换装")), false)),
+      styleGrid("书架上穿哪套", () => s().demonStyle, (v) => withGreeting(() => change({ demonStyle: v }, "小恶魔换装")), false), paletteLockNote()),
     row("话多少", "少：只在打开软件、完成字数目标、写完一章时说话。你戳她、出错时照常说。",
       seg("话多少", [["quiet", "少"], ["normal", "正常"], ["chatty", "多"]], () => s().demonChatty,
         (v) => change({ demonChatty: v }, "小恶魔话多少改成" + { quiet: "少", normal: "正常", chatty: "多" }[v]))),
@@ -551,7 +586,7 @@ function renderBookGroup(body) {
     row("每日字数目标", "状态栏显示今天写了多少；写够了她会说一声。0 表示不设。",
       numberBox("每日字数目标", () => b().dailyGoal || 0, (v) => changeBook({ dailyGoal: v }, "改每日字数目标", { merge: true }), { min: 0, max: 100000, step: 100 }, "字")),
     row("小恶魔穿哪套", "按作品类型：按这本书的类型标签挑一套。也可以指定一套。",
-      styleGrid("这本书的小恶魔", () => b().demonStyle || "auto", (v) => withGreeting(() => changeBook({ demonStyle: v }, "这本书的小恶魔换装")), true)),
+      styleGrid("这本书的小恶魔", () => b().demonStyle || "auto", (v) => withGreeting(() => changeBook({ demonStyle: v }, "这本书的小恶魔换装")), true), paletteLockNote()),
   );
 }
 

@@ -2,7 +2,8 @@
 // 顶栏的「配色」按钮弹出小面板，随手切换，不用进设置页。
 import { getSettings, setSettings } from "./settings.js";
 import { PALETTES } from "./pattern.js";
-import { h, icon, pushLayer } from "./ui.js";
+import { h, icon, pushLayer, toast } from "./ui.js";
+import { nextScene, sceneInfo } from "./scene.js";
 
 /** 一天里的时段 → 配色 */
 export function paletteByTime(d = new Date()) {
@@ -79,7 +80,21 @@ export function openLookPop(anchor) {
         btn.addEventListener("click", async () => { await setSettings({ theme: v }); render(); });
         return btn;
       })),
+      h("div.look-head", {}, h("b", {}, "背景插画")),
+      h("div.look-seg", { role: "group", "aria-label": "背景插画" }, ...[[true, "铺上"], [false, "不铺"]].map(([v, t]) => {
+        const btn = h("button", { type: "button", "aria-pressed": String((s().sceneBg !== false) === v) }, t);
+        btn.addEventListener("click", async () => { await setSettings({ sceneBg: v }); render(); });
+        return btn;
+      }), sceneButton()),
       h("p.look-note", {}, nowText()));
+  };
+  const sceneButton = () => {
+    const info = sceneInfo();
+    const can = info && info.kinds.length > 1;
+    const btn = h("button.look-scene", { type: "button", disabled: !can, title: can ? "在这套风格的外景和内景之间换" : "这套风格只有一张背景图" },
+      info && info.kind === "in" ? "走出去" : "走进去");
+    btn.addEventListener("click", () => { if (!nextScene()) toast("这套风格只有一张背景图。"); setTimeout(render, 50); });
+    return btn;
   };
   const item = (id, name, sub, swatch, on) => {
     const sw = swatch ? h("span.look-sw", {}, ...swatch.map((c) => h("i", { style: { background: c } }))) : h("span.look-sw.auto", {}, "↻");

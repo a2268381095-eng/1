@@ -11,6 +11,8 @@ import { mountFx } from "./core/fx.js";
 import { mountPulse } from "./core/pulse.js";
 import { patternURL, markURL } from "./core/pattern.js";
 import { sceneryURL } from "./core/scenery.js";
+import { mountScene, syncScene, nextScene } from "./core/scene.js";
+import { applyPaper, mountPaper } from "./core/paper.js";
 import { resolvePalette, resolveDark, lookButton } from "./core/look.js";
 import { registerShelf } from "./features/shelf/shelf.js";
 import { registerWorkspace } from "./features/editor/workspace.js";
@@ -44,6 +46,18 @@ export function applyLook() {
     root.style.setProperty("--pattern-img", `url(${patternURL(palette || "magical", color, dark ? 0.16 : 0.09)})`);
     root.style.setProperty("--scene-img", `url(${sceneryURL(palette || "magical", color, dark ? 0.22 : 0.13)})`);
   }
+  // 背景插画：跟着配色走（配色 = 哪套风格）；「背景透出」决定纸、侧栏、顶栏有多透
+  syncScene(palette || "magical", dark);
+  applyPaper(palette || "magical");
+  const v = Math.max(0, Math.min(100, Number(s.sceneVeil ?? 60)));
+  const pct = (n) => Math.round(n) + "%";
+  root.style.setProperty("--a-paper", pct(94 - 0.5 * v));
+  root.style.setProperty("--a-paper-typing", pct(Math.min(96, 94 - 0.5 * v + 14)));
+  root.style.setProperty("--b-paper", Math.round(22 - 0.17 * v) + "px");
+  root.style.setProperty("--a-side", pct(88 - 0.45 * v));
+  root.style.setProperty("--a-bar", pct(84 - 0.45 * v));
+  root.style.setProperty("--a-card", pct(92 - 0.3 * v));
+  root.style.setProperty("--halo", pct(50 + 0.4 * v));
   const fonts = {
     system: '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif',
     serif: '"Noto Serif SC", "Songti SC", "SimSun", serif',
@@ -73,12 +87,16 @@ async function start() {
     return;
   }
   await loadSettings();
+  mountScene();
+  mountPaper();
   applyLook();
   bus.on("settings:changed", applyLook);
   bus.on("demon:style", applyLook);
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyLook);
   setInterval(() => { const s = getSettings(); if (s.palette === "time" || s.palette === "season" || s.theme === "time") applyLook(); }, 60000);
   mountDemon(document.body);
+  commands.register({ id: "scene.next", title: "换背景：走进 / 走出", keywords: "背景 插画 外景 内景 换景 轮换", hint: "在这套风格的外景和内景之间换",
+    run: () => { if (!nextScene()) toast(getSettings().sceneBg === false ? "背景插画关着，在「配色」里打开。" : "这套风格只有一张背景图。"); } });
   mountFx();
   mountPulse();
   registerShelf();

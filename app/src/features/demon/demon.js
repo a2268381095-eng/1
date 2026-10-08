@@ -8,6 +8,8 @@ import { commands, keyOf, prettyKey } from "../../core/commands.js";
 import { getSettings, setSettings } from "../../core/settings.js";
 import { burst, burstAt, stream, setFxStyle } from "../../core/fx.js";
 import { todayWords } from "../../core/store.js";
+import { resolvePalette } from "../../core/look.js";
+import { meterFor } from "./meters/index.js";
 
 const W = 128, H = 224;
 const BY_ID = Object.fromEntries(SPRITES.map((s) => [s.id, s]));
@@ -19,6 +21,7 @@ const EVENT_ACT = {
   format: "cheer", save: "idle", back: "wave", poke: "shock", poke_many: "shock",
   replace: "cheer", search_none: "think", restore: "wave", import: "cheer", export: "wave",
   combo: "cheer", milestone: "cheer", chapter_len: "cheer", big_delete: "shock", rest: "wave",
+  scene_in: "point", scene_out: "wave", scene_poke: "think", dress: "cheer",
 };
 // 不管多安静都要说的（你主动找她、或者要提醒你的）
 const IMPORTANT = new Set(["delete", "ai_error", "lost", "poke", "poke_many", "goal", "tip"]);
@@ -43,6 +46,24 @@ export function styleFor(book) {
   return BY_ID[s.demonStyle] || SPRITES[0];
 }
 export const allStyles = () => SPRITES;
+
+/** 她现在该穿哪套：配色选「跟随小恶魔」时按作品；配色固定、随时间、随季节时，换上配色那一套，主题和衣服对得上 */
+export function wantedStyle(book = bookCtx) {
+  const base = styleFor(book);
+  const s = getSettings();
+  if (!s.palette || s.palette === "follow") return base;
+  return BY_ID[resolvePalette(s, base.id)] || base;
+}
+/** 配色变了：换衣服。show 时撒一把特效、说一句 */
+function syncStyle(show) {
+  const st = wantedStyle();
+  if (st === style) return;
+  setStyle(st);
+  if (show && el) {
+    burstAt(el.querySelector(".demon-body"), "celebrate", 18);
+    react("dress", { force: true, act: "cheer" });
+  }
+}
 
 export const currentStyleId = () => (style ? style.id : "magical");
 
@@ -238,7 +259,7 @@ export function mountDemon(root) {
     ctl("hide", "收起小恶魔", icon("close"), () => setSettings({ demonOn: false })));
   const grip = h("div.demon-grip", { title: "拖这里变大变小", "aria-hidden": "true" });
   badge = h("div.demon-badge", { "aria-hidden": "true", hidden: true },
-    h("span.db-label"), h("span.db-bar", {}, h("span.db-fill"), h("span.db-heart")));
+    h("span.db-label"), h("canvas.db-meter"));
   comboEl = h("div.demon-combo", { "aria-hidden": "true" }, h("span.dc-label", {}, "连击"), h("span.dc-num"), h("span.dc-unit", {}, "字"));
   const body = h("div.demon-body", {}, poke, tools, grip, comboEl, badge);
   const showBtn = h("button.demon-show", { type: "button", title: "叫小恶魔出来", "aria-label": "叫小恶魔出来" }, "小恶魔");
@@ -268,7 +289,7 @@ export function mountDemon(root) {
   bus.on("panel:closed", unavoid);
   applySettings();
   bus.on("settings:changed", applySettings);
-  setStyle(styleFor(null));
+  setStyle(wantedStyle(null));
   requestAnimationFrame(loop);
   wireEvents();
   wirePulse();
@@ -415,7 +436,7 @@ function applySettings() {
 /** 进出作品时换风格（按作品类型，或作品里选定的那套） */
 export function setDemonBook(book) {
   bookCtx = book;
-  setStyle(styleFor(book));
+  setStyle(wantedStyle(book));
   refreshBadge();
 }
 
@@ -440,16 +461,59 @@ async function refreshBadge(n) {
   drawBadge();
 }
 
+// 进度的样子按风格换（meters/*.js），画在一张小画布上，按 3 倍放大
+const meterState = { target: 0, shown: 0, words: 0, goal: 1, done: false, lastGain: -1e9, lastWords: -1, colors: null, styleId: "" };
+let meterRaf = 0, meterLast = 0;
+function meterColors() {
+  const cs = getComputedStyle(el || document.documentElement);
+  const v = (k) => cs.getPropertyValue("--" + k).trim();
+  return { accent: v("accent"), ink: v("ink"), paper: v("paper"), surface: v("surface"), line: v("line-strong"), side: v("side"),
+    muted: v("muted"), faint: v("faint"), accentSoft: v("accent-soft"), bubbleLine: v("bubble-line") };
+}
 function drawBadge() {
   if (!badge || badge.hidden || !bookCtx) return;
   const goal = bookCtx.dailyGoal;
   const now = Math.max(0, todayN + typedSinceSave);
-  const pct = Math.min(1, now / goal);
-  badge.querySelector(".db-label").textContent = `${(WORDS[style.id] || WORDS.magical).badge} ${now.toLocaleString()}/${goal.toLocaleString()}`;
-  badge.querySelector(".db-fill").style.width = (pct * 100).toFixed(1) + "%";
-  badge.querySelector(".db-heart").style.left = `calc(${(pct * 100).toFixed(1)}% - 5px)`;
-  badge.classList.toggle("done", pct >= 1);
+  const st = meterState;
+  if (st.lastWords >= 0 && now > st.lastWords) st.lastGain = performance.now();
+  st.lastWords = now;
+  Object.assign(st, { target: Math.min(1, now / goal), words: now, goal, done: now >= goal });
+  const m = meterFor(style.id);
+  const label = m.label ? m.label({ ...st, pct: st.target }) : null;
+  badge.querySelector(".db-label").textContent = label || `${(WORDS[style.id] || WORDS.magical).badge} ${now.toLocaleString()}/${goal.toLocaleString()}`;
+  badge.classList.toggle("done", st.done);
+  kickMeter();
 }
+function kickMeter() { if (!meterRaf) meterRaf = requestAnimationFrame(meterFrame); }
+function meterFrame(now) {
+  meterRaf = 0;
+  if (!badge || badge.hidden || !bookCtx) return;
+  const st = meterState;
+  const m = meterFor(style.id);
+  const cv = badge.querySelector(".db-meter");
+  if (st.styleId !== style.id || cv.width !== m.w) {
+    st.styleId = style.id; st.colors = null;
+    cv.width = m.w; cv.height = m.h;
+    cv.style.width = m.w * 3 + "px"; cv.style.height = m.h * 3 + "px";
+  }
+  if (!st.colors) st.colors = meterColors();
+  const motion = document.documentElement.dataset.motion || "full";
+  // 数字涨的时候慢慢长上去
+  const diff = st.target - st.shown;
+  st.shown = motion === "off" || Math.abs(diff) < 0.002 ? st.target : st.shown + diff * 0.18;
+  const g = cv.getContext("2d");
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.globalAlpha = 1; g.globalCompositeOperation = "source-over";
+  g.clearRect(0, 0, cv.width, cv.height);
+  try {
+    m.draw(g, { pct: st.target, shown: st.shown, words: st.words, goal: st.goal, done: st.done, t: motion === "off" ? 0 : now / 1000,
+      bump: (now - st.lastGain) / 1000, c: st.colors, motion });
+  } catch (e) { console.warn("进度画不出来：", e); }
+  const moving = st.shown !== st.target || (motion === "full" && m.animated) || (now - st.lastGain) / 1000 < 2;
+  if (moving && !document.hidden) setTimeout(kickMeter, Math.max(0, 90 - (performance.now() - now)));
+}
+// 换配色、明暗以后重新取颜色
+function resetMeterColors() { meterState.colors = null; kickMeter(); }
 
 function setCombo(n, level) {
   if (!comboEl) return;
@@ -490,6 +554,9 @@ function wirePulse() {
   bus.on("pulse:rest", () => react("rest", { act: "wave", force: true }));
   bus.on("goal:reached", () => { refreshBadge(); });
   bus.on("book:updated", ({ book }) => { if (bookCtx && book.id === bookCtx.id) { bookCtx = book; refreshBadge(); } });
+  bus.on("settings:changed", () => setTimeout(resetMeterColors, 50));
+  bus.on("demon:style", () => setTimeout(resetMeterColors, 50));
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) kickMeter(); });
   bus.on("settings:changed", ({ patch }) => { if (patch && "demonPulse" in patch) { refreshBadge(); if (!patch.demonPulse) { setCombo(0); stream(null, 0); } } });
 }
 
@@ -521,6 +588,12 @@ function wireEvents() {
   bus.on("io:exported", () => react("export"));
   bus.on("io:backup", () => react("export", { force: true }));
   bus.on("save:failed", () => react("ai_error", { text: "保存出错了！别关窗口，正文还在，我帮你看着。", act: "shock" }));
+  // 换了配色就换衣服；随时间、随季节的配色每分钟看一次
+  bus.on("settings:changed", ({ patch }) => { if (patch && "palette" in patch) syncStyle(true); });
+  setInterval(() => { const p = getSettings().palette; if (p === "time" || p === "season") syncStyle(true); }, 60000);
+  // 背景插画：走进、走出时说一句；点了画里的东西，偶尔接一句
+  bus.on("scene:changed", ({ dir, style: st }) => { if (st === style.id) react(dir === "in" ? "scene_in" : "scene_out"); });
+  bus.on("scene:poke", ({ name }) => { const t = pickLine("scene_poke"); if (t) react("scene_poke", { text: t.replace(/\{name\}/g, name || "它") }); });
   bus.on("demon:say", (d) => react(d.event || "tip", { text: d.text, act: d.act, force: true }));
   bus.on("book:created", (d) => { if (!d.restored) setTimeout(() => react("start", { force: true, act: "cheer" }), 300); });
   let hiddenAt = 0;

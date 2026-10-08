@@ -6,6 +6,12 @@ export const DEFAULT_SETTINGS = {
   theme: "auto",              // 明暗：auto 跟随系统 / light / dark / time 随时间（晚 8 点到早 6 点深色）
   palette: "follow",          // 配色：follow 跟随小恶魔 / time 随时间 / season 随季节 / magical / sailor / hanfu / gothic / detective / adventurer
   pixelBg: true,              // 空白处铺像素底纹
+  sceneBg: true,              // 背景插画（每套风格一张外景、一张内景）
+  sceneDither: false,         // 背景插画用网点版
+  sceneVeil: 60,              // 背景透出：0 界面最实 — 100 画最清楚
+  sceneCycle: 10,             // 外景、内景轮换：每几分钟，0 不轮换
+  sceneNav: true,             // 打开作品时走进内景，回书架走回外景
+  paperRest: 30,              // 停笔多少秒后纸和侧栏淡下去、屏幕交给动态背景，0 不淡
   motion: "auto",             // 界面动效：auto（系统要求减少动态时关掉）/ full 完整 / simple 简洁 / off 关闭
   clickFx: "style",           // 点击特效：style 跟随小恶魔的道具 / hearts 像素爱心 / ripple 魔法波纹 / ink 墨点 / off
   demonPulse: true,           // 码字互动：字数牌子、连击

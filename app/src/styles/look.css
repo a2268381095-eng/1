@@ -1,0 +1,32 @@
+/* 顶栏「配色」按钮和它弹出的小面板（core/look.js） */
+.look-ico { display: inline-grid; grid-template-columns: repeat(3, 5px); gap: 1px; padding: 2px; border: 1px solid var(--line-strong); border-radius: 3px; }
+.look-ico i { width: 5px; height: 10px; display: block; }
+.look-ico i:nth-child(1) { background: var(--paper); box-shadow: inset 0 0 0 1px var(--line-strong); }
+.look-ico i:nth-child(2) { background: var(--accent-soft); }
+.look-ico i:nth-child(3) { background: var(--accent); }
+
+.look-pop { position: fixed; z-index: 92; width: min(328px, calc(100vw - 16px)); max-height: calc(100vh - 70px); overflow: auto; padding: 10px 12px 12px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); display: grid; gap: 8px; }
+[data-motion="full"] .look-pop { animation: look-in .18s cubic-bezier(.3, 1.4, .5, 1); transform-origin: top left; }
+@keyframes look-in { from { opacity: 0; transform: translateY(-6px) scale(.96); } }
+.look-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--muted); }
+.look-head b { font-weight: 600; letter-spacing: .06em; }
+.look-head b::before { content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 6px; vertical-align: 1px;
+  background: var(--mark-img) center / 7px 7px no-repeat; image-rendering: pixelated; }
+.look-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.look-item { display: grid; justify-items: center; gap: 3px; padding: 7px 4px 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper);
+  cursor: pointer; min-width: 0; }
+.look-item:hover { border-color: var(--line-strong); background: var(--hover); }
+.look-item[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); background: var(--accent-soft); }
+.look-sw { display: inline-grid; grid-template-columns: repeat(3, 8px); height: 16px; border: 1px solid var(--line-strong); }
+.look-sw i { display: block; }
+.look-sw.auto { display: grid; place-items: center; grid-template-columns: none; width: 26px; color: var(--accent); font-weight: 700; font-size: 13px; }
+.look-n { font-size: 12.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.look-s { font-size: 11px; color: var(--faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.look-seg { display: flex; flex-wrap: wrap; gap: 4px; }
+.look-seg > button { flex: 1 1 auto; padding: 4px 8px; border: 1px solid var(--line-strong); border-radius: 6px; background: var(--paper); cursor: pointer; font-size: 12.5px; }
+.look-seg > button:hover:not(:disabled) { background: var(--hover); }
+.look-seg > button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.look-seg > .look-scene { flex: 1 1 100%; border-style: dashed; color: var(--accent); }
+.look-seg > .look-scene:disabled { color: var(--faint); cursor: default; }
+.look-note { margin: 0; font-size: 12px; color: var(--muted); }

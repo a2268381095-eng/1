@@ -40,3 +40,11 @@
 .tag { border: 1px solid var(--line-strong); background: var(--paper); border-radius: 999px; padding: 2px 10px; cursor: pointer; font-size: 12.5px; }
 .tag.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 .tag-add { width: 150px; padding: 3px 8px; font-size: 12.5px; }
+
+/* 手机宽度：顶栏只留图标，按钮字不挤成竖排 */
+@media (max-width: 640px) {
+  .shelf .topbar .tool-btn { font-size: 0; gap: 0; padding: 0 7px; }
+  .shelf .topbar .tb-t { display: none; }
+  .shelf .topbar .brand { white-space: nowrap; font-size: 16px; }
+  .shelf .topbar .btn.primary { padding: 6px 10px; }
+}

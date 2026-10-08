@@ -56,30 +56,13 @@
 .help-item:hover, .help-item.sel { background: var(--accent-soft); }
 @media (max-width: 640px) { .demon-bubble { max-width: 200px; font-size: 13px; } }
 
-/* 字数牌子：挂在她脚边，像素进度条；光隔一会儿扫一次，末端一颗心慢慢跳 */
-.demon-badge { position: absolute; left: 50%; bottom: -10px; transform: translateX(-50%); width: 132px; padding: 3px 6px 5px; display: grid; gap: 3px;
+/* 字数牌子：挂在她脚边。进度的样子每套风格不一样（meters/*.js 画在 .db-meter 画布上） */
+.demon-badge { position: absolute; left: 50%; bottom: -10px; transform: translateX(-50%); min-width: 132px; padding: 3px 6px 5px; display: grid; gap: 3px;
   border: 2px solid var(--bubble-line); border-radius: 3px; background: var(--surface); box-shadow: 2px 2px 0 var(--accent-soft);
   font-family: var(--f-pixel); font-size: 11px; line-height: 1.2; color: var(--ink); pointer-events: none; z-index: 1; }
 .demon-badge[hidden] { display: none; }
 .db-label { text-align: center; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.db-bar { position: relative; height: 7px; border: 1px solid var(--bubble-line); background: var(--side); overflow: visible; }
-.db-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0;
-  background: repeating-linear-gradient(90deg, var(--accent) 0 4px, color-mix(in srgb, var(--accent) 70%, #fff) 4px 6px);
-  transition: width .45s steps(8); overflow: hidden; }
-.db-fill::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .7), transparent);
-  transform: translateX(-120%); }
-[data-motion="full"] .db-fill::after { animation: db-shine 7s ease-in-out infinite; }
-@keyframes db-shine { 0%, 82% { transform: translateX(-120%); } 100% { transform: translateX(120%); } }
-.db-heart { position: absolute; top: -5px; left: -5px; width: 10px; height: 9px; transition: left .45s steps(8);
-  background:
-    linear-gradient(var(--accent), var(--accent)) 1px 1px / 3px 3px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) 6px 1px / 3px 3px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) 0 3px / 10px 3px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) 2px 6px / 6px 2px no-repeat,
-    linear-gradient(var(--accent), var(--accent)) 4px 8px / 2px 1px no-repeat; image-rendering: pixelated; }
-[data-motion="full"] .db-heart { animation: db-hop 1.8s ease-in-out infinite; }
-@keyframes db-hop { 0%, 60%, 100% { transform: translateY(0); } 75% { transform: translateY(-3px); } }
-.demon-badge.done .db-fill { background: repeating-linear-gradient(90deg, #f2b51c 0 4px, #ffe28a 4px 6px); }
+.db-meter { display: block; margin: 0 auto; image-rendering: pixelated; }
 .demon-badge.done { border-color: #c98a12; }
 [data-motion="full"] .demon-badge.done { animation: db-flash 1.2s ease 2; }
 @keyframes db-flash { 50% { box-shadow: 0 0 0 3px rgba(242, 181, 28, .45), 2px 2px 0 var(--accent-soft); } }
@@ -89,6 +72,7 @@
   transition: opacity .2s ease, transform .2s ease; font-family: var(--f-pixel); color: var(--accent); z-index: 2; }
 .demon.near-left .demon-combo { left: auto; right: -70px; }
 .demon-combo.on { opacity: 1; transform: none; }
+.dc-label, .dc-unit { text-shadow: 1px 0 0 var(--surface), -1px 0 0 var(--surface), 0 1px 0 var(--surface), 0 -1px 0 var(--surface), 1px 1px 0 var(--surface), -1px -1px 0 var(--surface); }
 .dc-label { font-size: 11px; letter-spacing: .1em; }
 .dc-num { font-size: 24px; line-height: 1; font-variant-numeric: tabular-nums;
   text-shadow: 2px 0 0 var(--surface), -2px 0 0 var(--surface), 0 2px 0 var(--surface), 0 -2px 0 var(--surface), 2px 2px 0 var(--bubble-line); }
