@@ -389,7 +389,7 @@ export default {
   // 连击：表盘、指针；复写：蝙蝠
   dial: sprite(dialRows(), { o: "#d8d0e2", l: "#b7aec6", w: "#f4effa" }, { o: "#d8d0e2", l: "#b7aec6", w: "#f4effa" }, 2),
   hand: sprite(HAND, { "#": "#f4effa" }, { "#": "#f4effa" }, 2),
-  flock: sprite(FLOCK, { k: "#1a0f1e", e: "#ff4d6d" }, { k: "#0b060d", e: "#ff5a7a" }, 3),
+  flock: sprite(FLOCK, { k: "#1a0f1e", e: "#ff4d6d" }, { k: "#2a1830", e: "#ff6a88" }, 4),
   drips: sprite(DRIPS, { w: "#6e1022", R: "#a91d34" }, { w: "#5a0b1c", R: "#9a1a30" }, 2),
   // 纸纹
   vellum: { size: [160, 160], scale: 2, texture: vellum },

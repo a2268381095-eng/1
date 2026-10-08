@@ -79,14 +79,24 @@
   -webkit-mask-image: radial-gradient(circle at 0% 100%, #000 calc(var(--gt-r) - 160px), rgba(0, 0, 0, .55) calc(var(--gt-r) - 60px), transparent var(--gt-r));
   mask-image: radial-gradient(circle at 0% 100%, #000 calc(var(--gt-r) - 160px), rgba(0, 0, 0, .55) calc(var(--gt-r) - 60px), transparent var(--gt-r));
   -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-composite: source-over; mask-composite: add;
+  /* 光圈的边上一道暖光，跟着往外推 */
+  background-image: radial-gradient(circle at 0% 100%, transparent calc(var(--gt-r) - 300px), rgba(255, 150, 60, .28) calc(var(--gt-r) - 150px), rgba(255, 196, 120, .62) calc(var(--gt-r) - 50px), transparent calc(var(--gt-r) - 4px)),
+    var(--pa-edgeL), var(--pa-edgeR), var(--pa-edgeT), var(--pa-edgeB), var(--pa-fox), var(--pa-vellum),
+    radial-gradient(ellipse 75% 70% at 50% 45%, transparent 55%, var(--gt-burn) 100%),
+    linear-gradient(color-mix(in srgb, var(--gt-tint) calc(var(--a-paper) * var(--gt-tint-a)), transparent) 0 0);
+  background-size: 100% 100%, var(--pa-edgeL-w) var(--pa-edgeL-h), var(--pa-edgeR-w) var(--pa-edgeR-h), var(--pa-edgeT-w) var(--pa-edgeT-h), var(--pa-edgeB-w) var(--pa-edgeB-h),
+    var(--pa-fox-w) var(--pa-fox-h), var(--pa-vellum-w) var(--pa-vellum-h), 100% 100%, 100% 100%;
+  background-position: 0 0, left top, right top, left top, left bottom, 37px 23px, 0 0, center, center;
+  background-repeat: no-repeat, repeat-y, repeat-y, repeat-x, repeat-x, repeat, repeat, no-repeat, no-repeat;
   animation: gt-kindle .88s cubic-bezier(.35, .1, .3, 1) both, gt-warm .88s ease-out both; transition-duration: .3s; }
 @keyframes gt-kindle {
   0% { --gt-r: 0px; } 14% { --gt-r: 300px; } 22% { --gt-r: 250px; } 46% { --gt-r: 820px; } 56% { --gt-r: 760px; } 100% { --gt-r: 2400px; }
 }
-@keyframes gt-warm { 0% { filter: sepia(.7) saturate(1.6) brightness(1.35); } 60% { filter: sepia(.35) saturate(1.2) brightness(1.12); } 100% { filter: none; } }
+@keyframes gt-warm { 0% { filter: sepia(.5) saturate(1.4) brightness(1.25) hue-rotate(-14deg); } 60% { filter: sepia(.25) saturate(1.15) brightness(1.08) hue-rotate(-8deg); } 100% { filter: none; } }
 :root[data-paper="gothic"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::after {
   top: 14%; bottom: auto; height: var(--pa-flock-h); width: var(--pa-flock-w); margin-left: calc(var(--gt-w) / 2 - var(--pa-flock-w) - 40px);
-  background: var(--pa-flock) center / 100% 100% no-repeat; image-rendering: pixelated; opacity: 1; filter: drop-shadow(0 0 2px rgba(255, 90, 122, .35));
+  background: var(--pa-flock) center / 100% 100% no-repeat; image-rendering: pixelated; opacity: 1;
+  filter: drop-shadow(0 0 1px rgba(255, 170, 190, .9)) drop-shadow(0 0 5px rgba(255, 90, 122, .55));
   animation: gt-bats .86s steps(10) both; }
 @keyframes gt-bats {
   0% { transform: translate(-60px, 90px) scale(.55); opacity: 0; }
@@ -98,8 +108,11 @@
 /* 章名：「第几章」用朱红写（手抄本里的红字标题），下面一道酒红细线，中间一颗小菱形 */
 :root[data-paper="gothic"] body.has-scene .ch-no { color: var(--gt-rubric); letter-spacing: .08em; }
 :root[data-paper="gothic"] body.has-scene .ch-head { padding-top: 50px; padding-bottom: 12px;
-  background: linear-gradient(45deg, transparent 35%, var(--gt-line) 36% 64%, transparent 65%) center bottom 1px / 8px 8px no-repeat,
-    linear-gradient(90deg, transparent, var(--gt-line2) 15% 45%, transparent 47% 53%, var(--gt-line2) 55% 85%, transparent) center bottom 4px / calc(100% - 64px) 1px no-repeat; }
+  background: linear-gradient(to bottom right, transparent 50%, var(--gt-line) 50%) calc(50% - 3px) bottom 6px / 6px 6px no-repeat,
+    linear-gradient(to bottom left, transparent 50%, var(--gt-line) 50%) calc(50% + 3px) bottom 6px / 6px 6px no-repeat,
+    linear-gradient(to top right, transparent 50%, var(--gt-line) 50%) calc(50% - 3px) bottom 0 / 6px 6px no-repeat,
+    linear-gradient(to top left, transparent 50%, var(--gt-line) 50%) calc(50% + 3px) bottom 0 / 6px 6px no-repeat,
+    linear-gradient(90deg, transparent, var(--gt-line2) 15% 45%, transparent 47% 53%, var(--gt-line2) 55% 85%, transparent) center bottom 6px / calc(100% - 64px) 1px no-repeat; }
 
 /* ---------- 字数牌子：黑紫底的铁牌，酒红边、银色内线，顶上趴一只蝙蝠；写满了边上透出血红的光 ---------- */
 .demon[data-style="gothic"] .demon-body .demon-badge { border-radius: 0; background: #160e19; color: #e9def0; border: 2px solid #6e1f3c;
