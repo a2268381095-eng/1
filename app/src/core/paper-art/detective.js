@@ -114,7 +114,7 @@ function stamp(g, w, h, t, rnd) {
     if (a < .35) { d[i + 3] = 0; continue; }
     const ink = blot(x, y) * .7 + rnd() * .5;
     d[i] = red[0]; d[i + 1] = red[1]; d[i + 2] = red[2];
-    d[i + 3] = ink < .28 ? 0 : Math.round((.55 + Math.min(.45, ink * .4)) * 255);
+    d[i + 3] = ink < .3 ? 0 : Math.round((dark ? .4 : .42) * (1 + Math.min(.6, ink * .5)) * 255);
   }
   g.putImageData(img, 0, 0);
 }
@@ -123,7 +123,7 @@ function stamp(g, w, h, t, rnd) {
 function tab(g, w, h, t, rnd) {
   const dark = isDark(g, t);
   const kraft = dark ? [92, 70, 44] : [214, 176, 112], edge = dark ? [52, 38, 24] : [150, 112, 62], hi = dark ? [120, 94, 62] : [234, 204, 150];
-  const label = dark ? [196, 182, 156] : [253, 248, 232], type = dark ? [60, 48, 36] : [70, 56, 44];
+  const label = dark ? [156, 142, 116] : [246, 238, 214], type = dark ? [60, 48, 36] : [70, 56, 44];
   pixels(g, w, h, (px) => {
     for (let y = 0; y < h; y++) {
       const inset = Math.max(0, 3 - y);
@@ -132,10 +132,10 @@ function tab(g, w, h, t, rnd) {
         px(x, y, e ? edge : y === 1 ? hi : kraft, e ? .95 : .92 + rnd() * .08);
       }
     }
-    for (let y = 3; y < 11; y++) for (let x = 8; x < w - 8; x++) px(x, y, label, x === 8 || y === 3 ? .8 : 1);
-    for (const [y, a, b] of [[5, 11, 34], [8, 11, 25]]) for (let x = a; x < b; x++) if ((x - a) % 4 < 3 && rnd() < .9) px(x, y, type, .85);
+    for (let y = 3; y < 11; y++) for (let x = 8; x < w - 8; x++) px(x, y, label, x === 8 || y === 3 ? .7 : .88);
+    for (const [y, a, b] of [[5, 11, 34], [8, 11, 25]]) for (let x = a; x < b; x++) if ((x - a) % 4 < 3 && rnd() < .9) px(x, y, type, 1);
     // 签上一道红杠（归档）
-    for (let x = 37; x < w - 11; x++) px(x, 6, [190, 36, 44], .8), px(x, 7, [190, 36, 44], .8);
+    for (let x = 37; x < w - 11; x++) px(x, 6, [190, 36, 44], .95), px(x, 7, [190, 36, 44], .95);
   }, false);
 }
 

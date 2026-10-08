@@ -161,19 +161,19 @@
 /* 200：换红色色带 */
 .demon[data-style="detective"] .demon-combo:not([data-level="0"]) { --dt-c: #b3262e; }
 .demon[data-style="detective"] .demon-combo:not([data-level="0"]) .dc-label { background: linear-gradient(#b3262e 0 0) 9px calc(100% - 5px) / calc(100% - 18px) 1px no-repeat, #fbf6e6; }
-/* 500：铁壳换黄铜边，放大镜在计数轮上来回照 */
+/* 500：铁壳换黄铜边，右上角一只放大镜凑过来照数字 */
 .demon[data-style="detective"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"]) .dc-num { box-shadow: inset 0 0 0 1px #10201a, inset 0 2px 0 rgba(255, 255, 255, .18), 0 0 0 2px #c9a24a, 0 0 0 3px #6b4f1c; }
 .demon[data-style="detective"] .demon-combo::before, .demon[data-style="detective"] .demon-combo::after { content: ""; position: absolute; z-index: 3; pointer-events: none; opacity: 0; transition: opacity .3s; }
 /* 镜片 */
-.demon[data-style="detective"] .demon-combo::before { left: 6px; top: calc(50% - 15px); width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%; border: 3px solid #c9a24a;
+.demon[data-style="detective"] .demon-combo::before { left: auto; right: -16px; top: 2px; width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%; border: 3px solid #c9a24a;
   background: radial-gradient(circle at 30% 28%, rgba(255, 255, 255, .75) 0 9%, rgba(220, 240, 255, .06) 12% 100%); box-shadow: 0 0 0 1px #6b4f1c, inset 0 0 0 1px #6b4f1c; }
 /* 镜柄 */
-.demon[data-style="detective"] .demon-combo::after { left: 23px; top: calc(50% + 4px); width: 4px; height: 13px; border-radius: 1px; background: #5a3a1e; box-shadow: 0 0 0 1px #2a1a0c; rotate: -40deg; transform-origin: 50% 0; }
+.demon[data-style="detective"] .demon-combo::after { left: auto; right: -19px; top: 21px; width: 4px; height: 13px; border-radius: 1px; background: #5a3a1e; box-shadow: 0 0 0 1px #2a1a0c; rotate: -40deg; transform-origin: 50% 0; }
 .demon[data-style="detective"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"])::before,
 .demon[data-style="detective"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"])::after { opacity: 1; }
 [data-motion="full"] .demon[data-style="detective"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"])::before,
 [data-motion="full"] .demon[data-style="detective"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"])::after { animation: dt-lens 2.6s ease-in-out infinite; }
-@keyframes dt-lens { 0%, 100% { translate: 0 0; } 45%, 55% { translate: 46px -2px; } }
+@keyframes dt-lens { 0%, 100% { translate: 0 0; } 30% { translate: -5px 3px; } 60% { translate: -2px -2px; } }
 /* 1000：卷筒左右走（一格一格），纸条跟着走 */
 [data-motion="full"] .demon[data-style="detective"] .demon-combo:is([data-level="1000"], [data-level="2000"]) .dc-label { animation: dt-carriage 1.2s steps(6) infinite; }
 @keyframes dt-carriage { 0% { translate: 8px 0; } 83% { translate: -8px 0; } 100% { translate: 8px 0; } }
