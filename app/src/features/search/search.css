@@ -1,0 +1,89 @@
+/* 查找替换面板（右侧栏，宽版） */
+.panel-body.sr-body { display: flex; flex-direction: column; overflow: hidden; padding: 0; }
+.sr-panel { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.sr-panel [hidden] { display: none !important; }
+.sr-top { display: grid; gap: 7px; padding: 10px 10px 8px; border-bottom: 1px solid var(--line); }
+.sr-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
+
+/* 范围 */
+.sr-scope { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.sr-seg { border: 1px solid var(--line-strong); background: var(--surface); color: var(--muted); border-radius: 999px; padding: 2px 10px;
+  font-size: 12.5px; cursor: pointer; white-space: nowrap; }
+.sr-seg:hover { background: var(--hover); color: var(--ink); }
+.sr-seg[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.sr-vol { width: auto; max-width: 100%; min-width: 0; flex: 1 1 140px; padding: 3px 8px; font-size: 12.5px; }
+
+/* 查找框 */
+.sr-line { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.sr-q { flex: 1; min-width: 0; }
+.sr-q.bad { border-color: var(--danger); outline-color: var(--danger-soft); }
+.sr-count { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; min-width: 34px; text-align: right; padding-right: 2px; white-space: nowrap; }
+.sr-opts { gap: 2px; }
+.sr-opt, .sr-fold { height: 26px; padding: 0 7px; font-size: 12.5px; }
+.sr-fold .ico svg { width: 14px; height: 14px; transition: transform .15s; }
+.sr-fold[aria-expanded="true"] .ico svg { transform: rotate(180deg); }
+.sr-fold.on { color: var(--accent); }
+.sr-adv { gap: 8px; }
+.sr-err { margin: 0; padding: 6px 9px; border-radius: 6px; background: var(--danger-soft); color: var(--danger); font-size: 12.5px; line-height: 1.6; }
+.sr-err b { font-weight: 600; }
+.sr-err .muted { color: var(--muted); }
+.sr-rep { display: grid; gap: 6px; }
+.sr-filter { display: grid; gap: 6px; padding: 8px 9px; border: 1px dashed var(--line-strong); border-radius: 8px; background: var(--surface); font-size: 13px; }
+.sr-num { width: 84px; padding: 3px 8px; }
+.sr-note { margin: 0; font-size: 12px; line-height: 1.6; }
+
+/* 常用筛选 */
+.sr-presets { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.sr-lab { font-size: 12px; margin-right: 2px; }
+.sr-chip { display: inline-flex; align-items: center; max-width: 100%; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.sr-chip-b { border: 0; background: transparent; color: inherit; cursor: pointer; padding: 2px 4px 2px 10px; font-size: 12.5px; max-width: 160px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sr-chip-x { border: 0; background: transparent; color: inherit; cursor: pointer; width: 20px; height: 20px; border-radius: 50%; display: inline-grid;
+  place-items: center; margin-right: 2px; opacity: .7; }
+.sr-chip-x:hover { opacity: 1; background: var(--hover); }
+.sr-chip-x .ico svg { width: 11px; height: 11px; }
+
+/* 结果 */
+.sr-sum { display: flex; align-items: center; gap: 4px; min-height: 30px; padding: 4px 10px; font-size: 12.5px; color: var(--muted); border-bottom: 1px solid var(--line); }
+.sr-sum:empty { display: none; }
+/* 底部多留一段，最后几条能滚到小恶魔上面 */
+.sr-list { flex: 1; min-height: 0; overflow: auto; padding: 4px 6px 160px; }
+.sr-group { margin-top: 6px; }
+.sr-gh { display: flex; align-items: center; gap: 6px; padding: 4px 4px; position: sticky; top: -4px; background: var(--side); z-index: 1; }
+.sr-gt { flex: 1; min-width: 0; text-align: left; border: 0; background: transparent; cursor: pointer; padding: 2px 4px; border-radius: 4px;
+  font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sr-gt:hover { background: var(--hover); }
+.sr-gn { font-size: 11.5px; color: var(--muted); background: var(--hover); border-radius: 9px; padding: 0 7px; font-variant-numeric: tabular-nums; }
+.sr-hit { display: flex; align-items: flex-start; gap: 2px; border-radius: 6px; }
+.sr-hit:hover { background: var(--hover); }
+.sr-hit.cur { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); }
+.sr-cb { padding: 6px 2px 0 6px; }
+.sr-go { flex: 1; min-width: 0; text-align: left; border: 0; background: transparent; cursor: pointer; padding: 5px 8px; font-family: var(--f-text);
+  font-size: 13.5px; line-height: 1.6; color: var(--muted); overflow-wrap: anywhere; border-radius: 6px; }
+.sr-m { background: var(--mark); color: var(--ink); border-radius: 2px; padding: 0 1px; text-decoration: none; }
+del.sr-m { background: var(--danger-soft); color: var(--danger); text-decoration: line-through; }
+.sr-ins { background: var(--ok-soft); color: var(--ok); text-decoration: none; border-radius: 2px; padding: 0 1px; margin-left: 1px; }
+.sr-hit.cur .sr-m:not(del) { background: var(--mark-cur); }
+.sr-more { margin: 8px 6px 0; font-size: 12px; line-height: 1.6; }
+.sr-ch { display: grid; gap: 1px; width: 100%; text-align: left; border: 0; background: transparent; cursor: pointer; padding: 7px 9px; border-radius: 6px; }
+.sr-ch:hover { background: var(--hover); }
+.sr-ch.cur { background: var(--accent-soft); }
+.sr-ch-t { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sr-ch-m { font-size: 12px; color: var(--muted); }
+.sr-done { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid var(--line); background: var(--ok-soft); color: var(--ok); font-size: 12.5px; }
+.sr-done span { min-width: 0; }
+
+/* 手机：上半屏正文，下半屏面板，互不遮挡 */
+@media (max-width: 640px) {
+  .ws.wide-right.has-search .ws-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 55%);
+    grid-template-areas: "center" "right"; }
+  .ws.wide-right.has-search .side-left { display: none; }
+  .ws.wide-right.has-search .side-right { display: flex; border-left: 0; border-top: 1px solid var(--line); min-height: 0; }
+  .panel-body.sr-body { overflow: auto; }
+  .sr-panel { flex: none; }
+  .sr-list { overflow: visible; flex: none; }
+  .sr-gh { top: 0; }
+  .sr-list { padding-bottom: 12px; }
+  /* 下半屏放不下小恶魔，面板开着时她先躲一下，关掉就回来 */
+  body.search-open .demon { display: none; }
+}

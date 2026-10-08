@@ -29,6 +29,7 @@ https://claude.ai/artifact/5qDbaq5hUWxRFzHuvwhaEL
 - 结构：`src/core/`（数据、返回、撤销、浮层、命令表），`src/features/<功能>/`（每个功能一个目录，export `register()`，在 `features/index.js` 登记）。
 - 编辑器 CodeMirror 6，每章一份撤销记录；批量改正文走 `ws.applyBatch`，算一步撤销。
 - 小恶魔的动画和台词在构建时从 `assistant_sprite/styles/*` 拷进来（`src/generated/sprites.json`）。
+- 桌面版：`app/src-tauri/`（Tauri 2，只开窗口）。推送 `app/` 的改动后 GitHub Actions（`.github/workflows/desktop.yml`）在 Windows 上打 NSIS 安装包，在那次运行的 Artifacts 里下载；macOS 手动运行。图标 `app/app-icon.png`，改了以后 `npx tauri icon app-icon.png -o src-tauri/icons`。
 
 ## 软件原则
 

@@ -1,0 +1,71 @@
+/* 历史版本：右侧栏的版本列表 + 盖在正文区上面的左右对比 */
+.panel-body.ver-body { padding: 0 0 16px; }
+.ver-top { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; gap: 8px; padding: 8px 12px 8px 14px; background: var(--side);
+  border-bottom: 1px solid var(--line); min-width: 0; }
+.ver-ch { flex: 1; min-width: 0; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ver-n { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ver-list { display: grid; gap: 1px; padding: 2px 8px; }
+.ver-day { padding: 10px 8px 3px; font-size: 12px; font-weight: 600; color: var(--muted); letter-spacing: .04em; }
+.ver-item { display: flex; align-items: center; gap: 6px; width: 100%; min-width: 0; padding: 7px 8px; border: 0; border-radius: 6px; background: transparent;
+  color: var(--ink); cursor: pointer; text-align: left; font-variant-numeric: tabular-nums; }
+.ver-item:hover { background: var(--hover); }
+.ver-item.cur { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+.ver-time { font-weight: 600; font-size: 13.5px; }
+.ver-tag { font-size: 11px; padding: 0 6px; white-space: nowrap; }
+.ver-tag.now { background: var(--ok-soft); color: var(--ok); }
+.ver-sp { flex: 1; }
+.ver-words { font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+.ver-delta { min-width: 48px; text-align: right; font-size: 12.5px; color: var(--muted); white-space: nowrap; }
+.ver-delta.up { color: var(--ok); }
+.ver-delta.down { color: var(--danger); }
+.ver-delta.first { color: var(--faint); }
+.ver-note { margin: 10px 16px 0; font-size: 12px; line-height: 1.6; }
+.ver-empty { padding: 28px 12px; }
+
+.center.ver-on { position: relative; }
+.ver-overlay { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column; min-width: 0; background: var(--paper); color: var(--ink); }
+.ver-head { display: flex; align-items: center; gap: 6px; padding: 7px 8px; border-bottom: 1px solid var(--line); background: var(--bar); flex: 0 0 auto; min-width: 0; }
+.ver-head h2 { margin: 0; font-size: 15px; font-weight: 600; white-space: nowrap; }
+.ver-sub { flex: 1; min-width: 0; font-size: 12.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ver-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--line); background: var(--surface); flex: 0 0 auto; }
+.ver-sum { flex: 1 1 220px; min-width: 0; font-size: 13.5px; overflow-wrap: anywhere; }
+.ver-sum b { color: var(--accent); font-variant-numeric: tabular-nums; }
+.ver-btns { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-left: auto; }
+.ver-only { font-size: 13px; }
+.ver-only input { accent-color: var(--accent); }
+
+.ver-scroll { flex: 1 1 auto; min-height: 0; overflow: auto; }
+.ver-cols, .ver-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.ver-cols { position: sticky; top: 0; z-index: 1; background: var(--bar); border-bottom: 1px solid var(--line); }
+.ver-col-t { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; padding: 6px 14px; min-width: 0; font-size: 12.5px; }
+.ver-col-t + .ver-col-t, .ver-cell + .ver-cell { border-left: 1px solid var(--line); }
+.ver-col-name { font-weight: 600; color: var(--ink); min-width: 0; overflow-wrap: anywhere; }
+.ver-key { font-size: 11.5px; padding: 0 5px; text-decoration: none !important; }
+.ver-grid { padding-bottom: 48px; }
+.ver-row { border-bottom: 1px solid var(--line); }
+.ver-row.same { color: var(--muted); }
+.ver-cell { min-width: 0; padding: 6px 14px; font-family: var(--f-text); font-size: 15px; line-height: 1.85; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ver-cell.blank { background: var(--side); }
+.ver-ins { background: var(--ok-soft); color: var(--ok); border-radius: 2px; }
+.ver-del { background: var(--danger-soft); color: var(--danger); text-decoration: line-through; text-decoration-color: var(--danger); border-radius: 2px; }
+.ver-nl { font-family: var(--f-ui); font-size: .8em; opacity: .8; }
+.ver-fold { display: block; width: 100%; padding: 6px 10px; border: 0; border-bottom: 1px solid var(--line); background: var(--side); color: var(--muted);
+  font-size: 12.5px; cursor: pointer; }
+.ver-fold:hover { background: var(--hover); color: var(--ink); }
+.ver-same { padding: 40px 16px; }
+
+/* 手机：先是整屏的版本列表，点一版换成整屏的对比，返回回到列表 */
+@media (max-width: 640px) {
+  .ws.wide-right.has-ver .ws-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); grid-template-areas: "right"; }
+  .ws.wide-right.has-ver .side-left, .ws.wide-right.has-ver .center { display: none; }
+  .ws.wide-right.has-ver .side-right { display: flex; border-left: 0; min-width: 0; }
+  .ws.wide-right.has-ver.ver-cmp .ws-body { grid-template-areas: "center"; }
+  .ws.wide-right.has-ver.ver-cmp .center { display: flex; }
+  .ws.wide-right.has-ver.ver-cmp .side-right { display: none; }
+  .ver-bar { padding: 8px 10px; }
+  .ver-col-t { padding: 6px 8px; }
+  .ver-cell { padding: 6px 8px; font-size: 14px; line-height: 1.75; }
+  .ver-list { padding-bottom: 24px; }
+  /* 整屏放不下小恶魔，面板开着时她先躲一下，关掉就回来 */
+  body.ver-open .demon { display: none; }
+}
