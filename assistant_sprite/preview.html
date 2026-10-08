@@ -1,0 +1,457 @@
+<title>像素小助手预览</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;600&display=swap">
+<style>
+/* Layout: 左边是嵌在写作软件里的小人（实际尺寸），右边是放大舞台和控制台；窄屏上下叠放 */
+:root {
+  --bg: #f5eff2;
+  --surface: #fffafc;
+  --ink: #2f1d28;
+  --muted: #7d6874;
+  --line: #e6d7df;
+  --accent: #b23f77;
+  --accent-ink: #ffffff;
+  --accent-soft: #f7dfea;
+  --grid: #f0e5eb;
+  --stage-shadow: rgba(58, 26, 44, 0.22);
+
+  --app-paper: #fffdfa;
+  --app-side: #f7eff3;
+  --app-bar: #f0e5eb;
+  --app-ink: #2c2127;
+  --app-muted: #8a7480;
+  --app-line: #eadde4;
+  --app-shadow: rgba(58, 26, 44, 0.2);
+  --bubble: #ffffff;
+  --bubble-ink: #3a1a2c;
+  --bubble-line: #3a1a2c;
+
+  --f-ui: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --f-text: "Noto Serif SC", "Songti SC", "SimSun", serif;
+  --f-pixel: "DotGothic16", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151017; --surface: #1e1720; --ink: #f1e5ec; --muted: #a58f9c; --line: #352a38;
+    --accent: #ec82b1; --accent-ink: #2a0f1e; --accent-soft: #3b2231; --grid: #241b27;
+    --stage-shadow: rgba(0, 0, 0, 0.5);
+    --app-paper: #1b151d; --app-side: #171219; --app-bar: #221a25; --app-ink: #eadde4;
+    --app-muted: #9c8794; --app-line: #31263a; --app-shadow: rgba(0, 0, 0, 0.5);
+    --bubble: #2a2030; --bubble-ink: #f6e9f0; --bubble-line: #f0a8c8;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #151017; --surface: #1e1720; --ink: #f1e5ec; --muted: #a58f9c; --line: #352a38;
+  --accent: #ec82b1; --accent-ink: #2a0f1e; --accent-soft: #3b2231; --grid: #241b27;
+  --stage-shadow: rgba(0, 0, 0, 0.5);
+  --app-paper: #1b151d; --app-side: #171219; --app-bar: #221a25; --app-ink: #eadde4;
+  --app-muted: #9c8794; --app-line: #31263a; --app-shadow: rgba(0, 0, 0, 0.5);
+  --bubble: #2a2030; --bubble-ink: #f6e9f0; --bubble-line: #f0a8c8;
+  color-scheme: dark;
+}
+/* 模拟软件自己的浅色 / 深色皮肤，和页面主题分开切换 */
+.app[data-skin="light"] {
+  --app-paper: #fffdfa; --app-side: #f7eff3; --app-bar: #f0e5eb; --app-ink: #2c2127;
+  --app-muted: #8a7480; --app-line: #eadde4; --app-shadow: rgba(58, 26, 44, 0.2);
+  --bubble: #ffffff; --bubble-ink: #3a1a2c; --bubble-line: #3a1a2c;
+  color-scheme: light;
+}
+.app[data-skin="dark"] {
+  --app-paper: #1b151d; --app-side: #171219; --app-bar: #221a25; --app-ink: #eadde4;
+  --app-muted: #9c8794; --app-line: #31263a; --app-shadow: rgba(0, 0, 0, 0.5);
+  --bubble: #2a2030; --bubble-ink: #f6e9f0; --bubble-line: #f0a8c8;
+  color-scheme: dark;
+}
+
+body { background: var(--bg); color: var(--ink); font-family: var(--f-ui); }
+canvas { image-rendering: crisp-edges; image-rendering: pixelated; display: block; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 48px; display: grid; gap: 20px; }
+.head { display: grid; gap: 6px; }
+.head h1 { margin: 0; font-size: 22px; font-weight: 700; letter-spacing: 0.02em; text-wrap: balance; }
+.head p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.7; max-width: 60ch; }
+.spec { font-family: var(--f-pixel); font-size: 12px; color: var(--muted); letter-spacing: 0.04em; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 900px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---------- 模拟写作软件 ---------- */
+.app { border: 1px solid var(--app-line); border-radius: 10px; overflow: hidden; background: var(--app-paper); color: var(--app-ink);
+  box-shadow: 0 18px 40px -26px var(--app-shadow); min-width: 0; }
+.app-bar { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: var(--app-bar); border-bottom: 1px solid var(--app-line);
+  font-size: 12.5px; color: var(--app-muted); flex-wrap: wrap; }
+.dots { display: flex; gap: 6px; }
+.dots span { width: 10px; height: 10px; border-radius: 50%; background: var(--app-line); }
+.app-title { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.app-body { display: grid; grid-template-columns: 148px minmax(0, 1fr); min-height: 480px; }
+@media (max-width: 560px) { .app-body { grid-template-columns: minmax(0, 1fr); } .app-side { display: none; } }
+.app-side { background: var(--app-side); border-right: 1px solid var(--app-line); padding: 14px 8px; font-size: 13px; }
+.app-side h3 { margin: 0 6px 8px; font-size: 11px; font-weight: 500; letter-spacing: 0.1em; color: var(--app-muted); }
+.app-side ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.app-side li { padding: 6px 8px; border-radius: 5px; color: var(--app-muted); }
+.app-side li.cur { background: var(--app-paper); color: var(--app-ink); font-weight: 500; }
+.app-editor { position: relative; min-width: 0; }
+.doc { font-family: var(--f-text); font-size: 16px; line-height: 1.95; padding: 28px 32px 220px; max-width: 38em; outline: none; }
+.doc p { margin: 0 0 0.9em; text-indent: 2em; }
+.doc .chap { text-indent: 0; font-weight: 600; font-size: 18px; margin-bottom: 1.1em; }
+.dock { position: absolute; right: 14px; bottom: 6px; }
+.bubble { position: absolute; right: calc(100% - 22px); bottom: 62%; width: max-content; max-width: min(232px, 48vw);
+  background: var(--bubble); color: var(--bubble-ink); border: 2px solid var(--bubble-line); box-shadow: 3px 3px 0 var(--bubble-line);
+  padding: 8px 11px; font-size: 13px; line-height: 1.65; font-family: var(--f-ui); }
+.bubble::after { content: ""; position: absolute; right: 10px; bottom: -8px; width: 8px; height: 8px; background: var(--bubble);
+  border-right: 2px solid var(--bubble-line); border-bottom: 2px solid var(--bubble-line); transform: skewX(-30deg); }
+.app-status { display: flex; gap: 16px; padding: 6px 12px; border-top: 1px solid var(--app-line); font-size: 12px; color: var(--app-muted);
+  font-variant-numeric: tabular-nums; flex-wrap: wrap; background: var(--app-bar); }
+.app-status .who { margin-left: auto; color: var(--app-ink); }
+.skin { display: inline-flex; border: 1px solid var(--app-line); border-radius: 5px; overflow: hidden; }
+.skin button { border: 0; background: transparent; padding: 2px 8px; cursor: pointer; font-size: 12px; color: var(--app-muted); }
+.skin button[aria-pressed="true"] { background: var(--app-paper); color: var(--app-ink); }
+
+/* ---------- 控制台 ---------- */
+.panel { display: grid; gap: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+.stage { display: grid; justify-items: center; gap: 8px; padding: 14px 12px 10px; border: 1px solid var(--line); border-radius: 6px;
+  background-color: var(--surface);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 16px 16px; }
+#big { max-width: 100%; height: auto; }
+.meta { width: 100%; display: flex; justify-content: space-between; gap: 8px; font-family: var(--f-pixel); font-size: 12px; color: var(--muted);
+  font-variant-numeric: tabular-nums; }
+.note { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+.note:empty { display: none; }
+.group { display: grid; gap: 8px; }
+.label { margin: 0; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; color: var(--muted); }
+.acts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.act { padding: 9px 4px; border: 1px solid var(--line); background: var(--bg); border-radius: 6px; cursor: pointer; font-size: 14px; }
+.act:hover { border-color: var(--accent); }
+.act[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.seg button { border: 0; border-right: 1px solid var(--line); background: transparent; padding: 6px 12px; cursor: pointer; font-size: 13px;
+  font-variant-numeric: tabular-nums; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); font-weight: 500; }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.6; color: var(--ink); cursor: pointer; }
+.check input { margin-top: 4px; accent-color: var(--accent); }
+.strip { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 4px; }
+.strip canvas { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 3px; background: var(--bg); cursor: pointer; }
+.strip canvas.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.tools { display: flex; gap: 6px; }
+.tool { padding: 6px 12px; border: 1px solid var(--line); background: var(--bg); border-radius: 6px; cursor: pointer; font-size: 13px; }
+.tool:hover { border-color: var(--accent); }
+details { font-size: 13px; line-height: 1.75; color: var(--muted); }
+details summary { cursor: pointer; color: var(--ink); }
+details ul { margin: 8px 0 0; padding-left: 1.2em; }
+code { font-family: var(--f-pixel); font-size: 12px; color: var(--ink); }
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <h1>像素小助手</h1>
+    <p>左边是她待在写作软件里的样子，右边放大看细节。点按钮切换动作，也可以直接在稿纸上打字，停笔两秒她会接话。</p>
+    <span class="spec">59×81 PX · 4 ANIMS × 8 FRAMES · 14 COLORS</span>
+  </header>
+
+  <div class="grid">
+    <section class="app" id="app" aria-label="模拟写作软件">
+      <div class="app-bar">
+        <div class="dots" aria-hidden="true"><span></span><span></span><span></span></div>
+        <span class="app-title">雨夜书店（示例稿）</span>
+        <div class="skin" role="group" aria-label="软件皮肤">
+          <button type="button" id="skin-auto" data-skin="auto" aria-pressed="true">跟随</button>
+          <button type="button" id="skin-light" data-skin="light" aria-pressed="false">浅色</button>
+          <button type="button" id="skin-dark" data-skin="dark" aria-pressed="false">深色</button>
+        </div>
+      </div>
+      <div class="app-body">
+        <aside class="app-side">
+          <h3>章节</h3>
+          <ol>
+            <li>楔子</li>
+            <li class="cur">第一章 门铃</li>
+            <li>第二章 旧信</li>
+            <li>第三章 钟楼</li>
+          </ol>
+        </aside>
+        <div class="app-editor">
+          <div class="doc" id="doc" contenteditable="true" spellcheck="false" aria-label="示例正文，可编辑">
+            <p class="chap">第一章 门铃</p>
+            <p>雨下到第三天，旧书店的门铃终于响了。</p>
+            <p>林栀没有抬头。她正把一本受潮的诗集摊在暖气片上，一页一页翻开，翻到第四十二页时停了停，那页夹着一张电影票根。</p>
+            <p>进门的人收了伞，在门口站了很久，久到伞尖滴下的水在地板上积成一小片。</p>
+            <p>“你们这里，收旧信吗？”他问。</p>
+          </div>
+          <div class="dock" id="dock">
+            <div class="bubble" id="bubble" role="status" aria-live="polite" hidden></div>
+            <canvas id="mini" aria-label="像素小助手"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="app-status">
+        <span id="count">字数 0</span>
+        <span>已自动保存</span>
+        <span class="who" id="state">小助手：待机</span>
+      </div>
+    </section>
+
+    <aside class="panel" aria-label="动画控制">
+      <div class="stage">
+        <canvas id="big" aria-label="放大的小助手"></canvas>
+        <div class="meta"><span id="meta-anim">idle · 160ms</span><span id="meta-frame">01/08</span></div>
+      </div>
+      <p class="note" id="stage-note"></p>
+
+      <div class="group">
+        <h2 class="label">动作</h2>
+        <div class="acts">
+          <button type="button" class="act" id="act-idle" data-act="idle" aria-pressed="true">待机</button>
+          <button type="button" class="act" id="act-blink" data-act="blink" aria-pressed="false">眨眼</button>
+          <button type="button" class="act" id="act-talk" data-act="talk" aria-pressed="false">说话</button>
+          <button type="button" class="act" id="act-idea" data-act="idea" aria-pressed="false">灵感</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="group">
+          <h2 class="label">界面里的大小</h2>
+          <div class="seg" role="group" aria-label="界面里的大小">
+            <button type="button" id="scale-1" data-scale="1" aria-pressed="false">1×</button>
+            <button type="button" id="scale-2" data-scale="2" aria-pressed="true">2×</button>
+            <button type="button" id="scale-3" data-scale="3" aria-pressed="false">3×</button>
+          </div>
+        </div>
+        <div class="group">
+          <h2 class="label">速度</h2>
+          <div class="seg" role="group" aria-label="播放速度">
+            <button type="button" id="speed-05" data-speed="0.5" aria-pressed="false">0.5×</button>
+            <button type="button" id="speed-1" data-speed="1" aria-pressed="true">1×</button>
+            <button type="button" id="speed-2" data-speed="2" aria-pressed="false">2×</button>
+          </div>
+        </div>
+      </div>
+
+      <label class="check" for="auto">
+        <input type="checkbox" id="auto" checked>
+        <span>自动模式：待机时每隔几秒随机眨眼；你在稿纸上写了几个字、停笔两秒，她会说一句。</span>
+      </label>
+
+      <div class="group">
+        <h2 class="label">当前动画的 8 帧（点一帧可定格）</h2>
+        <div class="strip" id="strip"></div>
+        <div class="tools">
+          <button type="button" class="tool" id="pause">暂停</button>
+          <button type="button" class="tool" id="step">下一帧</button>
+        </div>
+      </div>
+
+      <details>
+        <summary>接入软件时</summary>
+        <ul>
+          <li>用 <code>out/sheet.png</code>，每格 59×81，从上到下依次是待机、眨眼、说话、灵感。</li>
+          <li>放大一律用最近邻缩放，CSS 写 <code>image-rendering: pixelated</code>。</li>
+          <li>待机循环播放，眨眼和灵感各播一遍后回到待机；说话在文字打完前一直循环。</li>
+          <li>脚下的影子不在精灵表里，是本页按每帧的上下浮动画的。</li>
+        </ul>
+      </details>
+    </aside>
+  </div>
+</div>
+
+<script>
+(() => {
+  const FW = 59, FH = 81, N = 8, SH = 7;          // SH：脚下留给影子的高度
+  const ANIM = {
+    idle:  { row: 0, ms: 160, loop: true,  name: "待机" },
+    blink: { row: 1, ms: 160, loop: false, name: "眨眼" },
+    talk:  { row: 2, ms: 120, loop: true,  name: "说话" },
+    idea:  { row: 3, ms: 110, loop: false, name: "灵感" },
+  };
+  const FLOAT = [0, 0, -1, -1, -1, -1, 0, 0];      // 与 build.py 的 BOB 一致
+  const BOB = { idle: FLOAT, blink: FLOAT, talk: FLOAT, idea: [0, 0, -1, -2, -2, -1, 0, 0] };
+  const TALK = [
+    "第二段可以短一点。门铃响了和她不抬头之间，留一拍。",
+    "票根这个细节好，后面记得让它再出现一次。",
+    "他问的那句话，可以晚一行再出来，先写他看了一圈书架。",
+  ];
+  const IDEA = [
+    "有了！他要卖的那封旧信，收信人就是林栀。",
+    "有了！票根上的日期，正好是三年前下雨的那天。",
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const app = $("app"), doc = $("doc"), bubble = $("bubble"), mini = $("mini"), big = $("big");
+  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const st = { anim: "idle", f: 0, acc: 0, speed: 1, paused: reduce, scale: 2, auto: true,
+               loops: 0, nextBlink: 3, talking: false, after: null };
+  const said = { talk: 0, idea: 0 };
+
+  const sheet = new Image();
+  let ready = false;
+  sheet.onload = () => { ready = true; stripFor = null; draw(); };
+  sheet.onerror = () => { $("stage-note").textContent = "精灵表没有加载出来：请确认 out/sheet.png 和本页放在一起。"; };
+  sheet.src = "out/sheet.png";
+  if (reduce) $("stage-note").textContent = "系统开了“减少动态效果”，先暂停了，点“播放”查看动画。";
+
+  const rand = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+  const cssVar = (el, name) => getComputedStyle(el).getPropertyValue(name).trim();
+
+  function play(name) {
+    st.anim = name; st.f = 0; st.acc = 0;
+    draw();
+  }
+
+  function advance() {
+    st.f += 1;
+    if (st.f < N) return;
+    const a = ANIM[st.anim];
+    if (!a.loop) {
+      const next = st.after; st.after = null;
+      if (next) next(); else play("idle");
+      return;
+    }
+    st.f = 0;
+    if (st.anim === "talk" && !st.talking) { play("idle"); return; }
+    if (st.anim === "idle" && st.auto && ++st.loops >= st.nextBlink) {
+      st.loops = 0; st.nextBlink = rand(2, 5); play("blink");
+    }
+  }
+
+  function paint(cv, scale, shadow) {
+    const w = FW * scale, h = (FH + SH) * scale;
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; cv.style.width = w + "px"; }
+    const c = cv.getContext("2d");
+    c.imageSmoothingEnabled = false;
+    c.clearRect(0, 0, w, h);
+    // 影子：人往上浮，影子跟着缩小
+    const half = 11 + BOB[st.anim][st.f], cx = 30, cy = FH + 3;
+    c.fillStyle = shadow;
+    for (const [dy, hw] of [[-1, half - 3], [0, half], [1, half - 3]]) {
+      c.fillRect((cx - hw) * scale, (cy + dy) * scale, hw * 2 * scale, scale);
+    }
+    if (ready) c.drawImage(sheet, st.f * FW, ANIM[st.anim].row * FH, FW, FH, 0, 0, FW * scale, FH * scale);
+  }
+
+  let stripFor = null;
+  function strip() {
+    const box = $("strip");
+    if (ready && stripFor !== st.anim) {
+      stripFor = st.anim;
+      box.textContent = "";
+      for (let i = 0; i < N; i++) {
+        const cv = document.createElement("canvas");
+        cv.width = FW; cv.height = FH; cv.tabIndex = 0;
+        cv.setAttribute("role", "button");
+        cv.setAttribute("aria-label", "定格在第 " + (i + 1) + " 帧");
+        cv.getContext("2d").drawImage(sheet, i * FW, ANIM[st.anim].row * FH, FW, FH, 0, 0, FW, FH);
+        const pick = () => { setPaused(true); st.f = i; draw(); };
+        cv.addEventListener("click", pick);
+        cv.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); pick(); } });
+        box.appendChild(cv);
+      }
+    }
+    [...box.children].forEach((cv, i) => cv.classList.toggle("on", i === st.f));
+  }
+
+  function draw() {
+    paint(mini, st.scale, cssVar(app, "--app-shadow"));
+    paint(big, 4, cssVar(document.documentElement, "--stage-shadow"));
+    const a = ANIM[st.anim];
+    $("meta-anim").textContent = st.anim + " · " + a.ms + "ms";
+    $("meta-frame").textContent = String(st.f + 1).padStart(2, "0") + "/0" + N;
+    $("state").textContent = "小助手：" + a.name;
+    document.querySelectorAll("[data-act]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.act === st.anim)));
+    strip();
+  }
+
+  // ---------- 说话气泡 ----------
+  let typeTimer = null, hideTimer = null;
+  function stopTalk() { clearInterval(typeTimer); clearTimeout(hideTimer); st.talking = false; }
+  function say(text) {
+    stopTalk();
+    bubble.hidden = false; bubble.textContent = "";
+    st.talking = true;
+    if (st.anim !== "talk") play("talk");
+    const chars = [...text]; let i = 0;
+    typeTimer = setInterval(() => {
+      bubble.textContent += chars[i++];
+      if (i >= chars.length) {
+        clearInterval(typeTimer); st.talking = false;
+        hideTimer = setTimeout(() => { bubble.hidden = true; }, 5000);
+      }
+    }, Math.round(60 / st.speed));
+  }
+  function idea(text) {
+    stopTalk();
+    bubble.hidden = false; bubble.textContent = "！";
+    st.after = () => say(text);
+    play("idea");
+  }
+
+  document.querySelectorAll("[data-act]").forEach((b) => b.addEventListener("click", () => {
+    st.after = null;
+    const act = b.dataset.act;
+    if (act === "idle") { stopTalk(); bubble.hidden = true; play("idle"); }
+    else if (act === "blink") play("blink");
+    else if (act === "talk") say(TALK[said.talk++ % TALK.length]);
+    else if (act === "idea") idea(IDEA[said.idea++ % IDEA.length]);
+  }));
+
+  // ---------- 设置 ----------
+  function pressOnly(sel, btn) { document.querySelectorAll(sel).forEach((b) => b.setAttribute("aria-pressed", String(b === btn))); }
+  function fitDoc() { doc.style.paddingBottom = ((FH + SH) * st.scale + 40) + "px"; }
+  document.querySelectorAll("[data-scale]").forEach((b) => b.addEventListener("click", () => {
+    st.scale = Number(b.dataset.scale); pressOnly("[data-scale]", b); fitDoc(); draw();
+  }));
+  document.querySelectorAll("[data-speed]").forEach((b) => b.addEventListener("click", () => {
+    st.speed = Number(b.dataset.speed); pressOnly("[data-speed]", b);
+  }));
+  document.querySelectorAll("[data-skin]").forEach((b) => b.addEventListener("click", () => {
+    if (b.dataset.skin === "auto") delete app.dataset.skin; else app.dataset.skin = b.dataset.skin;
+    pressOnly("[data-skin]", b); draw();
+  }));
+  $("auto").addEventListener("change", (e) => { st.auto = e.target.checked; });
+
+  function setPaused(p) { st.paused = p; $("pause").textContent = p ? "播放" : "暂停"; }
+  $("pause").addEventListener("click", () => setPaused(!st.paused));
+  $("step").addEventListener("click", () => { setPaused(true); advance(); draw(); });
+  setPaused(st.paused);
+
+  // 页面主题变了，影子颜色跟着变
+  if (window.matchMedia) matchMedia("(prefers-color-scheme: dark)").addEventListener("change", draw);
+  new MutationObserver(draw).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+  // ---------- 稿纸：字数 + 停笔接话 ----------
+  const countText = () => doc.innerText.replace(/\s/g, "").length;
+  let base = countText(), typing = null;
+  const showCount = () => { $("count").textContent = "字数 " + countText(); };
+  showCount();
+  doc.addEventListener("input", () => {
+    showCount();
+    clearTimeout(typing);
+    typing = setTimeout(() => {
+      const d = countText() - base;
+      if (d < 0) base = countText();
+      if (st.auto && d >= 6) { base = countText(); st.after = null; say("刚写了 " + d + " 字。写完这段，要我帮你看看吗？"); }
+    }, 2000);
+  });
+
+  // ---------- 主循环 ----------
+  let last = performance.now();
+  function loop(t) {
+    const dt = Math.min(t - last, 250); last = t;
+    if (!st.paused) {
+      st.acc += dt * st.speed;
+      let changed = false;
+      while (st.acc >= ANIM[st.anim].ms) { st.acc -= ANIM[st.anim].ms; advance(); changed = true; }
+      if (changed) draw();
+    }
+    requestAnimationFrame(loop);
+  }
+  fitDoc();
+  draw();
+  requestAnimationFrame(loop);
+})();
+</script>
