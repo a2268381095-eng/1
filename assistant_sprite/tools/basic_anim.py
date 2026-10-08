@@ -24,12 +24,16 @@ def main(style_dirs):
             meta = out / "anim.json"
             if meta.exists() and json.loads(meta.read_text()).get("kind", "basic") != "basic":
                 continue
-            base = load_pose(sd / "poses" / f"{key}.png")
+            pose_file = sd / "poses" / f"{key}.png"
+            if not pose_file.exists():          # 这个动作的图还没到，先跳过
+                continue
+            base = load_pose(pose_file)
             eyes = [(x0 - 1, y0 - 2, x1 + 1, y1) for x0, y0, x1, y1 in find_eyes(base)]
+            blinks = key not in ("shock", "cheer")     # 睁眼的姿势都眨眼，吓到和欢呼时不眨
             frames = []
             for i, dy in enumerate(BOB):
                 f = base
-                if eyes and key in ("idle", "think") and i in (6, 7):
+                if eyes and blinks and i in (6, 7):
                     f = blink(f, eyes, "closed" if i == 7 else "half", SKIN)
                 frames.append(shift(f, dy=dy))
             export(frames, [140] * len(frames), out, key, name, loop)

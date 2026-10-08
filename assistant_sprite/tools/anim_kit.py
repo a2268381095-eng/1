@@ -129,32 +129,56 @@ def brighten(img, mask, amount):
     return out
 
 
+def _cheek_below(c, al, box):
+    """眼睛正下方 2–4 行应该大多是脸颊的肤色（暖色、亮），披帛、纱带下面不是。"""
+    x0, y0, x1, y1 = box[:4]
+    H = c.shape[0]
+    patch = c[min(H - 1, y1 + 2):min(H, y1 + 5), x0:x1 + 1].reshape(-1, 3)
+    ok = al[min(H - 1, y1 + 2):min(H, y1 + 5), x0:x1 + 1].reshape(-1)
+    if not ok.any():
+        return False
+    p = patch[ok]
+    skin = (p[:, 0] > 215) & (p[:, 1] > 170) & (p[:, 0] >= p[:, 2]) & (p[:, 1] >= p[:, 2] - 12)
+    return skin.mean() >= 0.5
+
+
 def find_eyes(img, box=None):
-    """找青色瞳孔：返回每只眼的外框 (x0, y0, x1, y1)，从左到右。"""
+    """找一对青色瞳孔，返回 [(x0, y0, x1, y1) 左眼, 右眼]；找不准就返回 []（宁可不眨眼，也不画错）。
+    只在人物上 40% 里找；从所有青色小块里挑高低差不超过 7、左右相隔 4–20 像素的一对。
+    浅青色的披帛、纱带亮度高、块又大，会被排除。"""
     c = img[..., :3].astype(int)
-    # 瞳孔是偏深、偏饱和的青绿色；浅青色的披帛、纱带亮度高，不算
-    teal = ((c[..., 1] - c[..., 0] > 35) & (c[..., 2] - c[..., 0] > 20) & (c.max(-1) < 215)
-            & solid(img))
+    al = solid(img)
+    teal = (c[..., 1] - c[..., 0] > 25) & (c[..., 2] - c[..., 0] > 15) & (c.max(-1) < 215) & al
+    ys_all = np.where(al.any(1))[0]
+    if not len(ys_all):
+        return []
+    top, bottom = ys_all[0], ys_all[-1]
+    teal[top + int((bottom - top) * 0.4):] = False
     if box:
         x0, y0, x1, y1 = box
         m = np.zeros_like(teal)
         m[y0:y1 + 1, x0:x1 + 1] = True
         teal &= m
-    ys, xs = np.where(teal)
-    if not len(xs):
-        return []
-    order = np.argsort(xs)
-    xs, ys = xs[order], ys[order]
-    gaps = np.where(np.diff(xs) > 3)[0]
-    eyes = []
-    for part in np.split(np.arange(len(xs)), gaps + 1):
-        box = (xs[part].min(), ys[part].min(), xs[part].max(), ys[part].max())
-        if box[2] - box[0] <= 7 and box[3] - box[1] <= 6:     # 眼睛只有几个像素大
-            eyes.append(box)
-    # 两只眼睛应该在同一高度附近、挨得不远；对不上就当没找到，不做眨眼
-    if len(eyes) != 2 or abs(eyes[0][1] - eyes[1][1]) > 4 or eyes[1][0] - eyes[0][2] > 16:
-        return []
-    return eyes
+    import cv2
+    n, lab, st, _ = cv2.connectedComponentsWithStats(teal.astype(np.uint8), connectivity=8)
+    blobs = []
+    for i in range(1, n):
+        x, y, w, h, area = st[i]
+        if w <= 7 and h <= 6 and area >= 2:
+            blobs.append((x, y, x + w - 1, y + h - 1, area))
+    best = None
+    for i in range(len(blobs)):
+        for j in range(len(blobs)):
+            a, b = blobs[i], blobs[j]
+            if a[0] >= b[0]:
+                continue
+            gap = b[0] - a[2]
+            dy = abs(a[1] - b[1])
+            if 4 <= gap <= 20 and dy <= 7 and _cheek_below(c, al, a) and _cheek_below(c, al, b):
+                score = dy * 2 + abs(gap - 9) - (a[4] + b[4]) * 0.3
+                if best is None or score < best[0]:
+                    best = (score, a[:4], b[:4])
+    return [best[1], best[2]] if best else []
 
 
 def blink(img, eyes, level, skin=None, lash=None):

@@ -46,6 +46,21 @@ def foreground(src):
     return fg
 
 
+def strip_haze(src, fg, layers=40):
+    """擦掉人物身后、脚下的淡粉色光晕和爱心地影：从外往里剥淡粉色像素，碰到线稿就停。"""
+    c = src.astype(int)
+    # 光晕是偏粉紫的淡粉（蓝比绿多）；皮肤偏暖（绿比蓝多），不剥
+    haze = (c[..., 0] >= 232) & (c[..., 0] - c[..., 1] >= 14) & (c[..., 1] >= 160) & (c[..., 2] >= c[..., 1] + 4)
+    fg = fg.copy()
+    for _ in range(layers):
+        edge = fg & cv2.dilate((~fg).astype(np.uint8), np.ones((3, 3), np.uint8)).astype(bool)
+        peel = edge & haze
+        if not peel.any():
+            break
+        fg &= ~peel
+    return fg
+
+
 def split_runs(profile, parts, min_gap_frac=0.15):
     """在一维投影里找 parts-1 个切点：取最空的位置，切点之间至少隔开总长的一定比例。"""
     k = np.convolve(profile, np.ones(9) / 9, mode="same")
@@ -168,6 +183,35 @@ def figure_masks(fg, rows, src):
     return bodies
 
 
+def round_cut(alpha, side, depth=4):
+    """参考图边框截断的地方，像素版会留下一段竖直平边。把这段平边修圆：两头多削、中间少削，
+    像头发自然收拢。只删像素不加像素。"""
+    cols = np.where(alpha.any(0))[0]
+    if not len(cols):
+        return alpha
+    a = alpha.copy()
+    x_edge = cols.min() if side == "left" else cols.max()
+    rows = np.where(a[:, x_edge])[0]
+    if not len(rows):
+        return a
+    for run in np.split(rows, np.where(np.diff(rows) > 1)[0] + 1):
+        if len(run) < 8:
+            continue
+        r0, r1 = run[0], run[-1]
+        half, mid = (r1 - r0) / 2.0, (r0 + r1) / 2.0
+        d = min(depth, max(2, len(run) // 4))
+        for r in run:
+            t = (r - mid) / max(half, 1)
+            k = int(round(d * (1 - np.sqrt(max(0.0, 1 - t * t))))) + (1 if abs(t) > 0.85 else 0)
+            if k <= 0:
+                continue
+            if side == "left":
+                a[r, x_edge:x_edge + k] = False
+            else:
+                a[r, x_edge - k + 1:x_edge + 1] = False
+    return a
+
+
 def pixelize_one(src, lum, m, scale, canvas):
     ys, xs = np.where(m)
     ya, yb, xa, xb = ys.min(), ys.max(), xs.min(), xs.max()
@@ -222,6 +266,7 @@ def main():
     ap.add_argument("--char-height", type=int, default=210, help="姿势高度的中位数缩放到多少像素")
     ap.add_argument("--canvas", default="128x224")
     ap.add_argument("--colors", type=int, default=48)
+    ap.add_argument("--no-haze", action="store_true", help="擦掉身后、脚下的淡粉色光晕和爱心地影")
     a = ap.parse_args()
 
     rows = [int(x) for x in a.rows.split(",")]
@@ -233,6 +278,8 @@ def main():
     src = np.asarray(Image.open(a.image).convert("RGB")).astype(np.float32)
     lum = src @ np.array([0.299, 0.587, 0.114])
     fg = foreground(src)
+    if a.no_haze:
+        fg = strip_haze(src, fg)
     masks = figure_masks(fg, rows, src)
     heights = [np.ptp(np.where(m)[0]) + 1 for m in masks]
     widths = [np.ptp(np.where(m)[1]) + 1 for m in masks]
@@ -243,7 +290,14 @@ def main():
         scale = fit
     print(f"找到 {len(masks)} 个姿势，缩放 {scale:.3f}")
 
-    poses = [pixelize_one(src, lum, m, scale, canvas) for m in masks]
+    poses = []
+    for m in masks:
+        rgb, alpha = pixelize_one(src, lum, m, scale, canvas)
+        if m[:, :3].any():                 # 参考图里这个姿势碰到了左边框
+            alpha = round_cut(alpha, "left")
+        if m[:, -3:].any():
+            alpha = round_cut(alpha, "right")
+        poses.append((rgb, alpha))
     pal = build_palette(poses, a.colors)
     pal_arr = np.array(pal, float)
     chars = {c: list(map(int, p)) for c, p in zip(CHARS, pal)}
