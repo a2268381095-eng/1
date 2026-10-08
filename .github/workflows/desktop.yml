@@ -15,10 +15,6 @@ on:
         type: boolean
         default: false
 
-concurrency:
-  group: desktop-${{ github.ref }}
-  cancel-in-progress: false
-
 jobs:
   windows:
     if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[desktop]') }}

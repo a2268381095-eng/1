@@ -114,6 +114,12 @@ async function unit(fails) {
   }
   check(!bad, '随机 30000 段：幂等、只动空白标点、对比能还原两边' + (bad ? `（${bad} 段不对，例：${firstBad}）` : ''), fails);
 
+  const huge = '他说:"等等..."林栀没有抬头,她看着窗外的雨(很大),心想--这回真的要走了.Hello, world.\n'.repeat(5000);
+  let t0 = Date.now();
+  formatText(huge, { ...DEFAULT_RULES, mergeLines: true, cjkSpace: true });
+  const ms = Date.now() - t0;
+  check(ms < 5000, `${huge.length} 字接成一段也不卡（${ms}ms）`, fails);
+
   console.log('改动对比');
   const d1 = diffParts('他说,你好.', '他说，你好。');
   check(d1.count === 2 && JSON.stringify(d1.parts) === JSON.stringify([{ t: 0, s: '他说' }, { t: -1, s: ',' }, { t: 1, s: '，' }, { t: 0, s: '你好' }, { t: -1, s: '.' }, { t: 1, s: '。' }]), '按字对齐，改两处', fails);
@@ -259,6 +265,7 @@ async function flows(dist, fails) {
   await page.keyboard.press('Enter');
   await page.waitForTimeout(500);
   check((await page.$eval('.fmt-scheme', (e) => e.value)) === '投稿用', '存成方案后选中它', fails);
+  check(!(await page.$('.modal')), '输入框里按回车不会再弹一次', fails);
   let saved = await kv(page, 'format:schemes');
   check(Array.isArray(saved) && saved.some((s) => s.name === '投稿用' && s.rules.indent === false), '方案存在 kv format:schemes', fails);
   await page.selectOption('.fmt-scheme', '网文平台');

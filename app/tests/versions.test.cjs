@@ -59,7 +59,7 @@ async function unit(fails) {
 
   console.log('记录 → 合并 → 每一版都能还原');
   const now0 = new Date(2026, 9, 8, 15, 30).getTime();
-  function record(rows, text, ts, sinceFull) {
+  function record(rows, text, ts) {
     const prev = rows.length ? textAt(rows, rows.length - 1) : null;
     const st = chainState(rows);
     const enc = encode(prev, text, st ? st.sinceFull : 0);
@@ -98,28 +98,26 @@ async function unit(fails) {
       ts += g < 0.6 ? 60000 + Math.floor(r() * 10 * 60000) : g < 0.9 ? Math.floor(r() * 5 * HOUR) : Math.floor(r() * 2 * DAY);
     }
     const before = rows.length;
+    const original = rows.slice();
     const bad0 = verify(rows, truth, now0).bad;
     const fullsBefore = new Set(rows.filter((x) => x.kind === 'full').map((x) => x.id));
     const plan = compactChain(rows, now0);
     if (plan && plan.dels.some((id) => fullsBefore.has(id))) sawFullDeleted = true;
     rows = applyPlan(rows, plan);
     const v1 = verify(rows, truth, now0);
-    const keptRecent = [...truth.keys()].filter((id) => true).length;
-    const recentAll = [...truth.entries()].length;
     // 24 小时内的一版都不能少；最新一版一定在
-    const recentIds = [];
-    const allRows = [...truth.keys()];
+    const ids = new Set(rows.map((x) => x.id));
+    const recentKept = original.filter((x) => now0 - x.ts < DAY).every((x) => ids.has(x.id)) && ids.has(original[original.length - 1].id);
     const again = compactChain(rows, now0);
     // 时间往后走 3 天、10 天再合并
     const rowsLater = applyPlan(rows, compactChain(rows, now0 + 3 * DAY));
     const v2 = verify(rowsLater, truth, now0 + 3 * DAY);
     const rowsLater2 = applyPlan(rowsLater, compactChain(rowsLater, now0 + 10 * DAY));
     const v3 = verify(rowsLater2, truth, now0 + 10 * DAY);
-    const good = bad0 === 0 && v1.bad === 0 && v1.tierOk && v1.run <= FULL_EVERY - 1 && !again
+    const good = bad0 === 0 && v1.bad === 0 && v1.tierOk && recentKept && v1.run <= FULL_EVERY - 1 && !again
       && v2.bad === 0 && v2.tierOk && v2.run <= FULL_EVERY - 1 && v3.bad === 0 && v3.tierOk && rowsLater2.length <= rowsLater.length;
-    if (!good) { allGood = false; console.log('  种子', seed, { bad0, v1, again: !!again, v2, v3 }); }
+    if (!good) { allGood = false; console.log('  种子', seed, { bad0, v1, recentKept, again: !!again, v2, v3 }); }
     totalBefore += before; totalAfter += rows.length;
-    void keptRecent; void recentAll; void recentIds; void allRows;
   }
   check(allGood, '12 组随机编辑序列：合并前后、往后 3 天和 10 天再合并，留下的每一版都还原成当时的文字；补丁链不超过 19 节；合并第二次没东西可删', fails);
   check(totalAfter < totalBefore, `合并后变少了：${totalBefore} → ${totalAfter} 版`, fails);
@@ -130,9 +128,9 @@ async function unit(fails) {
   const now = at(8, 15, 30);
   const R = (list) => list.map((ts, i) => ({ id: 'r' + i, ts }));
   const rows = R([
-    at(1, 9, 0), at(1, 10, 0), at(1, 22, 0),            // 7 天前：同一天三版 → 留最后一版
+    new Date(2026, 8, 30, 9, 0).getTime(), new Date(2026, 8, 30, 10, 0).getTime(), new Date(2026, 8, 30, 22, 0).getTime(),   // 8 天前：同一天三版 → 留最后一版
     at(5, 10, 5), at(5, 10, 40), at(5, 11, 2),           // 3 天前：10 点两版 → 留 10:40；11 点一版
-    at(7, 15, 0), at(7, 15, 20), at(7, 15, 40),          // 不到 24 小时：全留
+    at(7, 16, 0), at(7, 16, 20), at(7, 16, 40),          // 不到 24 小时：全留
     at(8, 15, 0), at(8, 15, 1), at(8, 15, 2),
   ]);
   const keep = planKeep(rows, now);
@@ -164,7 +162,7 @@ async function unit(fails) {
   const changedParas = paras.slice(); changedParas[1] = '　　第2段，雨停了。'; changedParas[10] = '　　第11段，门铃响了。';
   const ar = alignRows(changedParas.join('\n'), paras.join('\n'));
   const fr = foldRows(ar, 1);
-  check(ar.filter((x) => !x.same).length === 2 && fr.some((x) => x.fold && x.fold.length === 7), '两处改动，中间 7 段没改的折起来', fails);
+  check(ar.filter((x) => !x.same).length === 2 && fr.some((x) => x.fold && x.fold.length === 6), '两处改动，各留一段上下文，中间 6 段没改的折起来', fails);
   const chg = ar.find((x) => !x.same);
   check(chg.l.some((p) => p.t === -1 && p.s.includes('停')) && chg.r.some((p) => p.t === 1 && p.s.includes('还在下')), '改动标在字上：左边「停」、右边「还在下」', fails);
 
@@ -199,6 +197,13 @@ const rowsOf = (page, cid) => page.evaluate((cid) => new Promise((res, rej) => {
   };
   rq.onerror = () => rej(rq.error);
 }), cid);
+/** 等到这一章正好有 n 版（机器忙的时候数据库慢一点） */
+async function waitRows(page, cid, n, ms = 6000) {
+  const end = Date.now() + ms;
+  let rows = await rowsOf(page, cid);
+  while (rows.length !== n && Date.now() < end) { await page.waitForTimeout(150); rows = await rowsOf(page, cid); }
+  return rows;
+}
 const putRows = (page, rows) => page.evaluate((rows) => new Promise((res, rej) => {
   const rq = indexedDB.open('xiaoemo-wenshu');
   rq.onsuccess = () => {
@@ -235,22 +240,22 @@ async function flows(dist, fails) {
   const { browser, page, errors } = await launch(dist);
   await newBook(page, '历史测试', [{ title: '门铃', text: T1 }]);
   const c1 = await curId(page);
-  let rows = await rowsOf(page, c1);
+  let rows = await waitRows(page, c1, 1);
   check(rows.length === 1 && E.textAt(rows, 0) === T1 && rows[0].kind === 'full', '第一次保存就记了一版（全文）', fails);
   await setText(page, T2);
   await page.waitForTimeout(1500);
   check((await rowsOf(page, c1)).length === 1, '不到 1 分钟的保存先不记', fails);
   await forward(page, 61000);
-  rows = await rowsOf(page, c1);
+  rows = await waitRows(page, c1, 2);
   check(rows.length === 2 && E.textAt(rows, 1) === T2 && rows[1].kind === 'patch', '够 1 分钟后补记了一版（只存改动）', fails);
   await setText(page, T3);
   await page.waitForTimeout(1500);
   await setText(page, T3b);
   await page.waitForTimeout(1500);
   await forward(page, 61000);
-  rows = await rowsOf(page, c1);
+  rows = await waitRows(page, c1, 3);
   check(rows.length === 3 && E.textAt(rows, 2) === T3b, '1 分钟内改了两次，只记最后的样子', fails);
-  check(rows[1].ts - rows[0].ts >= 60000 && rows[2].ts - rows[1].ts >= 60000, '两次记录至少隔 60 秒', fails);
+  check(rows.length === 3 && rows[1].ts - rows[0].ts >= 60000 && rows[2].ts - rows[1].ts >= 60000, '两次记录至少隔 60 秒', fails);
   await setText(page, T4);
   await page.waitForTimeout(1500);   // 这一次还没到 1 分钟，没进历史
 
@@ -279,7 +284,7 @@ async function flows(dist, fails) {
   await page.click('.ver-fold');
   check((await page.$$('.ver-fold')).length === cmp.folds - 1, '点开折起来的段', fails);
   await page.click('.ver-only input');
-  check((await page.$$('.ver-fold')).length === 0 && (await page.$$('.ver-row')).length >= 13, '取消「只看改动处」显示全文', fails);
+  check((await page.$$('.ver-fold')).length === 0 && (await page.$$('.ver-row.same')).length >= 8, '取消「只看改动处」显示全文', fails);
   await page.click('.ver-only input');
   await page.keyboard.press('Escape');
   await page.waitForTimeout(200);
@@ -294,7 +299,7 @@ async function flows(dist, fails) {
   check((await getText(page)) === T1, '恢复成最早那一版', fails);
   check(!(await page.$('.ver-overlay')), '恢复后关掉对比，回到列表', fails);
   check((await toastText(page)).includes('已恢复到'), '出提示条「已恢复到……的版本」', fails);
-  rows = await rowsOf(page, c1);
+  rows = await waitRows(page, c1, 4);
   const texts = decodeAll(rows);
   check(rows.length === 4 && texts[3] === T4 && rows[3].note === '恢复前', '恢复前先把现在的正文记了一版（标着「恢复前」）', fails);
   await page.waitForTimeout(400);
@@ -322,7 +327,7 @@ async function flows(dist, fails) {
   await setText(page, '　　第二章的开头。');
   await page.waitForTimeout(1500);
   const c2 = await curId(page);
-  check(c2 !== c1 && (await rowsOf(page, c2)).length === 1, '新的一章第一次保存也记了一版', fails);
+  check(c2 !== c1 && (await waitRows(page, c2, 1)).length === 1, '新的一章第一次保存也记了一版', fails);
   check(await page.$('.ver-list'), '换章时面板还开着', fails);
   await page.waitForTimeout(400);
   check((await page.textContent('.ver-top')).includes('第二章') && (await page.$$('.ver-item')).length === 1, '面板跟着换成这一章的版本', fails);
@@ -358,24 +363,22 @@ async function flows(dist, fails) {
   const dayStart = (ts) => { const d = new Date(ts); return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); };
   // 第二章前面补一串旧版本：10 天前同一天 3 版、3 天前同一小时 3 版，用补丁接起来
   const old = [];
-  const oldTexts = ['　　旧稿一。', '　　旧稿一。改了一句。', '　　旧稿一。改了两句。', '　　旧稿二。', '　　旧稿二，又改。', '　　旧稿二，又改了。'];
+  const OP = '　　' + '旧稿里的一段话，写得比较长。'.repeat(6);
+  const oldTexts = [OP + '一', OP + '一二', OP + '一二三', OP + '四', OP + '四五', OP + '四五六'];
   const d10 = dayStart(now - 10 * D) + 9 * H, d3 = dayStart(now - 3 * D) + 14 * H;
   const oldTs = [d10, d10 + 2 * H, d10 + 5 * H, d3 + 60000, d3 + 20 * 60000, d3 + 40 * 60000];
   oldTexts.forEach((t, i) => {
     const prev = old.length ? E.textAt(old, old.length - 1) : null;
-    const enc = E.encode(prev, t, i);
     old.push({ id: 'vold' + i, chapterId: c2, ts: oldTs[i], kind: i === 0 ? 'full' : 'patch', data: i === 0 ? t : E.makeDelta(prev, t), words: t.length, len: t.length });
-    void enc;
   });
   await putRows(page, old);
   check(decodeAll(await rowsOf(page, c2)).every((t) => t != null), '补进去的旧版本链是好的', fails);
   await page.reload();
   await page.waitForSelector('.cm-content');
   await forward(page, 5000);   // 启动后 4 秒合并
-  await page.waitForTimeout(600);
-  rows = await rowsOf(page, c2);
+  rows = await waitRows(page, c2, 3);
   let texts2 = decodeAll(rows);
-  check(rows.length === 3 && texts2[0] === '　　旧稿一。改了两句。' && texts2[1] === '　　旧稿二，又改了。' && texts2[2] === '　　第二章的开头。',
+  check(rows.length === 3 && texts2[0] === OP + '一二三' && texts2[1] === OP + '四五六' && texts2[2] === '　　第二章的开头。',
     '启动时合并：10 天前那天留最后一版，3 天前那个小时留最后一版，还原出来字都对 ' + JSON.stringify(texts2), fails);
   check(rows[0].kind === 'full' && rows[1].kind === 'patch', '留下的补丁按新的上一版重新算过', fails);
   // 23 小时多以前的同一小时 3 版：现在不动，过一小时就该合并
@@ -383,14 +386,11 @@ async function flows(dist, fails) {
   const hb = new Date(nowB - 23.5 * H); hb.setMinutes(0, 0, 0);
   const recent = [];
   ['　　近稿。', '　　近稿，加一句。', '　　近稿，加两句。'].forEach((t, i) => {
-    const base = rows.concat(recent);
     recent.push({ id: 'vnear' + i, chapterId: c2, ts: hb.getTime() + (i + 1) * 60000, kind: 'full', data: t, words: t.length, len: t.length });
-    void base;
   });
   await putRows(page, recent);
   await forward(page, 3600 * 1000 + 1000);
-  await page.waitForTimeout(600);
-  rows = await rowsOf(page, c2);
+  rows = await waitRows(page, c2, 4);
   texts2 = decodeAll(rows);
   check(rows.length === 4 && texts2.includes('　　近稿，加两句。') && !texts2.includes('　　近稿。') && texts2.every((t) => t != null),
     '每小时合并一次：过了 24 小时的那一小时只留最后一版 ' + rows.length, fails);
@@ -404,9 +404,13 @@ async function flows(dist, fails) {
   await page.waitForSelector('.ver-overlay .ver-restore:not([disabled])');
   await page.click('.ver-restore');
   await page.waitForTimeout(800);
-  check((await getText(page)) === '　　旧稿一。改了两句。', '合并过的旧版本也能恢复', fails);
+  check((await getText(page)) === OP + '一二三', '合并过的旧版本也能恢复', fails);
+  await page.waitForTimeout(400);
+  check(await page.$$eval('.ver-item', (els) => !!els[0].querySelector('.ver-tag.now')), '恢复后的正文记成最新一版，标着「和现在一样」', fails);
   await clickToastUndo(page, '已恢复到');
   check((await getText(page)) === '　　第二章的开头。', '撤销后回到原来的正文', fails);
+  await page.waitForTimeout(1500);
+  check(!(await page.$('.ver-tag.now')), '撤销以后「和现在一样」跟着去掉', fails);
 
   console.log('深色模式颜色');
   await page.emulateMedia({ colorScheme: 'dark' });
@@ -432,6 +436,7 @@ async function flows(dist, fails) {
   await setText(m.page, T3);
   await m.page.waitForTimeout(1500);
   await forward(m.page, 61000);
+  await waitRows(m.page, await curId(m.page), 2);
   await m.page.click('.tool-btn[data-cmd="versions.open"]');
   await m.page.waitForSelector('.ver-item');
   const box1 = await m.page.evaluate(() => {
@@ -460,7 +465,7 @@ async function flows(dist, fails) {
   await m.page.click('.ver-head .icon-btn[aria-label="返回"]');
   await m.page.waitForTimeout(200);
   check(await m.page.isVisible('.ver-list'), '手机：返回回到列表', fails);
-  await m.page.click('.ver-item[data-i="1"]');
+  await m.page.click('.ver-item[data-i="0"]');
   await m.page.click('.ver-restore');
   await m.page.waitForTimeout(800);
   check((await getText(m.page)) === T1, '手机上也能恢复', fails);

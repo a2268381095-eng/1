@@ -61,3 +61,4 @@
   .fmt-sub { display: none; }
   .fmt-head h2 { flex: 1; }
 }
+.fmt-more { margin: 14px 0 0; padding: 8px 10px; border-radius: 6px; background: var(--side); color: var(--muted); font-family: var(--f-ui); font-size: 12.5px; white-space: normal; }

@@ -153,15 +153,19 @@ function setPressed(on) {
   if (b) b.setAttribute("aria-pressed", String(on));
 }
 
+let opening = false;
 async function openVersions() {
   if (!ws.book || !ws.current || !ws.els()) return;
   if (P) { focusList(); return; }
+  if (opening) return;
+  opening = true;
   try { await ws.editor.flush(); } catch (_) { /* 保存失败另有提示 */ }
-  if (!ws.current) return;
+  opening = false;
+  if (!ws.current || !ws.els() || P) return;
   const p = ws.openPanel({ title: "历史版本", wide: true, onClose: onPanelClose, render: (body) => body.classList.add("ver-body") });
   const top = h("div.ver-top");
   const list = h("div.ver-list", { role: "listbox", "aria-label": "版本" });
-  p.body.append(top, list, h("p.ver-note.muted", {}, "自动保存时记一版，同一章至少隔 1 分钟。只存改动的部分，占地方很少。"));
+  p.body.append(top, list, h("p.ver-note.muted", {}, "自动保存时记一版，同一章至少隔 1 分钟。只存改动的部分。"));
   P = { id: ws.current.id, body: p.body, top, list, rows: [], latest: null, sel: -1, layer: p.layer, first: true };
   const v = wsView();
   if (v) v.classList.add("has-ver");
@@ -221,6 +225,7 @@ function renderList() {
     h("span.ver-ch", {}, ch ? ws.fullTitle(ch) : ""),
     h("span.ver-n", {}, rows.length ? `共 ${rows.length} 版` : ""),
     helpTip("24 小时内每次改动都留；一周内每小时留一份；更早的每天留一份。"));
+  const focused = list.contains(document.activeElement) ? document.activeElement.dataset.i : null;
   list.textContent = "";
   if (!rows.length) {
     list.append(h("div.empty.ver-empty", {}, "这一章还没有历史版本。", h("br"), "写一会儿就有了：自动保存时会记一版。"));
@@ -239,6 +244,7 @@ function renderList() {
       : h("span.ver-delta" + (d > 0 ? ".up" : d < 0 ? ".down" : ""), { title: d > 0 ? `比上一版多 ${d} 字` : d < 0 ? `比上一版少 ${-d} 字` : "字数和上一版一样" },
         d > 0 ? "+" + d.toLocaleString() : d < 0 ? "−" + (-d).toLocaleString() : "±0");
     const same = i === rows.length - 1 && P.latest != null && P.latest === nowText;
+    if (i === rows.length - 1) P.sameShown = same;
     const b = h("button.ver-item" + (i === P.sel ? ".cur" : ""), {
       type: "button", role: "option", "aria-selected": String(i === P.sel), "data-i": String(i),
       "aria-label": `${whenLabel(r.ts, now)}，${(r.words || 0).toLocaleString()} 字`,
@@ -261,6 +267,7 @@ function renderList() {
     });
     list.append(b);
   }
+  if (focused != null) { const el = list.querySelector(`.ver-item[data-i="${focused}"]`); if (el) el.focus(); }
 }
 
 function focusList() {
@@ -361,7 +368,7 @@ function renderCompare() {
   const { row, then } = C;
   const nowText = ws.textOf(P.id);
   const when = whenLabel(row.ts);
-  C.sub.textContent = "左边现在 · 右边" + when;
+  C.sub.textContent = "左边现在 · 右边 " + when;
   C.thenHead.textContent = "那时 · " + when;
   const rows = alignRows(nowText, then);
   const n = rows.filter((r) => !r.same).length;
@@ -450,7 +457,9 @@ export async function register() {
   });
   bus.on("content:saved", (d) => {
     onSaved(d);
-    if (C && P && d.chapter && d.chapter.id === P.id && !busy) renderCompare();
+    if (!P || !d.chapter || d.chapter.id !== P.id || busy) return;
+    if (C) renderCompare();
+    if (P.rows.length && (P.latest != null && P.latest === ws.textOf(P.id)) !== P.sameShown) renderList();   // 「和现在一样」跟着变
   });
   bus.on("chapter:opened", ({ chapter }) => { baseline(chapter, chapter && chapter.updatedAt); follow(chapter); });
   bus.on("chapter:created", ({ chapter, restored }) => { if (!restored) baseline(chapter, chapter && chapter.createdAt); });

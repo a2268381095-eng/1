@@ -27,10 +27,18 @@ function effective(scheme) {
 
 /** 删掉、加上的空白换成看得见的记号 */
 const WS_GLYPH = { " ": "␣", " ": "␣", "　": "□", "\t": "→", "\n": "↵" };
+const SHOW_MAX = 3000;   // 一章里最多标出这么多段改动，再多页面会卡
 function renderParts(parts) {
   const box = h("div.fmt-text");
-  for (const p of parts) {
+  let shown = 0;
+  for (let i = 0; i < parts.length; i++) {
+    const p = parts[i];
     if (p.t === 0) { box.append(p.s); continue; }
+    if (++shown > SHOW_MAX) {
+      const rest = parts.slice(i).filter((x) => x.t !== 0).length;
+      box.append(h("p.fmt-more", {}, `后面还有 ${rest} 段改动没列出来，写回时一起改。`));
+      break;
+    }
     const el = h(p.t < 0 ? "del.fmt-del" : "ins.fmt-ins", { title: p.t < 0 ? "删掉" : "加上" });
     let buf = "";
     const flush = () => { if (buf) { el.append(buf); buf = ""; } };
@@ -55,7 +63,13 @@ function setPressed(on) {
 // ---------------- 打开预览 ----------------
 async function openFormat(opts = {}) {
   if (!ws.book || !ws.els()) return;
-  if (cur) { if (opts && opts.scope) cur.setScope(opts.scope); cur.focus(); return; }
+  if (cur) {
+    // 已经开着：点了「排版这几章」就换到选中的几章
+    const want = (opts && opts.scope) || (ws.selectedIds().length >= 2 ? "selected" : "");
+    if (want) cur.setScope(want);
+    cur.focus();
+    return;
+  }
   if (opening) return;
   opening = true;
   try {
