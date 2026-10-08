@@ -48,7 +48,7 @@ const SQ = new Set(Array.from("'＇‘’『』"));
 // 合并断行：上一行以这些结尾就算一句说完了；下一行以这些开头就算新的一段（引号、括号、破折号、省略号开头）
 const TERMINAL = new Set(Array.from("。．.！!？?…⋯：:\"'＂＇“”‘’「」『』)）】》〉—―─━-－~～·"));
 const START_BREAK = new Set(Array.from("\"'＂＇“”‘’「」『』(（【《〈[—―─━-－…⋯.。．·"));
-const HEADING = /^\s*(?:第\s*[0-9０-９零〇一二三四五六七八九十百千万两]+\s*[章节卷回集部篇幕]|序章|楔子|引子|尾声|后记|番外)/u;
+const HEADING = /^\s{0,8}(?:第\s{0,3}[0-9０-９零〇一二三四五六七八九十百千万两]{1,12}\s{0,3}[章节卷回集部篇幕]|序章|楔子|引子|尾声|后记|番外)/u;
 const SCENE = /^[\s*＊=＝~～#＃\-－—―─━·•☆★◆◇○●※+＋_]+$/u;
 const SP1 = new RegExp(`(?<=[${CJK}])[ \\t]*(?=[A-Za-z0-9])`, "gu");
 const SP2 = new RegExp(`(?<=[A-Za-z0-9])[ \\t]*(?=[${CJK}])`, "gu");
@@ -68,28 +68,55 @@ function isSceneBreak(s) {
 }
 
 // ---------------- 合并断行 ----------------
-function lastChar(s) { const a = Array.from(s.replace(/\s+$/u, "")); return a[a.length - 1] || ""; }
+function lastChar(t) {
+  if (!t) return "";
+  const c = t.charCodeAt(t.length - 1);
+  return c >= 0xdc00 && c <= 0xdfff && t.length > 1 ? t.slice(-2) : t[t.length - 1];
+}
 function firstChar(s) { for (const c of s) return c; return ""; }
+const HEAD_LEN = 64;   // HEADING 最多匹配 30 来个字，看开头这么多就够
+
+/** 一行（或接起来的几行）判断能不能接下一行要用的信息，只看头尾，不用每次扫整行 */
+function lineInfo(s) {
+  const t = s.trimEnd();
+  const core = t.trimStart();
+  return { blank: !core, first: firstChar(s), last: lastChar(t), head: s.slice(0, HEAD_LEN),
+    sceneChars: SCENE.test(core), marks: core.replace(/\s/gu, "").length };
+}
+const isSceneInfo = (x) => x.sceneChars && x.marks >= 3;
 
 /** 两行能不能接成一段：上一行没说完、下一行没缩进也不像新的一段 */
-function canMerge(a, b) {
-  if (isBlank(a) || isBlank(b) || isWs(firstChar(b))) return false;
-  if (TERMINAL.has(lastChar(a)) || START_BREAK.has(firstChar(b))) return false;
-  if (HEADING.test(a) || HEADING.test(b)) return false;
-  if (isSceneBreak(a.trim()) || isSceneBreak(b.trim())) return false;
+function canMergeInfo(a, b) {
+  if (a.blank || b.blank || isWs(b.first)) return false;
+  if (TERMINAL.has(a.last) || START_BREAK.has(b.first)) return false;
+  if (HEADING.test(a.head) || HEADING.test(b.head)) return false;
+  if (isSceneInfo(a) || isSceneInfo(b)) return false;
   return true;
 }
+const canMerge = (a, b) => canMergeInfo(lineInfo(a), lineInfo(b));
 
 function mergeBroken(lines) {
   const out = [];
+  let parts = null, cur = null;   // 正在接的这一段：几行原文、它的信息
+  const done = () => { if (parts) out.push(parts.join("")); };
   for (const line of lines) {
-    const k = out.length - 1;
-    if (k >= 0 && canMerge(out[k], line)) {
-      const a = out[k].replace(/\s+$/u, "");
-      const glue = /[A-Za-z0-9,;]$/.test(a) && /^[A-Za-z0-9(]/.test(line) ? " " : "";
-      out[k] = a + glue + line;
-    } else out.push(line);
+    const info = lineInfo(line);
+    if (cur && canMergeInfo(cur, info)) {
+      const k = parts.length - 1;
+      parts[k] = parts[k].trimEnd();
+      const glue = /[A-Za-z0-9,;]$/.test(parts[k]) && /^[A-Za-z0-9(]/.test(line) ? " " : "";
+      parts.push(glue + line);
+      if (cur.head.length < HEAD_LEN) cur.head = (parts.join("")).slice(0, HEAD_LEN);
+      cur.last = info.last;
+      cur.sceneChars = cur.sceneChars && info.sceneChars;
+      cur.marks += info.marks;
+    } else {
+      done();
+      parts = [line];
+      cur = info;
+    }
   }
+  done();
   return out;
 }
 
@@ -98,19 +125,20 @@ function fixPunct(body, r) {
   const cs = Array.from(body);
   const n = cs.length;
   const out = [];
-  const lastOut = () => { for (let k = out.length - 1; k >= 0; k--) if (!isWs(out[k])) return out[k]; return ""; };
+  let lastNW = "";   // out 里最后一个不是空白的字（去空格只去空白，所以不会变）
+  const lastOut = () => lastNW;
   const nextFrom = (j) => { while (j < n && isWs(cs[j])) j++; return j < n ? cs[j] : ""; };
 
   // 半角括号配对：括号里有汉字才改成全角，f(x) 这种不动
   const pairConv = new Map();
-  if (r.punct) {
-    const st = [];
+  if (r.punct && body.includes(")")) {
+    const st = [], hanBefore = [0];   // hanBefore[k]：前 k 个字里有几个汉字
+    for (let k = 0; k < n; k++) hanBefore.push(hanBefore[k] + (isHan(cs[k]) ? 1 : 0));
     for (let k = 0; k < n; k++) {
       if (cs[k] === "(") st.push(k);
       else if (cs[k] === ")" && st.length) {
         const o = st.pop();
-        let han = false;
-        for (let m = o + 1; m < k && !han; m++) han = isHan(cs[m]);
+        const han = hanBefore[k] - hanBefore[o + 1] > 0;
         pairConv.set(o, han);
         pairConv.set(k, han);
       }
@@ -125,7 +153,7 @@ function fixPunct(body, r) {
       if (k < out.length && k > 0 && isCN(out[k - 1])) out.length = k;
     }
     if (collapse && endsWith(out, s)) return;
-    for (const ch of s) out.push(ch);
+    for (const ch of s) { out.push(ch); if (!isWs(ch)) lastNW = ch; }
   };
   const skipAfter = (j, fw) => {
     if (!fw || !r.punct) return j;
@@ -252,7 +280,7 @@ function fixBody(body, r) {
 export function formatText(text, rules) {
   const r = normalizeRules(rules);
   let lines = String(text == null ? "" : text).replace(/\r\n?|\u2028|\u2029/g, "\n").split("\n");
-  if (r.trimEnd) lines = lines.map((l) => l.replace(/\s+$/u, ""));
+  if (r.trimEnd) lines = lines.map((l) => l.trimEnd());
   if (r.mergeLines) lines = mergeBroken(lines);
   lines = lines.map((l) => {
     if (isBlank(l)) return l;
