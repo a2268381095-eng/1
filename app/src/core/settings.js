@@ -12,7 +12,8 @@ export const DEFAULT_SETTINGS = {
   customFonts: [],            // 自己上传的字体 [{ id, name }]（文件存在 kv "font:<id>"）
   hoverDelay: 500,            // 书架悬停多久显示详情（毫秒）
   demonOn: true,              // 小恶魔显示
-  demonScale: 1,              // 1 或 2
+  demonScale: 1,              // 大小：0.5–3
+  demonPos: null,             // 位置 { right, bottom }（px，离窗口右下角），null 是默认的右下角
   demonStyle: "magical",      // 书架等没有作品时用哪套
   demonChatty: "normal",      // quiet 少说话 / normal / chatty 多说话
   idleMinutes: 5,             // 停笔多少分钟算「停笔很久」

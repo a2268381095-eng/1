@@ -9,7 +9,7 @@ async function launch(distDir, { width = 1360, height = 860 } = {}) {
   const errors = [];
   page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
   page.on('console', (m) => { if (m.type() === 'error') errors.push('console: ' + m.text()); });
-  await page.goto('file://' + distDir.replace(/\/$/, '') + '/index.html');
+  await page.goto('file://' + require('path').resolve(distDir) + '/index.html');
   await page.waitForSelector('.topbar');
   return { browser, ctx, page, errors };
 }

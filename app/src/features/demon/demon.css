@@ -1,31 +1,51 @@
-/* 小恶魔：右下角常驻，气泡在她头上 */
-.demon { position: fixed; right: 14px; bottom: 34px; z-index: 60; display: grid; justify-items: end; pointer-events: none; --demon-scale: 1; }
-.demon > * { pointer-events: auto; }
-.demon.off .demon-poke, .demon.off .demon-help, .demon.off .demon-hide, .demon.off .demon-bubble { display: none; }
+/* 小恶魔：默认在右下角，可以拖着放、变大变小；气泡在她头上（靠近屏幕上沿时放到下面） */
+.demon { position: fixed; right: 14px; bottom: 34px; z-index: 60; --demon-scale: 1; touch-action: none; }
+.demon.off .demon-body, .demon.off .demon-bubble { display: none; }
 .demon:not(.off) .demon-show { display: none; }
 .demon.focus-hidden { display: none; }
-.demon-poke { border: 0; padding: 0; background: transparent; cursor: pointer; line-height: 0; }
+.demon-body { position: relative; width: calc(128px * var(--demon-scale)); height: calc(224px * var(--demon-scale)); }
+.demon-poke { border: 0; padding: 0; background: transparent; cursor: grab; line-height: 0; display: block; touch-action: none; }
+.demon.dragging .demon-poke { cursor: grabbing; }
 .demon-canvas { width: calc(128px * var(--demon-scale)); height: calc(224px * var(--demon-scale)); filter: drop-shadow(0 4px 6px rgba(58, 26, 44, .18)); }
-.demon-poke:active .demon-canvas { transform: translateY(1px); }
-.demon-bubble { position: relative; max-width: 240px; margin-bottom: 6px; margin-right: 18px; padding: 8px 12px; border: 2px solid var(--bubble-line);
+.demon.dragging .demon-canvas { filter: drop-shadow(0 12px 14px rgba(58, 26, 44, .28)); transform: translateY(-3px); }
+.demon-poke:active:not(:focus-visible) .demon-canvas { transform: translateY(1px); }
+
+/* 悬停时右上角出现的小按钮：? − + × */
+.demon-tools { position: absolute; top: 4px; right: -6px; display: grid; gap: 4px; }
+.demon-btn { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--surface); color: var(--muted);
+  cursor: pointer; display: grid; place-items: center; font-weight: 700; font-size: 14px; line-height: 1; padding: 0; opacity: 0; transition: opacity .15s; }
+.demon-btn.help { opacity: .85; }
+.demon-btn .ico svg { width: 12px; height: 12px; }
+.demon-body:hover .demon-btn, .demon-body:focus-within .demon-btn { opacity: .9; }
+.demon-btn:hover { opacity: 1 !important; color: var(--accent); border-color: var(--accent); }
+.demon.dragging .demon-btn { opacity: 0 !important; }
+.demon-grip { position: absolute; left: -4px; top: -4px; width: 16px; height: 16px; cursor: nwse-resize; opacity: 0; transition: opacity .15s;
+  border-left: 3px solid var(--accent); border-top: 3px solid var(--accent); border-radius: 4px 0 0 0; touch-action: none; }
+.demon-body:hover .demon-grip { opacity: .7; }
+.demon-grip:hover { opacity: 1 !important; }
+
+/* 气泡 */
+.demon-bubble { position: absolute; right: 18px; bottom: calc(100% + 8px); width: max-content; max-width: 240px; padding: 8px 12px; border: 2px solid var(--bubble-line);
   border-radius: 8px; background: var(--bubble); color: var(--bubble-ink); font-size: 13.5px; line-height: 1.6; box-shadow: 3px 3px 0 var(--accent-soft);
-  opacity: 0; transform: translateY(4px); transition: opacity .15s ease, transform .15s ease; pointer-events: none; min-height: 1em; }
-.demon-bubble.on { opacity: 1; transform: none; pointer-events: auto; }
-.demon-bubble::after { content: ""; position: absolute; right: 44px; bottom: -8px; width: 12px; height: 12px; background: var(--bubble);
+  opacity: 0; transform: translateY(4px); transition: opacity .15s ease, transform .15s ease; pointer-events: none; }
+.demon-bubble.on { opacity: 1; transform: none; }
+.demon-bubble::after { content: ""; position: absolute; right: 28px; bottom: -8px; width: 12px; height: 12px; background: var(--bubble);
   border-right: 2px solid var(--bubble-line); border-bottom: 2px solid var(--bubble-line); transform: rotate(45deg); }
-.demon-help, .demon-hide { position: absolute; width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--surface);
-  color: var(--muted); cursor: pointer; display: grid; place-items: center; font-weight: 700; font-size: 13px; opacity: .0; transition: opacity .15s; }
-.demon-help { right: -4px; bottom: calc(224px * var(--demon-scale) - 36px); opacity: .85; }
-.demon-hide { right: -4px; bottom: calc(224px * var(--demon-scale) - 64px); }
-.demon-hide .ico svg { width: 12px; height: 12px; }
-.demon:hover .demon-hide, .demon-hide:focus-visible { opacity: .85; }
-.demon-help:hover, .demon-hide:hover { opacity: 1; color: var(--accent); border-color: var(--accent); }
+.demon.near-top .demon-bubble { bottom: auto; top: calc(100% + 8px); transform: translateY(-4px); }
+.demon.near-top .demon-bubble.on { transform: none; }
+.demon.near-top .demon-bubble::after { bottom: auto; top: -8px; transform: rotate(-135deg); }
+.demon.near-left .demon-bubble { right: auto; left: 18px; }
+.demon.near-left .demon-bubble::after { right: auto; left: 28px; }
+.demon.dragging .demon-bubble { opacity: 0; }
+
 .demon-show { border: 1px solid var(--line-strong); background: var(--surface); color: var(--accent); border-radius: 999px; padding: 4px 12px; cursor: pointer;
   font-size: 12.5px; box-shadow: var(--shadow-s); }
 
 /* 找功能面板 */
-.help-pop { position: absolute; right: 0; bottom: calc(224px * var(--demon-scale) + 8px); width: 320px; max-width: calc(100vw - 28px); background: var(--surface);
+.help-pop { position: absolute; right: 0; bottom: calc(100% + 8px); width: 320px; max-width: calc(100vw - 28px); background: var(--surface);
   border: 1px solid var(--line); border-radius: 10px; box-shadow: var(--shadow); padding: 10px; display: grid; gap: 8px; z-index: 2; }
+.demon.near-top .help-pop { bottom: auto; top: calc(100% + 8px); }
+.demon.near-left .help-pop { right: auto; left: 0; }
 .help-head { display: flex; align-items: center; justify-content: space-between; }
 .help-list { display: grid; gap: 2px; max-height: 320px; overflow: auto; }
 .help-item { display: grid; grid-template-columns: 1fr auto; gap: 0 8px; text-align: left; padding: 7px 9px; border: 0; border-radius: 6px; background: transparent; cursor: pointer; }
@@ -33,4 +53,4 @@
 .help-item .help-h { grid-column: 1; color: var(--muted); font-size: 12px; }
 .help-item .kbd { grid-column: 2; grid-row: 1; align-self: center; }
 .help-item:hover, .help-item.sel { background: var(--accent-soft); }
-@media (max-width: 640px) { .demon { --demon-scale: .6 !important; right: 6px; } .demon-bubble { max-width: 200px; font-size: 13px; } }
+@media (max-width: 640px) { .demon-bubble { max-width: 200px; font-size: 13px; } }

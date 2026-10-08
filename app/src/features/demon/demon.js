@@ -53,9 +53,9 @@ function setStyle(st) {
 function actOf(name) { return style.actions[name] || style.actions.idle; }
 
 /** 播一个动作；不循环的播完回到待机，循环的播 duration 毫秒后回到待机 */
-export function play(name, duration = 0) {
+export function play(name, duration = 0, { hold = false } = {}) {
   if (!style.actions[name]) name = "idle";
-  Object.assign(player, { act: name, f: 0, acc: 0, t: 0, until: duration, then: name === "idle" ? null : "idle" });
+  Object.assign(player, { act: name, f: 0, acc: 0, t: 0, until: duration, hold, then: name === "idle" ? null : "idle" });
   draw();
 }
 
@@ -81,7 +81,7 @@ function loop(t) {
       player.acc -= a.ms[player.f];
       changed = true;
       if (player.f + 1 >= a.frames) {
-        if (!a.loop && player.then) { play(player.then); return requestAnimationFrame(loop); }
+        if (!a.loop && !player.hold && player.then) { play(player.then); return requestAnimationFrame(loop); }
         player.f = 0;
       } else player.f++;
     }
@@ -108,6 +108,7 @@ export function say(text, { hold = 0 } = {}) {
   clearTimeout(hideTimer);
   if (!text) { hush(); return; }
   live.textContent = text;
+  placeBubble();
   bubble.hidden = false;
   bubble.classList.add("on");
   const chars = [...text];
@@ -199,7 +200,12 @@ export function openHelp() {
   setTimeout(() => input.focus(), 0);
 }
 
-// ---------------- 挂到界面上 ----------------
+// ---------------- 挂到界面上：可以拖着放、变大变小 ----------------
+const SIZES = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3];
+let pos = { right: 14, bottom: 34 };   // 离窗口右边、下边多远（px）
+let scale = 1;
+let suppressClick = false;
+
 export function mountDemon(root) {
   canvas = h("canvas.demon-canvas", { width: W, height: H, "aria-hidden": "true" });
   ctx = canvas.getContext("2d");
@@ -207,35 +213,153 @@ export function mountDemon(root) {
   bubbleText = h("span.demon-text");
   bubble = h("div.demon-bubble", { "aria-hidden": "true" }, bubbleText);
   live = h("span.sr", { role: "status", "aria-live": "polite" });
-  const poke = h("button.demon-poke", { type: "button", "aria-label": "戳她一下" }, canvas);
-  const helpBtn = h("button.demon-help", { type: "button", title: "找不到功能？问她（F1）", "aria-label": "找功能" }, "?");
-  const hideBtn = h("button.demon-hide", { type: "button", title: "收起小恶魔", "aria-label": "收起小恶魔" }, icon("close"));
+  const poke = h("button.demon-poke", { type: "button", "aria-label": "小恶魔：点一下戳她，按住拖动换位置，方向键挪动，加号减号变大变小" }, canvas);
+  const ctl = (cls, title, content, fn) => {
+    const b = h("button.demon-btn." + cls, { type: "button", title, "aria-label": title }, content);
+    b.addEventListener("click", (e) => { e.stopPropagation(); fn(); });
+    return b;
+  };
+  const tools = h("div.demon-tools", {},
+    ctl("help", "找不到功能？问她（F1）", "?", openHelp),
+    ctl("smaller", "变小", "−", () => stepSize(-1)),
+    ctl("bigger", "变大", "+", () => stepSize(1)),
+    ctl("hide", "收起小恶魔", icon("close"), () => setSettings({ demonOn: false })));
+  const grip = h("div.demon-grip", { title: "拖这里变大变小", "aria-hidden": "true" });
+  const body = h("div.demon-body", {}, poke, tools, grip);
   const showBtn = h("button.demon-show", { type: "button", title: "叫小恶魔出来", "aria-label": "叫小恶魔出来" }, "小恶魔");
-  el = h("div.demon", {}, bubble, live, poke, helpBtn, hideBtn, showBtn);
+  showBtn.addEventListener("click", () => setSettings({ demonOn: true }));
+  el = h("div.demon", {}, bubble, live, body, showBtn);
   root.append(el);
 
   poke.addEventListener("click", () => {
+    if (suppressClick) { suppressClick = false; return; }
     const t = Date.now();
     pokes.push(t);
     pokes = pokes.filter((x) => t - x < 1600);
     if (pokes.length >= 3) { pokes = []; react("poke_many", { act: "shock" }); }
     else react("poke", { act: ["shock", "wave", "cheer", "think"][pokeN++ % 4] });
   });
-  helpBtn.addEventListener("click", openHelp);
-  hideBtn.addEventListener("click", () => setSettings({ demonOn: false }));
-  showBtn.addEventListener("click", () => setSettings({ demonOn: true }));
+  wireDrag(poke);
+  wireGrip(grip);
+  poke.addEventListener("keydown", (e) => {
+    const step = e.shiftKey ? 50 : 10;
+    const moves = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] };
+    if (moves[e.key]) { e.preventDefault(); setPos(pos.right + moves[e.key][0], pos.bottom + moves[e.key][1]); savePlace(); }
+    else if (e.key === "+" || e.key === "=") { e.preventDefault(); stepSize(1); }
+    else if (e.key === "-") { e.preventDefault(); stepSize(-1); }
+  });
+  window.addEventListener("resize", () => setPos(pos.right, pos.bottom));
   applySettings();
   bus.on("settings:changed", applySettings);
   setStyle(styleFor(null));
   requestAnimationFrame(loop);
   wireEvents();
   commands.register({ id: "help.open", title: "找功能（问小恶魔）", keywords: "帮助 找不到 怎么 功能", hint: "搜功能名，直接点就能用", key: "F1", run: openHelp });
+  commands.register({ id: "demon.reset", title: "小恶魔回到右下角", keywords: "小恶魔 位置 大小 找不到她 复位", hint: "位置和大小都恢复默认", run: () => { setSettings({ demonPos: null, demonScale: 1, demonOn: true }); } });
+}
+
+/** 按住她拖动：动一点点（5px 以内）还算「戳一下」 */
+function wireDrag(handle) {
+  handle.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    const start = { x: e.clientX, y: e.clientY, right: pos.right, bottom: pos.bottom };
+    let moved = false;
+    handle.setPointerCapture(e.pointerId);
+    const move = (ev) => {
+      const dx = ev.clientX - start.x, dy = ev.clientY - start.y;
+      if (!moved && Math.hypot(dx, dy) < 5) return;
+      if (!moved) { moved = true; el.classList.add("dragging"); hush(); play("shock", 0, { hold: true }); }
+      setPos(start.right - dx, start.bottom - dy);
+    };
+    const up = () => {
+      handle.removeEventListener("pointermove", move);
+      handle.removeEventListener("pointerup", up);
+      handle.removeEventListener("pointercancel", up);
+      if (!moved) return;
+      suppressClick = true;
+      setTimeout(() => { suppressClick = false; }, 0);
+      el.classList.remove("dragging");
+      play("wave");
+      savePlace();
+    };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", up);
+    handle.addEventListener("pointercancel", up);
+  });
+}
+
+/** 拖左上角的小角变大变小（她以右下角为基准长大） */
+function wireGrip(grip) {
+  grip.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    grip.setPointerCapture(e.pointerId);
+    const start = { y: e.clientY, x: e.clientX, scale };
+    const baseH = H * start.scale;
+    const move = (ev) => {
+      const gy = start.y - ev.clientY, gx = (start.x - ev.clientX) * (H / W);
+      const grow = Math.abs(gy) >= Math.abs(gx) ? gy : gx;   // 往左上拖变大，往右下拖变小，按拖得多的方向算
+      setScale(Math.round(((baseH + grow) / H) * 4) / 4);
+    };
+    const up = () => {
+      grip.removeEventListener("pointermove", move);
+      grip.removeEventListener("pointerup", up);
+      grip.removeEventListener("pointercancel", up);
+      savePlace();
+    };
+    grip.addEventListener("pointermove", move);
+    grip.addEventListener("pointerup", up);
+    grip.addEventListener("pointercancel", up);
+  });
+}
+
+function stepSize(dir) {
+  const i = SIZES.findIndex((v) => v >= scale - 0.01);
+  const next = SIZES[Math.max(0, Math.min(SIZES.length - 1, (i < 0 ? SIZES.length - 1 : i) + dir))];
+  setScale(next);
+  savePlace();
+}
+
+function setScale(v) {
+  scale = Math.max(SIZES[0], Math.min(SIZES[SIZES.length - 1], v));
+  el.style.setProperty("--demon-scale", scale);
+  setPos(pos.right, pos.bottom);
+}
+
+/** 摆到某个位置，不让她跑出窗口 */
+function setPos(right, bottom) {
+  const w = W * scale, hgt = H * scale;
+  pos.right = Math.round(Math.max(0, Math.min(innerWidth - w, right)));
+  pos.bottom = Math.round(Math.max(0, Math.min(innerHeight - hgt, bottom)));
+  el.style.right = pos.right + "px";
+  el.style.bottom = pos.bottom + "px";
+  placeBubble();
+}
+
+/** 气泡和找功能面板：她在屏幕上半部分时放到身体下面，靠左时往右展开 */
+function placeBubble() {
+  const top = innerHeight - pos.bottom - H * scale;
+  const left = innerWidth - pos.right - W * scale;
+  el.classList.toggle("near-top", top < 150);
+  el.classList.toggle("near-left", left < 200);
+}
+
+let saveTimer = 0;
+function savePlace() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => setSettings({ demonPos: { ...pos }, demonScale: scale }), 200);
 }
 
 function applySettings() {
   const s = getSettings();
   el.classList.toggle("off", !s.demonOn);
-  el.style.setProperty("--demon-scale", s.demonScale || 1);
+  const small = innerWidth <= 640;
+  scale = s.demonScale || 1;
+  if (small && !s.demonPos && scale === 1) scale = 0.75;
+  el.style.setProperty("--demon-scale", scale);
+  const p = s.demonPos || { right: small ? 6 : 14, bottom: 34 };
+  setPos(p.right, p.bottom);
   if (!s.demonOn) hush();
 }
 
