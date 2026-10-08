@@ -30,7 +30,9 @@ https://claude.ai/artifact/5qDbaq5hUWxRFzHuvwhaEL
 
 ## 写作软件（`app/`）
 
-- 第一版预览：https://claude.ai/artifact/11CP9vz8Rnka9HoJ6f5KWg（`app/dist/index.html`，`cd app && npm run build` 生成；发布时带上 `dist/sprites/` 里的 42 张图）。
+- 预览：https://claude.ai/artifact/11CP9vz8Rnka9HoJ6f5KWg（`app/dist/index.html`，`cd app && npm run build` 生成；发布时带上 `dist/sprites/` 里的 42 张图和 `dist/bg/` 里的 24 张背景）。
+- 背景插画：GPT 出图（提示词在 `app/assets/bg/PROMPTS.md`）→ `app/tools/pixelize_bg.py` 转成 384×256 的干净版和网点版 → `app/assets/bg/scenes.json` 登记推进位置、画面动效、点击点。引擎 `src/core/scene.js`。
+- 每套风格的纸 `src/styles/paper/<风格>.css` + 纸纹和装饰 `src/core/paper-art/<风格>.js`（`src/core/paper.js` 画成 CSS 变量），码字进度 `src/features/demon/meters/<风格>.js`，提示条和弹窗 `src/styles/forms.css`，书封 `src/features/shelf/covers.js`。
 - 先做网页版（单文件 HTML，数据在 IndexedDB），以后套 Tauri 做桌面版；`src/core/db.js` 是唯一碰存储的地方。
 - 结构：`src/core/`（数据、返回、撤销、浮层、命令表），`src/features/<功能>/`（每个功能一个目录，export `register()`，在 `features/index.js` 登记）。
 - 编辑器 CodeMirror 6，每章一份撤销记录；批量改正文走 `ws.applyBatch`，算一步撤销。
