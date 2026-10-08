@@ -1,180 +1,181 @@
 /* gothic 这套的纸（写字页中间那张）。选择器用 :root[data-paper="gothic"] body.has-scene ...
-   魔典书页：旧皮纸纹，四边发暗、带一簇簇老化斑点；一道细酒红双线框，四角铁艺花纹；上沿垂下一条酒红书签丝带，页脚躺着一朵小玫瑰。
-   左上角有一片烛光的暖色，越往里越淡，动效全开时极慢地闪。深色是深紫黑的书页，外框换成银线。
-   醒来：书页从左上角的烛光里一圈圈亮出来，暗处慢慢浮出纸色，框线最后带着一点红光描上去。 */
-@property --gt-glow { syntax: "<number>"; inherits: false; initial-value: 1; }
-
+   魔典书页：犊皮纸的斑驳皮纹，毛边、四边发暗起霉斑；一道酒红双线框，四角铁艺包角（深色是银的），
+   顶上一只蝙蝠压在框线中间，页脚一枚玫瑰蜡封。左下角有一片烛光的暖色，越往里越淡，动效全开时极慢地闪；那角还溅了几滴红蜡。
+   醒来：书页从左下角的烛光里一圈圈亮出来（光会晃一下），暗处的蝙蝠被光惊得飞走。 */
 :root[data-paper="gothic"] {
-  --gt-tint: rgba(150, 104, 70, .07); --gt-dim: rgba(64, 26, 44, .30); --gt-edge: rgba(74, 32, 50, .22); --gt-rim: rgba(90, 40, 60, .22);
-  --gt-w1: .30; --gt-w2: .12;
-  --gt-l1: color-mix(in srgb, var(--accent) 72%, transparent); --gt-l2: color-mix(in srgb, var(--accent) 34%, transparent); }
+  --gt-tint: #ead6b0; --gt-tint-a: .5; --gt-burn: rgba(96, 52, 20, .3); --gt-line: #7d1f3c; --gt-line2: rgba(142, 42, 79, .55);
+  --gt-glow: 255, 168, 84; --gt-glow-a: .30; --gt-rubric: #8e1f3c; }
 :root[data-paper="gothic"][data-dark] {
-  --gt-tint: rgba(70, 24, 80, .12); --gt-dim: rgba(0, 0, 0, .52); --gt-edge: rgba(0, 0, 0, .55); --gt-rim: rgba(180, 168, 200, .12);
-  --gt-w1: .22; --gt-w2: .09;
-  --gt-l1: rgba(196, 186, 214, .55); --gt-l2: color-mix(in srgb, var(--accent) 52%, transparent); }
+  --gt-tint: #1c1120; --gt-tint-a: .35; --gt-burn: rgba(0, 0, 0, .55); --gt-line: #9e2a4a; --gt-line2: rgba(200, 192, 214, .42);
+  --gt-glow: 255, 150, 70; --gt-glow-a: .18; --gt-rubric: #ff7a9a; }
+:root[data-paper="gothic"] body.has-scene .ws-body > .center { --gt-w: min(100%, calc(var(--text-width) + 120px)); }
 
-/* ---------- 纸 ---------- */
+/* ---------- 纸：毛边遮罩（整张减掉四条边上剪掉的小口）+ 皮纹、霉斑、焦边 + 一层犊皮纸的暖色（跟着「背景透出」走） ---------- */
 :root[data-paper="gothic"] body.has-scene .ws-body > .center::before {
-  image-rendering: pixelated;
-  background-image: var(--pa-vellum), var(--pa-foxL), var(--pa-foxR), var(--pa-foxT), var(--pa-foxB),
-    radial-gradient(ellipse 72% 52% at 4% 3%, rgba(255, 176, 90, calc(var(--gt-w1) * var(--gt-glow))) 0, rgba(255, 138, 64, calc(var(--gt-w2) * var(--gt-glow))) 42%, transparent 78%),
-    radial-gradient(ellipse 78% 74% at 50% 46%, transparent 52%, var(--gt-dim) 100%),
-    linear-gradient(var(--gt-tint) 0 0);
-  background-size: var(--pa-vellum-w) var(--pa-vellum-h), var(--pa-foxL-w) var(--pa-foxL-h), var(--pa-foxR-w) var(--pa-foxR-h),
-    var(--pa-foxT-w) var(--pa-foxT-h), var(--pa-foxB-w) var(--pa-foxB-h), 100% 100%, 100% 100%, 100% 100%;
-  background-position: 0 0, left top, right top, left top, left bottom, 0 0, 0 0, 0 0;
-  background-repeat: repeat, repeat-y, repeat-y, repeat-x, repeat-x, no-repeat, no-repeat, no-repeat;
-  box-shadow: inset 0 0 0 1px var(--gt-rim), inset 0 0 46px var(--gt-edge), 0 14px 44px rgba(20, 6, 18, .3); }
-/* 烛光极慢地闪：亮暗不规则，一圈十一秒 */
-:root[data-paper="gothic"][data-motion="full"] body.has-scene .ws-body > .center::before { animation: gt-candle 11s ease-in-out infinite; }
-@keyframes gt-candle {
-  0%, 100% { --gt-glow: 1; } 12% { --gt-glow: .84; } 19% { --gt-glow: .97; } 33% { --gt-glow: .78; } 41% { --gt-glow: .9; }
-  55% { --gt-glow: 1.08; } 68% { --gt-glow: .86; } 74% { --gt-glow: .95; } 87% { --gt-glow: .82; } }
-/* 停笔：书页隐去 */
+  top: 12px; bottom: 12px; image-rendering: pixelated;
+  background-image: var(--pa-edgeL), var(--pa-edgeR), var(--pa-edgeT), var(--pa-edgeB), var(--pa-fox), var(--pa-vellum),
+    radial-gradient(ellipse 75% 70% at 50% 45%, transparent 55%, var(--gt-burn) 100%),
+    linear-gradient(color-mix(in srgb, var(--gt-tint) calc(var(--a-paper) * var(--gt-tint-a)), transparent) 0 0);
+  background-size: var(--pa-edgeL-w) var(--pa-edgeL-h), var(--pa-edgeR-w) var(--pa-edgeR-h), var(--pa-edgeT-w) var(--pa-edgeT-h), var(--pa-edgeB-w) var(--pa-edgeB-h),
+    var(--pa-fox-w) var(--pa-fox-h), var(--pa-vellum-w) var(--pa-vellum-h), 100% 100%, 100% 100%;
+  background-position: left top, right top, left top, left bottom, 37px 23px, 0 0, center, center;
+  background-repeat: repeat-y, repeat-y, repeat-x, repeat-x, repeat, repeat, no-repeat, no-repeat;
+  -webkit-mask-image: linear-gradient(#000 0 0), var(--pa-biteL), var(--pa-biteR), var(--pa-biteT), var(--pa-biteB);
+  mask-image: linear-gradient(#000 0 0), var(--pa-biteL), var(--pa-biteR), var(--pa-biteT), var(--pa-biteB);
+  -webkit-mask-size: 100% 100%, var(--pa-biteL-w) var(--pa-biteL-h), var(--pa-biteR-w) var(--pa-biteR-h), var(--pa-biteT-w) var(--pa-biteT-h), var(--pa-biteB-w) var(--pa-biteB-h);
+  mask-size: 100% 100%, var(--pa-biteL-w) var(--pa-biteL-h), var(--pa-biteR-w) var(--pa-biteR-h), var(--pa-biteT-w) var(--pa-biteT-h), var(--pa-biteB-w) var(--pa-biteB-h);
+  -webkit-mask-position: 0 0, left top, right top, left top, left bottom; mask-position: 0 0, left top, right top, left top, left bottom;
+  -webkit-mask-repeat: no-repeat, repeat-y, repeat-y, repeat-x, repeat-x; mask-repeat: no-repeat, repeat-y, repeat-y, repeat-x, repeat-x;
+  -webkit-mask-composite: source-out, source-over, source-over, source-over, source-over;
+  mask-composite: subtract, add, add, add, add;
+  box-shadow: inset 0 0 46px var(--gt-burn); }
+/* 停笔：书页整张隐进夜色 */
 :root[data-paper="gothic"] body.has-scene.paper-rest .ws-body > .center::before { opacity: 0; }
 
-/* ---------- 纸上的装饰：外框（外粗内细两道）、四角铁艺、书签丝带、页脚玫瑰。和纸一样大，盖在纸上、字下面 ---------- */
+/* ---------- 纸上的装饰：铁艺包角、酒红双线框（上下在蝙蝠和蜡封处断开）、蝙蝠、蜡封、蜡滴、烛光 ---------- */
+@property --gt-fl { syntax: "<number>"; inherits: false; initial-value: .6; }
 :root[data-paper="gothic"] body.has-scene .ws-body > .center::after {
-  content: ""; position: absolute; top: 0; bottom: 0; left: 50%; z-index: 0; pointer-events: none; height: auto;
-  width: min(100%, calc(var(--text-width) + 120px)); transform: translateX(-50%); image-rendering: pixelated;
-  background-image: var(--pa-ribbon), var(--pa-rose),
-    var(--pa-cornerTL), var(--pa-cornerTR), var(--pa-cornerBL), var(--pa-cornerBR),
-    linear-gradient(var(--gt-l1) 0 0), linear-gradient(var(--gt-l1) 0 0), linear-gradient(var(--gt-l1) 0 0), linear-gradient(var(--gt-l1) 0 0),
-    linear-gradient(var(--gt-l2) 0 0), linear-gradient(var(--gt-l2) 0 0), linear-gradient(var(--gt-l2) 0 0), linear-gradient(var(--gt-l2) 0 0);
-  background-size: var(--pa-ribbon-w) var(--pa-ribbon-h), var(--pa-rose-w) var(--pa-rose-h),
+  --o: 24px; --i: 30px; --gap: 44px;
+  content: ""; position: absolute; z-index: 0; pointer-events: none; top: 12px; bottom: 12px; height: auto; left: 50%; width: var(--gt-w); margin-left: calc(var(--gt-w) / -2);
+  image-rendering: pixelated; opacity: 1;
+  background-image:
+    var(--pa-cornerTL), var(--pa-cornerTR), var(--pa-cornerBL), var(--pa-cornerBR), var(--pa-bat), var(--pa-seal), var(--pa-drips),
+    linear-gradient(var(--gt-line) 0 0), linear-gradient(var(--gt-line) 0 0), linear-gradient(var(--gt-line) 0 0), linear-gradient(var(--gt-line) 0 0),
+    linear-gradient(var(--gt-line) 0 0), linear-gradient(var(--gt-line) 0 0),
+    linear-gradient(var(--gt-line2) 0 0), linear-gradient(var(--gt-line2) 0 0), linear-gradient(var(--gt-line2) 0 0), linear-gradient(var(--gt-line2) 0 0),
+    linear-gradient(var(--gt-line2) 0 0), linear-gradient(var(--gt-line2) 0 0),
+    radial-gradient(ellipse calc(44% + var(--gt-fl) * 8%) calc(36% + var(--gt-fl) * 6%) at 0% 100%,
+      rgba(var(--gt-glow), calc(var(--gt-glow-a) * (.7 + var(--gt-fl) * .4))), rgba(var(--gt-glow), calc(var(--gt-glow-a) * .35)) 45%, transparent 100%);
+  background-size:
     var(--pa-cornerTL-w) var(--pa-cornerTL-h), var(--pa-cornerTR-w) var(--pa-cornerTR-h), var(--pa-cornerBL-w) var(--pa-cornerBL-h), var(--pa-cornerBR-w) var(--pa-cornerBR-h),
-    calc(100% - 36px) 2px, calc(100% - 36px) 2px, 2px calc(100% - 36px), 2px calc(100% - 36px),
-    calc(100% - 48px) 1px, calc(100% - 48px) 1px, 1px calc(100% - 48px), 1px calc(100% - 48px);
-  background-position: right 44px top 0, center bottom 16px,
-    left 14px top 14px, right 14px top 14px, left 14px bottom 14px, right 14px bottom 14px,
-    left 18px top 18px, left 18px bottom 18px, left 18px top 18px, right 18px top 18px,
-    left 24px top 24px, left 24px bottom 24px, left 24px top 24px, right 24px top 24px;
+    var(--pa-bat-w) var(--pa-bat-h), var(--pa-seal-w) var(--pa-seal-h), var(--pa-drips-w) var(--pa-drips-h),
+    calc(50% - var(--o) - var(--gap)) 2px, calc(50% - var(--o) - var(--gap)) 2px, calc(50% - var(--o) - var(--gap) + 10px) 2px, calc(50% - var(--o) - var(--gap) + 10px) 2px,
+    2px calc(100% - 2 * var(--o)), 2px calc(100% - 2 * var(--o)),
+    calc(50% - var(--i) - var(--gap)) 1px, calc(50% - var(--i) - var(--gap)) 1px, calc(50% - var(--i) - var(--gap) + 10px) 1px, calc(50% - var(--i) - var(--gap) + 10px) 1px,
+    1px calc(100% - 2 * var(--i)), 1px calc(100% - 2 * var(--i)),
+    100% 100%;
+  background-position:
+    left 6px top 6px, right 6px top 6px, left 6px bottom 6px, right 6px bottom 6px, center top 10px, center bottom 8px, left 70px bottom 54px,
+    left var(--o) top var(--o), right var(--o) top var(--o), left var(--o) bottom var(--o), right var(--o) bottom var(--o),
+    left var(--o) top var(--o), right var(--o) top var(--o),
+    left var(--i) top var(--i), right var(--i) top var(--i), left var(--i) bottom var(--i), right var(--i) bottom var(--i),
+    left var(--i) top var(--i), right var(--i) top var(--i),
+    0 0;
   background-repeat: no-repeat;
   transition: opacity 1.6s ease; }
-:root[data-paper="gothic"] body.has-scene:not(.paper-rest) .ws.focus .ws-body > .center::after { opacity: 1; }
-/* 停笔：框线和丝带留一道极淡的影子 */
+:root[data-paper="gothic"][data-dark] body.has-scene .ws-body > .center::after { filter: drop-shadow(0 0 3px rgba(224, 87, 127, .18)); }
+/* 烛光极慢地晃：一呼一吸里夹着两下小抖 */
+:root[data-paper="gothic"][data-motion="full"] body.has-scene .ws-body > .center::after { animation: gt-orn-in .6s ease-out backwards, gt-candle 9s steps(54) infinite; }
+@keyframes gt-orn-in { from { opacity: 0; } }
+@keyframes gt-candle {
+  0%, 100% { --gt-fl: .55; } 18% { --gt-fl: .85; } 24% { --gt-fl: .6; } 30% { --gt-fl: .78; } 52% { --gt-fl: .35; } 66% { --gt-fl: .7; } 72% { --gt-fl: .5; } 84% { --gt-fl: .9; }
+}
+/* 停笔：只剩极淡的包角和框线 */
 :root[data-paper="gothic"] body.has-scene.paper-rest .ws-body > .center::after { opacity: .2; }
 
-/* ---------- 复写回来：左上角的烛光一圈圈往外照，书页从暗里浮出来；框线最后描上，带一下红光 ---------- */
+/* ---------- 醒来：烛光从左下角一圈圈推开，书页跟着亮出来；暗处的蝙蝠被惊飞 ---------- */
+@property --gt-r { syntax: "<length>"; inherits: false; initial-value: 0px; }
 :root[data-paper="gothic"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::before {
-  animation: gt-light .86s cubic-bezier(.45, .05, .55, 1) both, gt-dusk .9s ease-out both, gt-candle 11s ease-in-out infinite; transition-duration: .3s; }
+  -webkit-mask-image: radial-gradient(circle at 0% 100%, #000 calc(var(--gt-r) - 160px), rgba(0, 0, 0, .55) calc(var(--gt-r) - 60px), transparent var(--gt-r));
+  mask-image: radial-gradient(circle at 0% 100%, #000 calc(var(--gt-r) - 160px), rgba(0, 0, 0, .55) calc(var(--gt-r) - 60px), transparent var(--gt-r));
+  -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-composite: source-over; mask-composite: add;
+  animation: gt-kindle .88s cubic-bezier(.35, .1, .3, 1) both, gt-warm .88s ease-out both; transition-duration: .3s; }
+@keyframes gt-kindle {
+  0% { --gt-r: 0px; } 14% { --gt-r: 300px; } 22% { --gt-r: 250px; } 46% { --gt-r: 820px; } 56% { --gt-r: 760px; } 100% { --gt-r: 2400px; }
+}
+@keyframes gt-warm { 0% { filter: sepia(.7) saturate(1.6) brightness(1.35); } 60% { filter: sepia(.35) saturate(1.2) brightness(1.12); } 100% { filter: none; } }
 :root[data-paper="gothic"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::after {
-  animation: gt-light .8s cubic-bezier(.45, .05, .55, 1) .1s both, gt-sigil .9s ease-out both; }
-@keyframes gt-light {
-  0% { clip-path: circle(0% at 4% 3%); }
-  14% { clip-path: circle(16% at 4% 3%); }
-  22% { clip-path: circle(13% at 4% 3%); }   /* 烛火晃一下，光缩回去一点 */
-  40% { clip-path: circle(38% at 4% 3%); }
-  48% { clip-path: circle(35% at 4% 3%); }
-  72% { clip-path: circle(92% at 4% 3%); }
-  100% { clip-path: circle(150% at 4% 3%); }
-}
-@keyframes gt-dusk {
-  0% { filter: brightness(.25) sepia(.8) saturate(1.6); opacity: .35; }
-  45% { filter: brightness(.8) sepia(.45) saturate(1.3); opacity: 1; }
-  70% { filter: brightness(1.08) sepia(.15); }
-  100% { filter: none; opacity: 1; }
-}
-@keyframes gt-sigil {
-  0%, 30% { opacity: 0; filter: brightness(1.8) drop-shadow(0 0 5px rgba(224, 70, 110, .95)); }
-  60% { opacity: 1; filter: brightness(1.4) drop-shadow(0 0 4px rgba(224, 70, 110, .7)); }
-  100% { opacity: 1; filter: none; }
+  top: 14%; bottom: auto; height: var(--pa-flock-h); width: var(--pa-flock-w); margin-left: calc(var(--gt-w) / 2 - var(--pa-flock-w) - 40px);
+  background: var(--pa-flock) center / 100% 100% no-repeat; image-rendering: pixelated; opacity: 1; filter: drop-shadow(0 0 2px rgba(255, 90, 122, .35));
+  animation: gt-bats .86s steps(10) both; }
+@keyframes gt-bats {
+  0% { transform: translate(-60px, 90px) scale(.55); opacity: 0; }
+  15% { transform: translate(-40px, 60px) scale(.7); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: translate(150px, -170px) scale(1.35); opacity: 0; }
 }
 
-/* 章名下面一道两头收尖的酒红双线 */
-:root[data-paper="gothic"] body.has-scene .ch-head { padding-bottom: 10px;
-  background: linear-gradient(90deg, transparent, var(--gt-l1) 18% 82%, transparent) left bottom 3px / 100% 1px no-repeat content-box,
-    linear-gradient(90deg, transparent 10%, var(--gt-l2) 30% 70%, transparent 90%) left bottom / 100% 1px no-repeat content-box; }
+/* 章名：「第几章」用朱红写（手抄本里的红字标题），下面一道酒红细线，中间一颗小菱形 */
+:root[data-paper="gothic"] body.has-scene .ch-no { color: var(--gt-rubric); letter-spacing: .08em; }
+:root[data-paper="gothic"] body.has-scene .ch-head { padding-bottom: 12px;
+  background: linear-gradient(45deg, transparent 35%, var(--gt-line) 36% 64%, transparent 65%) center bottom 1px / 8px 8px no-repeat,
+    linear-gradient(90deg, transparent, var(--gt-line2) 15% 45%, transparent 47% 53%, var(--gt-line2) 55% 85%, transparent) center bottom 4px / calc(100% - 64px) 1px no-repeat; }
 
-/* ---------- 字数牌子：黑紫底、酒红边、外面一圈细银线，顶上一颗菱形铆钉；写满了铆钉换成一轮血月 ---------- */
-.demon[data-style="gothic"] .demon-badge { border: 2px solid #8e2a4f; border-radius: 0; background: linear-gradient(#21162a, #140d17); color: #eadfee;
-  box-shadow: inset 0 0 0 1px #3a1828, 0 0 0 2px #0e0910, 0 0 0 3px rgba(190, 178, 208, .45), 0 0 12px rgba(142, 42, 79, .35); }
-.demon[data-style="gothic"] .demon-badge::before { content: ""; position: absolute; left: 50%; top: -8px; width: 10px; height: 10px; margin-left: -5px;
-  background: radial-gradient(circle, #ffd7e2 0 18%, #e0577f 20% 50%, #8e2a4f 52%); clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
-.demon[data-style="gothic"] .db-label { color: #e6d6ee; letter-spacing: .06em; }
-.demon[data-style="gothic"] .demon-badge.done { border-color: #c0335f; box-shadow: inset 0 0 0 1px #5a1830, 0 0 0 2px #0e0910, 0 0 0 3px rgba(224, 87, 127, .6), 0 0 16px rgba(224, 60, 100, .5); }
-.demon[data-style="gothic"] .demon-badge.done::before { top: -9px; width: 14px; height: 14px; margin-left: -7px; clip-path: circle(50%);
-  background: radial-gradient(circle at 38% 36%, #ffb0c4 0 12%, #d43a64 40%, #8a1838 80%); box-shadow: 0 0 8px #e0577f; }
-.demon[data-style="gothic"] .demon-badge.done .db-label { color: #ffc2d2; }
-[data-motion="full"] .demon[data-style="gothic"] .demon-badge.done { animation: gt-badge-pulse 3.2s ease-in-out infinite; }
-@keyframes gt-badge-pulse { 50% { box-shadow: inset 0 0 0 1px #5a1830, 0 0 0 2px #0e0910, 0 0 0 3px rgba(224, 87, 127, .9), 0 0 24px rgba(224, 60, 100, .75); } }
+/* ---------- 字数牌子：黑紫底的铁牌，酒红边、银色内线，顶上趴一只蝙蝠；写满了边上透出血红的光 ---------- */
+.demon[data-style="gothic"] .demon-body .demon-badge { border-radius: 0; background: #160e19; color: #e9def0; border: 2px solid #6e1f3c;
+  outline: 1px solid rgba(200, 190, 215, .38); outline-offset: -5px; padding: 6px 7px 6px; box-shadow: 0 0 0 1px #0b060d, 0 4px 10px rgba(0, 0, 0, .35); }
+.demon[data-style="gothic"] .demon-body .demon-badge::before { content: ""; position: absolute; left: 50%; top: -13px; width: var(--pa-bat-w); height: var(--pa-bat-h); margin-left: calc(var(--pa-bat-w) / -2);
+  background: var(--pa-bat) center / 100% 100% no-repeat; image-rendering: pixelated; filter: drop-shadow(0 0 1px rgba(200, 190, 215, .6)); }
+.demon[data-style="gothic"] .demon-body .db-label { letter-spacing: .06em; color: #e9def0; }
+.demon[data-style="gothic"] .demon-body .demon-badge.done { border-color: #c4284d; box-shadow: 0 0 0 1px #0b060d, 0 0 12px rgba(224, 40, 80, .55); }
+[data-motion="full"] .demon[data-style="gothic"] .demon-body .demon-badge::before { animation: gt-perch 5s steps(1) infinite; }
+[data-motion="full"] .demon[data-style="gothic"] .demon-body .demon-badge.done { animation: gt-blood 2.4s ease-in-out infinite; }
+@keyframes gt-perch { 0%, 88%, 94%, 100% { transform: none; } 90%, 96% { transform: scaleY(.7) translateY(2px); } }
+@keyframes gt-blood { 50% { box-shadow: 0 0 0 1px #0b060d, 0 0 20px rgba(224, 40, 80, .85); } }
 
-/* ---------- 连击：一扇尖顶哥特窗，窗里刻着「咒文」和数字。
-   0 银紫；200 框染成酒红、左边点起一根蜡烛；500 两根蜡烛；1000 窗后升起一轮血月；2000 烛火变成紫色鬼火，一只蝙蝠掠过月亮，整扇窗轻轻发颤。
-   每敲一下数字像烛火一样亮一下；停下来化成一缕烟飘走 ---------- */
-.demon[data-style="gothic"] .demon-combo {
-  --gt-arch: polygon(0 100%, 0 34%, 7% 22%, 18% 11%, 33% 4%, 50% 0, 67% 4%, 82% 11%, 93% 22%, 100% 34%, 100% 100%);
-  --gt-fr: #7d6e93; --gt-c: #ddd2ea; --gt-halo: rgba(150, 110, 200, .28); --gt-fl: #ffb648; --gt-fl2: #ff7a2e;
-  left: -86px; top: 12%; min-width: 64px; padding: 18px 9px 7px; box-sizing: border-box; gap: 0;
-  font-family: "Noto Serif SC", "Songti SC", serif; color: var(--gt-c); }
-.demon.near-left[data-style="gothic"] .demon-combo { left: auto; right: -86px; }
-/* 窗框（银 / 酒红）和窗里的黑紫 */
-.demon[data-style="gothic"] .demon-combo::before, .demon[data-style="gothic"] .demon-combo::after { content: ""; position: absolute; pointer-events: none; clip-path: var(--gt-arch); }
-.demon[data-style="gothic"] .demon-combo::before { inset: 0; z-index: -2;
-  background: linear-gradient(color-mix(in srgb, var(--gt-fr) 100%, #fff 20%), var(--gt-fr) 40%, color-mix(in srgb, var(--gt-fr) 55%, #000)); }
-.demon[data-style="gothic"] .demon-combo::after { inset: 2px; z-index: -1;
-  background: radial-gradient(ellipse 90% 60% at 50% 62%, var(--gt-halo), transparent 72%),
-    linear-gradient(90deg, transparent calc(50% - .5px), rgba(255, 255, 255, .05) 0 calc(50% + .5px), transparent 0),
-    linear-gradient(#26172c, #110912); }
-.demon[data-style="gothic"] .demon-combo .dc-label { position: static; padding: 0 3px 2px; margin-bottom: 1px; font-size: 10px; line-height: 1.1; letter-spacing: .32em; text-indent: .32em;
-  color: color-mix(in srgb, var(--gt-c) 70%, var(--gt-fr)); text-shadow: none; border-bottom: 1px solid color-mix(in srgb, var(--gt-fr) 80%, transparent); }
-.demon[data-style="gothic"] .demon-combo .dc-num { position: static; font-size: 23px; font-weight: 700; line-height: 1.05; color: var(--gt-c);
-  background: none; -webkit-background-clip: border-box; background-clip: border-box; -webkit-text-stroke: 0;
-  text-shadow: 0 0 6px var(--gt-halo), 0 0 1px #000, 1px 1px 0 #000; }
-.demon[data-style="gothic"] .demon-combo .dc-unit { position: static; padding: 0 11px; font-size: 10px; line-height: 1.2; text-shadow: none;
-  color: color-mix(in srgb, var(--gt-c) 70%, var(--gt-fr));
-  background: linear-gradient(var(--gt-fr) 0 0) left center / 7px 1px no-repeat, linear-gradient(var(--gt-fr) 0 0) right center / 7px 1px no-repeat; }
+/* ---------- 连击：一面罗马数字的钟盘（魔法阵），数字压在盘心，秒针一格一格走；「咒文」刻在上面的铁牌上，「字」是右下角一枚血红蜡封。
+   等级：银 → 200 酒红的光、走得快 → 500 两只蝙蝠绕着飞 → 1000 盘面变成血月 → 2000 盘面倒着转、整个抖、红紫交替 ---------- */
+@property --gt-c { syntax: "<color>"; inherits: true; initial-value: #cfc6dc; }
+.demon[data-style="gothic"] .demon-combo { --gt-c: #cfc6dc; --gt-d: 112px; --gt-face: rgba(24, 13, 28, .9); --gt-face2: rgba(44, 20, 46, .9);
+  left: -92px; top: 21%; display: block; min-width: 60px; text-align: center; color: #f4ecdf; }
+.demon.near-left[data-style="gothic"] .demon-combo { left: auto; right: -92px; }
+/* 盘面 + 罗马数字圈 */
+.demon[data-style="gothic"] .demon-combo::before { content: ""; position: absolute; left: 50%; top: 50%; z-index: 0; width: var(--gt-d); height: var(--gt-d);
+  margin: calc(var(--gt-d) / -2) 0 0 calc(var(--gt-d) / -2); border-radius: 50%; image-rendering: pixelated;
+  background: var(--pa-dial) center / 100% 100% no-repeat, radial-gradient(circle, var(--gt-face2) 0, var(--gt-face) 62%, transparent 63%);
+  filter: drop-shadow(0 0 3px var(--gt-c)) drop-shadow(0 2px 0 rgba(0, 0, 0, .35)); transition: width .3s, height .3s, margin .3s; }
+/* 秒针 */
+.demon[data-style="gothic"] .demon-combo::after { content: ""; position: absolute; left: 50%; top: 50%; z-index: 1; width: var(--pa-hand-w); height: var(--pa-hand-h);
+  margin: calc(var(--pa-hand-h) / -2) 0 0 calc(var(--pa-hand-w) / -2); background: var(--pa-hand) center / 100% 100% no-repeat; image-rendering: pixelated;
+  filter: drop-shadow(0 0 2px var(--gt-c)); }
+.demon[data-style="gothic"] .demon-combo .dc-num { position: relative; z-index: 2; display: block; padding: 2px 4px; font-family: "Noto Serif SC", serif; font-weight: 600;
+  font-size: 24px; line-height: 1; color: #f6eee2; background: none; -webkit-text-stroke: 0; -webkit-background-clip: border-box; background-clip: border-box;
+  text-shadow: 1px 0 0 #3a0d1e, -1px 0 0 #3a0d1e, 0 1px 0 #3a0d1e, 0 -1px 0 #3a0d1e, 2px 2px 0 #6e1f3c, 0 0 8px var(--gt-c); }
+/* 「咒文」：钟盘上面一块切角铁牌 */
+.demon[data-style="gothic"] .demon-combo .dc-label { position: absolute; left: 50%; bottom: calc(50% + var(--gt-d) / 2 - 6px); z-index: 3; transform: translateX(-50%);
+  padding: 3px 12px 3px 15px; font-size: 11px; line-height: 1; letter-spacing: .3em; white-space: nowrap; color: #f1e8f6; text-shadow: 0 1px 0 #000;
+  filter: drop-shadow(1px 0 0 var(--gt-c)) drop-shadow(-1px 0 0 var(--gt-c)) drop-shadow(0 1px 0 var(--gt-c)) drop-shadow(0 -1px 0 var(--gt-c)); }
+.demon[data-style="gothic"] .demon-combo .dc-label::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(#4a1229, #24091a);
+  clip-path: polygon(7px 0, calc(100% - 7px) 0, 100% 50%, calc(100% - 7px) 100%, 7px 100%, 0 50%); }
+/* 「字」：一枚血红蜡封 */
+.demon[data-style="gothic"] .demon-combo .dc-unit { position: absolute; z-index: 3; left: calc(50% + var(--gt-d) * .28); top: calc(50% + var(--gt-d) * .2); width: 26px; height: 25px;
+  display: grid; place-items: center; font-family: "Noto Serif SC", serif; font-size: 12px; font-weight: 600; line-height: 1; color: #ffd9df;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, .45), 0 1px 0 rgba(255, 160, 175, .4);
+  background: radial-gradient(circle at 36% 32%, #e04a5f 0, #a3182f 45%, #6a0f22 80%);
+  clip-path: polygon(50% 0, 63% 6%, 78% 4%, 86% 17%, 99% 27%, 95% 44%, 100% 60%, 88% 72%, 84% 89%, 66% 92%, 52% 100%, 37% 93%, 19% 95%, 13% 80%, 1% 68%, 6% 50%, 0 33%, 13% 22%, 18% 7%, 35% 7%);
+  rotate: -12deg; }
+/* 500 起：两只蝙蝠绕着钟盘飞 */
+.demon[data-style="gothic"] .demon-combo .dc-num::before { content: ""; position: absolute; left: 50%; top: 50%; width: calc(var(--gt-d) + 30px); height: calc(var(--gt-d) + 30px);
+  margin: calc(var(--gt-d) / -2 - 15px) 0 0 calc(var(--gt-d) / -2 - 15px); pointer-events: none; opacity: 0; image-rendering: pixelated;
+  background: var(--pa-bat) center top / var(--pa-bat-w) var(--pa-bat-h) no-repeat, var(--pa-bat) center bottom / var(--pa-bat-w) var(--pa-bat-h) no-repeat; transition: opacity .3s; }
 
-/* 两根蜡烛立在窗两边：火苗、烛芯、蜡身（一侧阴影）、一滴蜡泪 */
-.demon[data-style="gothic"] .demon-combo .dc-label::before, .demon[data-style="gothic"] .demon-combo .dc-label::after {
-  content: ""; position: absolute; bottom: -2px; width: 8px; height: 30px; opacity: 0; pointer-events: none; transform-origin: 50% 100%;
-  background:
-    radial-gradient(ellipse 50% 50% at 50% 55%, #fff6d4 0 22%, var(--gt-fl) 40%, var(--gt-fl2) 62%, transparent 66%) center top / 6px 11px no-repeat,
-    linear-gradient(#2a1a1a 0 0) center 10px / 1px 3px no-repeat,
-    linear-gradient(#f4e9da 0 0) 1px 13px / 2px 5px no-repeat,
-    linear-gradient(90deg, #efe3d2 0 55%, #c7b49f 0) center bottom / 6px 17px no-repeat;
-  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--gt-fl) 80%, transparent)); transition: opacity .3s; }
-.demon[data-style="gothic"] .demon-combo .dc-label::before { left: -11px; height: 26px; }
-.demon[data-style="gothic"] .demon-combo .dc-label::after { right: -11px; }
-/* 血月（1000 起）：从窗顶后面露出半轮；蝙蝠（2000）从月亮前面掠过 */
-.demon[data-style="gothic"] .demon-combo .dc-unit::before { content: ""; position: absolute; left: 50%; top: -17px; z-index: -3; width: 32px; height: 32px; margin-left: -16px;
-  border-radius: 50%; opacity: 0; pointer-events: none;
-  background: radial-gradient(circle at 62% 64%, rgba(90, 10, 34, .45) 0 9%, transparent 10%), radial-gradient(circle at 34% 58%, rgba(90, 10, 34, .35) 0 6%, transparent 7%),
-    radial-gradient(circle at 40% 36%, #ffb3c6 0 10%, #e04a72 36%, #a41d45 68%, #6d1030);
-  box-shadow: 0 0 14px rgba(230, 60, 100, .65); }
-.demon[data-style="gothic"] .demon-combo .dc-unit::after { content: ""; position: absolute; left: 50%; top: -14px; z-index: -3; width: 14px; height: 7px; margin-left: -7px;
-  opacity: 0; pointer-events: none; background: #120812;
-  clip-path: polygon(0 25%, 20% 0, 34% 45%, 44% 28%, 50% 42%, 56% 28%, 66% 45%, 80% 0, 100% 25%, 86% 55%, 70% 62%, 56% 100%, 44% 100%, 30% 62%, 14% 55%); }
+.demon[data-style="gothic"] .demon-combo[data-level="200"] { --gt-c: #e0577f; }
+.demon[data-style="gothic"] .demon-combo[data-level="500"] { --gt-c: #ff3d6b; --gt-d: 118px; }
+.demon[data-style="gothic"] .demon-combo:is([data-level="1000"], [data-level="2000"]) { --gt-c: #ff2d55; --gt-d: 124px; --gt-face: rgba(120, 10, 34, .92); --gt-face2: rgba(214, 52, 78, .95); }
+.demon[data-style="gothic"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"]) .dc-num::before { opacity: 1; }
 
-.demon[data-style="gothic"] .demon-combo[data-level="200"] { --gt-fr: #9a2a52; --gt-c: #f2e4ec; --gt-halo: rgba(210, 70, 110, .3); }
-.demon[data-style="gothic"] .demon-combo[data-level="500"] { --gt-fr: #b8305b; --gt-c: #fff0e4; --gt-halo: rgba(255, 150, 80, .34); }
-.demon[data-style="gothic"] .demon-combo:is([data-level="1000"], [data-level="2000"]) { --gt-fr: #d0446c; --gt-c: #ffe6ee; --gt-halo: rgba(230, 50, 90, .45); }
-.demon[data-style="gothic"] .demon-combo[data-level="2000"] { --gt-fl: #c99bff; --gt-fl2: #7d4dff; --gt-halo: rgba(160, 90, 255, .45); }
-.demon[data-style="gothic"] .demon-combo:not([data-level="0"]) .dc-label::before { opacity: 1; }
-.demon[data-style="gothic"] .demon-combo:not([data-level="0"]):not([data-level="200"]) .dc-label::after { opacity: 1; }
-.demon[data-style="gothic"] .demon-combo:is([data-level="1000"], [data-level="2000"]) .dc-unit::before { opacity: 1; }
-.demon[data-style="gothic"] .demon-combo[data-level="2000"] .dc-unit::after { opacity: 1; }
-
-[data-motion="full"] .demon[data-style="gothic"] .demon-combo .dc-num, [data-motion="full"] .demon[data-style="gothic"] .demon-combo { animation: none; }
-[data-motion="full"] .demon[data-style="gothic"] .demon-combo.bump .dc-num { animation: gt-flare .28s ease-out; }
-[data-motion="full"] .demon[data-style="gothic"] .demon-combo .dc-label::before { animation: gt-flicker 1.3s steps(1) infinite; }
-[data-motion="full"] .demon[data-style="gothic"] .demon-combo .dc-label::after { animation: gt-flicker 1.7s steps(1) .4s infinite; }
-[data-motion="full"] .demon[data-style="gothic"] .demon-combo.bump .dc-label::before,
-[data-motion="full"] .demon[data-style="gothic"] .demon-combo.bump .dc-label::after { animation: gt-flame-up .3s ease-out; }
-[data-motion="full"] .demon[data-style="gothic"] .demon-combo:is([data-level="1000"], [data-level="2000"]) .dc-unit::before { animation: gt-moonrise .9s cubic-bezier(.2, .7, .3, 1) both, gt-moonglow 3s ease-in-out .9s infinite; }
-[data-motion="full"] .demon[data-style="gothic"] .demon-combo[data-level="2000"] .dc-unit::after { animation: gt-bat 2.4s linear infinite; }
-[data-motion="full"] .demon[data-style="gothic"] .demon-combo[data-level="2000"] { animation: gt-tremble .5s steps(2) infinite; }
-[data-motion="full"] .demon[data-style="gothic"] .demon-combo.end { animation: gt-smoke .85s ease-out both; }
-@keyframes gt-flare { 0% { scale: 1.32; filter: brightness(1.9) drop-shadow(0 0 6px var(--gt-fl)); } 100% { scale: 1; filter: none; } }
-/* 烛火：火苗那层的尺寸一会儿高一会儿矮 */
-@keyframes gt-flicker {
-  0% { background-size: 6px 11px, 1px 3px, 2px 5px, 6px 17px; } 30% { background-size: 5px 12px, 1px 3px, 2px 5px, 6px 17px; }
-  55% { background-size: 6px 10px, 1px 3px, 2px 5px, 6px 17px; } 80% { background-size: 7px 11px, 1px 3px, 2px 5px, 6px 17px; } }
-@keyframes gt-flame-up { 0% { background-size: 8px 16px, 1px 3px, 2px 5px, 6px 17px; filter: drop-shadow(0 0 6px var(--gt-fl)) brightness(1.3); } }
-@keyframes gt-moonrise { from { translate: 0 14px; opacity: 0; } }
-@keyframes gt-moonglow { 50% { box-shadow: 0 0 22px rgba(240, 70, 110, .9); } }
-@keyframes gt-bat {
-  0% { translate: -30px 6px; scale: 1 1; } 12% { scale: 1 .4; } 25% { translate: -12px -4px; scale: 1 1; } 37% { scale: 1 .4; }
-  50% { translate: 4px -2px; scale: 1 1; } 62% { scale: 1 .4; } 75% { translate: 18px -10px; scale: 1 1; } 87% { scale: 1 .4; } 100% { translate: 34px -6px; scale: 1 1; } }
-@keyframes gt-tremble { 50% { translate: .6px -.6px; } }
-@keyframes gt-smoke { 0% { opacity: 1; filter: none; } 100% { opacity: 0; translate: 0 -20px; filter: blur(3px) grayscale(1) brightness(1.6); } }
+[data-motion="full"] .demon[data-style="gothic"] .demon-combo { animation: none; }
+[data-motion="full"] .demon[data-style="gothic"] .demon-combo .dc-num { animation: none; }
+[data-motion="full"] .demon[data-style="gothic"] .demon-combo::after { animation: gt-tick 12s steps(60) infinite; }
+[data-motion="full"] .demon[data-style="gothic"] .demon-combo[data-level="200"]::after { animation-duration: 6s; }
+[data-motion="full"] .demon[data-style="gothic"] .demon-combo[data-level="500"]::after { animation-duration: 3s; }
+[data-motion="full"] .demon[data-style="gothic"] .demon-combo[data-level="1000"]::after { animation-duration: 1.5s; }
+[data-motion="full"] .demon[data-style="gothic"] .demon-combo[data-level="2000"]::after { animation-duration: .8s; }
+[data-motion="full"] .demon[data-style="gothic"] .demon-combo .dc-num::before { animation: gt-orbit 2.6s steps(24) infinite; }
+[data-motion="full"] .demon[data-style="gothic"] .demon-combo.bump .dc-num { animation: gt-pop .26s cubic-bezier(.2, 1.4, .4, 1); }
+[data-motion="full"] .demon[data-style="gothic"] .demon-combo.bump .dc-unit { animation: gt-stamp .3s cubic-bezier(.3, 1.6, .5, 1); }
+[data-motion="full"] .demon[data-style="gothic"] .demon-combo:is([data-level="1000"], [data-level="2000"])::before { animation: gt-moon 1.6s ease-in-out infinite; }
+[data-motion="full"] .demon[data-style="gothic"] .demon-combo[data-level="2000"] { animation: gt-frenzy 1.2s steps(1) infinite, dc-shake .25s steps(2) infinite; }
+[data-motion="full"] .demon[data-style="gothic"] .demon-combo[data-level="2000"]::before { animation: gt-moon 1s ease-in-out infinite, gt-unwind 6s linear infinite; }
+/* 连击停了：蜡封盖下去，钟盘化成烟 */
+[data-motion="full"] .demon[data-style="gothic"] .demon-combo.end::before { animation: gt-smoke .8s ease-out both; }
+[data-motion="full"] .demon[data-style="gothic"] .demon-combo.end .dc-unit { animation: gt-seal .5s cubic-bezier(.3, 1.5, .5, 1) both; }
+@keyframes gt-tick { to { rotate: 360deg; } }
+@keyframes gt-orbit { to { rotate: 360deg; } }
+@keyframes gt-unwind { to { rotate: -360deg; } }
+@keyframes gt-pop { 0% { scale: 1.4; } 60% { scale: .95; } 100% { scale: 1; } }
+@keyframes gt-stamp { 0% { scale: 1.5; rotate: -30deg; } 100% { scale: 1; rotate: -12deg; } }
+@keyframes gt-moon { 50% { filter: drop-shadow(0 0 9px var(--gt-c)) drop-shadow(0 2px 0 rgba(0, 0, 0, .35)); } }
+@keyframes gt-frenzy { 0% { --gt-c: #ff2d55; } 50% { --gt-c: #b04dff; } }
+@keyframes gt-smoke { to { opacity: 0; scale: 1.25; filter: blur(4px) grayscale(1); } }
+@keyframes gt-seal { 0% { scale: 1; } 40% { scale: 2.2; rotate: -4deg; } 100% { scale: 1.6; rotate: -12deg; } }

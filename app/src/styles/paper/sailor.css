@@ -5,17 +5,31 @@
   --sl-head: color-mix(in srgb, #3f63b8 46%, transparent); --sl-edge: color-mix(in srgb, #1f2a3d 12%, transparent); --sl-head-y: 58px; }
 :root[data-paper="sailor"][data-dark] { --sl-rule: color-mix(in srgb, #8fb0e0 17%, transparent); --sl-margin: color-mix(in srgb, #ff7a85 40%, transparent);
   --sl-head: color-mix(in srgb, #8fb0e0 36%, transparent); --sl-edge: color-mix(in srgb, #8fb0e0 14%, transparent); }
+/* 纸面质感：横线深一点、浅一点的墨色，纸边一圈发白（深色里是一圈淡淡的灰蓝） */
+:root[data-paper="sailor"] { --sl-rule-d: color-mix(in srgb, #3f63b8 42%, transparent); --sl-rule-l: color-mix(in srgb, var(--paper) 72%, transparent);
+  --sl-rim-glow: rgba(255, 255, 255, .62); --sl-rim-glow2: rgba(255, 255, 255, .34); }
+:root[data-paper="sailor"][data-dark] { --sl-rule-d: color-mix(in srgb, #8fb0e0 26%, transparent); --sl-rule-l: color-mix(in srgb, var(--paper) 70%, transparent);
+  --sl-rim-glow: rgba(160, 186, 228, .1); --sl-rim-glow2: rgba(160, 186, 228, .05); }
 
 /* 红线在打孔和正文中间：宽纸离孔 10px，纸窄到正文贴边时往左让（手机上贴着孔） */
 :root[data-paper="sailor"] body.has-scene .ws-body > .center::before { --sl-margin-x: max(28px, min(46px, calc((100% - min(100%, var(--text-width))) / 2 + 20px))); }
 /* 纸：打孔一列 36px 宽，上下各留一段不打孔（padding 圈出打孔的范围，round 让孔整颗排满） */
 :root[data-paper="sailor"] body.has-scene .ws-body > .center::before {
-  padding: 36px 0 27px; image-rendering: pixelated; box-shadow: inset 0 0 0 1px var(--sl-edge);
-  background-image: var(--pa-rim), linear-gradient(var(--sl-margin) 0 0), linear-gradient(var(--sl-head) 0 0), linear-gradient(var(--sl-head) 0 0);
-  background-position: left top, var(--sl-margin-x) 0, 36px var(--sl-head-y), 36px calc(var(--sl-head-y) + 4px);
-  background-size: var(--pa-rim-w) var(--pa-rim-h), 2px 100%, calc(100% - 36px) 2px, calc(100% - 36px) 1px;
-  background-repeat: no-repeat round, no-repeat, no-repeat, no-repeat;
-  background-origin: content-box, border-box, border-box, border-box; background-clip: content-box, border-box, border-box, border-box;
+  /* 纸边比纸心白：内阴影是白色的，一圈宽的一圈窄的 */
+  padding: 36px 0 27px; image-rendering: pixelated;
+  box-shadow: inset 0 0 0 1px var(--sl-edge), inset 0 0 8px 1px var(--sl-rim-glow2), inset 0 0 46px 6px var(--sl-rim-glow2);
+  /* 从上到下：孔边压痕、孔沿淡影、红页边线、抬头双线、橡皮擦痕、纸面颗粒、四边发白 */
+  background-image: var(--pa-dent), var(--pa-rim), linear-gradient(var(--sl-margin) 0 0), linear-gradient(var(--sl-head) 0 0), linear-gradient(var(--sl-head) 0 0),
+    var(--pa-erase), var(--pa-grain),
+    linear-gradient(90deg, var(--sl-rim-glow) 36px, transparent 66px, transparent calc(100% - 30px), var(--sl-rim-glow)),
+    linear-gradient(var(--sl-rim-glow), transparent 30px, transparent calc(100% - 30px), var(--sl-rim-glow));
+  background-position: left top, left top, var(--sl-margin-x) 0, 36px var(--sl-head-y), 36px calc(var(--sl-head-y) + 4px),
+    right 2px top 61%, 0 0, 0 0, 0 0;
+  background-size: var(--pa-dent-w) var(--pa-dent-h), var(--pa-rim-w) var(--pa-rim-h), 2px 100%, calc(100% - 36px) 2px, calc(100% - 36px) 1px,
+    var(--pa-erase-w) var(--pa-erase-h), var(--pa-grain-w) var(--pa-grain-h), 100% 100%, 100% 100%;
+  background-repeat: no-repeat round, no-repeat round, no-repeat, no-repeat, no-repeat, no-repeat, repeat, no-repeat, no-repeat;
+  background-origin: content-box, content-box, border-box, border-box, border-box, border-box, border-box, border-box, border-box;
+  background-clip: content-box, content-box, border-box, border-box, border-box, border-box, border-box, border-box, border-box;
   -webkit-mask-image: var(--pa-punch), linear-gradient(#000 0 0), linear-gradient(#000 0 0), linear-gradient(#000 0 0);
   mask-image: var(--pa-punch), linear-gradient(#000 0 0), linear-gradient(#000 0 0), linear-gradient(#000 0 0);
   -webkit-mask-position: left top, right top, left top, left bottom; mask-position: left top, right top, left top, left bottom;
@@ -38,9 +52,22 @@
 /* 横格：画在滚动层上（background-attachment: local），跟字一起走；宽度铺到整页，左边让出打孔那一列 */
 :root[data-paper="sailor"] body.has-scene .ed-host .cm-content { background-image: none; }
 :root[data-paper="sailor"] body.has-scene .ed-host .cm-scroller {
-  background-image: linear-gradient(transparent calc(100% - 1px), var(--sl-rule) calc(100% - 1px));
-  background-size: calc(min(100%, calc(var(--text-width) + 120px)) - 36px) calc(var(--text-size) * var(--text-lh));
-  background-position: calc(50% + 18px) 28px; background-repeat: repeat-y; background-attachment: local; }
+  --sl-lh: calc(var(--text-size) * var(--text-lh)); --sl-rw: calc(min(100%, calc(var(--text-width) + 120px)) - 36px);
+  /* 横线略微不匀：印刷时有的地方墨重、线粗一点，有的地方墨淡。用几层周期不同（2、3、5、7 行）的扁椭圆压在线上，每行深浅位置都不一样 */
+  background-image:
+    radial-gradient(ellipse 16% 2px at 22% 100%, var(--sl-rule-d), transparent),
+    radial-gradient(ellipse 24% 2px at 71% 100%, var(--sl-rule-d), transparent),
+    radial-gradient(ellipse 12% 2px at 44% 100%, var(--sl-rule-d), transparent),
+    radial-gradient(ellipse 20% 2px at 90% 100%, var(--sl-rule-d), transparent),
+    radial-gradient(ellipse 9% 1.5px at 36% 100%, var(--sl-rule-l), transparent),
+    radial-gradient(ellipse 13% 1.5px at 58% 100%, var(--sl-rule-l), transparent),
+    radial-gradient(ellipse 7% 1.5px at 8% 100%, var(--sl-rule-l), transparent),
+    linear-gradient(transparent calc(100% - 1px), var(--sl-rule) calc(100% - 1px));
+  background-size: var(--sl-rw) calc(var(--sl-lh) * 2), var(--sl-rw) calc(var(--sl-lh) * 3), var(--sl-rw) calc(var(--sl-lh) * 5), var(--sl-rw) calc(var(--sl-lh) * 7),
+    var(--sl-rw) calc(var(--sl-lh) * 2), var(--sl-rw) calc(var(--sl-lh) * 3), var(--sl-rw) calc(var(--sl-lh) * 5), var(--sl-rw) var(--sl-lh);
+  background-position: calc(50% + 18px) 28px, calc(50% + 18px) 28px, calc(50% + 18px) calc(28px + var(--sl-lh) * 2), calc(50% + 18px) calc(28px + var(--sl-lh) * 4),
+    calc(50% + 18px) calc(28px + var(--sl-lh)), calc(50% + 18px) calc(28px + var(--sl-lh)), calc(50% + 18px) calc(28px + var(--sl-lh) * 3), calc(50% + 18px) 28px;
+  background-repeat: repeat-y; background-attachment: local; }
 
 /* 醒来：这页纸从上沿往下翻，越落越快，落平时弹两下；贴纸和影子跟着纸一起翻。纸色不等慢慢渐变，跟着翻页一起到位 */
 :root[data-paper="sailor"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::before,

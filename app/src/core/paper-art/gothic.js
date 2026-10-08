@@ -114,9 +114,13 @@ function cornerMask() {
   for (let i = 1; i <= 19; i++) for (const k of [1, 2]) { put(i, k, 1); put(k, i, 1); }
   const curl = spiral(19.5, 7, 5.5, 1.3, -Math.PI / 2, 1.15, 1);
   path(curl); path(curl.map(([x, y]) => [y, x]));
-  // 斜着伸出一根铁杆，头上一个矛尖
+  // 斜着伸出一根铁杆，头上一颗心（心尖朝着角）
   path(line(8, 8, 13, 13));
-  for (let y = 13; y <= 17; y++) for (let x = 13; x <= 17; x++) if (x + y >= 30 && (x >= 15 || y >= 15) && x + y <= 34) put(x, y, 1);
+  for (let y = 12; y < 22; y++) for (let x = 12; x < 22; x++) {
+    const lobe = Math.hypot(x - 17.2, y - 14.6) <= 1.75 || Math.hypot(x - 14.6, y - 17.2) <= 1.75;
+    const body = x + y >= 27 && x + y <= 32 && Math.abs(x - y) <= 2 + (x + y - 27) * .3;
+    if (lobe || body) put(x, y, 1);
+  }
   // 铁条上的小铆钉
   for (const i of [12]) { m[1][i] = 3; m[i][1] = 3; }
   return m;
@@ -167,6 +171,98 @@ const SEAL = [
   "..wRRRRgRRRw...",
   "...wwRRRRRww...",
   ".....wwwwww....",
+];
+
+
+// ---------------- 连击的表盘：一圈罗马数字（I–XII），双圈、刻度；银色，按等级在 CSS 里染色 ----------------
+const ROMAN = {
+  I: ["#", "#", "#", "#", "#"],
+  V: ["#.#", "#.#", "#.#", "#.#", ".#."],
+  X: ["#.#", "#.#", ".#.", "#.#", "#.#"],
+};
+function dialRows() {
+  const N = 56, c = 27.5, g = Array.from({ length: N }, () => Array(N).fill("."));
+  const put = (x, y, ch) => { x = Math.round(x); y = Math.round(y); if (x >= 0 && y >= 0 && x < N && y < N) g[y][x] = ch; };
+  const ring = (r, ch, dash = 0) => {
+    const pts = [];
+    for (let a = 0; a < Math.PI * 2; a += 0.003) pts.push([c + Math.cos(a) * r, c + Math.sin(a) * r]);
+    stroke(pts).forEach(([x, y], i) => { if (!dash || i % dash < dash - 1) put(x, y, ch); });
+  };
+  ring(26.5, "o"); ring(24.5, "l"); ring(15, "l", 3);
+  // 刻度：60 格，五的倍数长一点
+  for (let k = 0; k < 60; k++) {
+    if (k % 5) { const a = k / 60 * Math.PI * 2; put(c + Math.cos(a) * 23, c + Math.sin(a) * 23, "l"); }
+  }
+  const names = ["XII", "I", "II", "III", "IIII", "V", "VI", "VII", "VIII", "IX", "X", "XI"];
+  names.forEach((nm, k) => {
+    const a = k / 12 * Math.PI * 2 - Math.PI / 2, cx = c + Math.cos(a) * 19.5, cy = c + Math.sin(a) * 19.5;
+    const glyphs = [...nm].map((ch) => ROMAN[ch]);
+    const w = glyphs.reduce((n, gl) => n + gl[0].length, 0) + glyphs.length - 1;
+    let x0 = Math.round(cx - w / 2 + .5);
+    for (const gl of glyphs) {
+      gl.forEach((r, y) => [...r].forEach((ch, x) => { if (ch === "#") put(x0 + x, Math.round(cy - 2.5 + .5) + y, "w"); }));
+      x0 += gl[0].length + 1;
+    }
+  });
+  return g.map((r) => r.join(""));
+}
+// 指针：尖头是一颗小心，尾巴一个圈
+const HAND = [
+  ".#.#.",
+  "#####",
+  "#####",
+  ".###.",
+  "..#..",
+  "..#..",
+  "..#..",
+  "..#..",
+  "..#..",
+  "..#..",
+  "..#..",
+  "..#..",
+  "..#..",
+  "..#..",
+  "..#..",
+  ".###.",
+  ".#.#.",
+  ".###.",
+  ".....",
+  ".....",
+  ".....",
+  ".....",
+  ".....",
+  ".....",
+  ".....",
+  ".....",
+  ".....",
+  ".....",
+  ".....",
+  ".....",
+  ".....",
+  ".....",
+  ".....",
+];
+// 醒来时从暗处飞走的一群蝙蝠（红眼睛）
+const FLOCK = (() => {
+  const W = 60, H = 40, g = Array.from({ length: H }, () => Array(W).fill("."));
+  const big = ["k.........k", "kk..k.k..kk", "kkk.kkk.kkk", ".kkkkekkkk.", "..kkkkkkk..", "...k...k..."];
+  const mid = ["k.......k", "kk.k.k.kk", ".kkkekkk.", "..kk.kk.."];
+  const sml = ["k.k.k", ".kkk.", "..k.."];
+  const at = (sp, x0, y0) => sp.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== ".") g[y0 + y][x0 + x] = ch; }));
+  at(big, 4, 26); at(mid, 24, 14); at(big, 38, 22); at(sml, 18, 33); at(mid, 46, 4); at(sml, 10, 8); at(sml, 33, 2); at(mid, 2, 14);
+  return g.map((r) => r.join(""));
+})();
+// 烛光那角溅的几滴蜡
+const DRIPS = [
+  "..........ww......",
+  ".........wRRw.....",
+  "..........RR......",
+  "..................",
+  "...ww.............",
+  "..wRRw........w...",
+  ".wRRRRw......wRw..",
+  "..wRRw........w...",
+  "...ww.............",
 ];
 
 // ---------------- 纸纹 ----------------
@@ -290,6 +386,11 @@ function edge(side) {
 }
 
 export default {
+  // 连击：表盘、指针；复写：蝙蝠
+  dial: sprite(dialRows(), { o: "#d8d0e2", l: "#b7aec6", w: "#f4effa" }, { o: "#d8d0e2", l: "#b7aec6", w: "#f4effa" }, 2),
+  hand: sprite(HAND, { "#": "#f4effa" }, { "#": "#f4effa" }, 2),
+  flock: sprite(FLOCK, { k: "#1a0f1e", e: "#ff4d6d" }, { k: "#0b060d", e: "#ff5a7a" }, 3),
+  drips: sprite(DRIPS, { w: "#6e1022", R: "#a91d34" }, { w: "#5a0b1c", R: "#9a1a30" }, 2),
   // 纸纹
   vellum: { size: [160, 160], scale: 2, texture: vellum },
   fox: { size: [211, 197], scale: 2, texture: foxSparse },
