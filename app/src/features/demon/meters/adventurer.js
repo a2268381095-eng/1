@@ -1,6 +1,6 @@
 // adventurer 这套的码字进度：RPG 的经验条。左边一面冒险者小盾（剑与罗盘），右边一根皮框镶钉的经验槽。
 // 平时：槽里的绿光慢慢流，满格的头上有一颗亮点一闪一闪，盾上的剑尖隔一会儿亮一下；
-// 刚涨字：经验槽亮一下，「+EXP」从槽头往上飘；写满：整条变金色，光一道道扫过，盾变金，「LV UP!」在上面跳。
+// 刚涨字：经验槽亮一下，「+XP」从槽头往上飘；写满：整条变金色，光一道道扫过，盾变金，「LV UP!」在上面跳。
 
 // 3×5 像素字
 const FONT = {
@@ -8,32 +8,32 @@ const FONT = {
   L: ["100", "100", "100", "100", "111"], V: ["101", "101", "101", "101", "010"], U: ["101", "101", "101", "101", "111"],
   "+": ["000", "010", "111", "010", "000"], "!": ["1", "1", "1", "0", "1"],
 };
-function text(g, str, x, y, col, shadow) {
+function text(g, str, x, y, col, edge) {
+  const dots = [];
   for (const ch of str) {
     const f = FONT[ch];
     if (!f) { x += 2; continue; }
-    f.forEach((r, j) => [...r].forEach((b, i) => {
-      if (b !== "1") return;
-      if (shadow) { g.fillStyle = shadow; g.fillRect(x + i + 1, y + j + 1, 1, 1); }
-      g.fillStyle = col; g.fillRect(x + i, y + j, 1, 1);
-    }));
-    x += f[0].length + 1;
+    f.forEach((r, j) => [...r].forEach((b, i) => { if (b === "1") dots.push([x + i, y + j]); }));
+    x += f[0].length + (edge ? 2 : 1);
   }
+  // 描一圈边，浅色深色底上都看得清
+  if (edge) { g.fillStyle = edge; for (const [a, b] of dots) for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) g.fillRect(a + dx, b + dy, 1, 1); }
+  g.fillStyle = col; for (const [a, b] of dots) g.fillRect(a, b, 1, 1);
   return x;
 }
-const textW = (str) => [...str].reduce((n, ch) => n + (FONT[ch] ? FONT[ch][0].length + 1 : 2), -1);
+const textW = (str, gap = 1) => [...str].reduce((n, ch) => n + (FONT[ch] ? FONT[ch][0].length + gap : 2), -gap);
 
-// 小盾：o 外框、r 盾面、R 盾面暗部、s 剑、h 剑柄、c 罗盘圈
+// 小盾：o 外框、r 盾面、R 盾面暗部、w 剑尖、s 剑身、h 护手、g 剑柄、c 铜钉和剑首
 const SHIELD = [
   "ooooooooooo",
-  "orrrrsrrrro",
-  "orccrsrccRo",
+  "orrrrwrrrRo",
   "orcrrsrrcRo",
-  "orrhhshhRRo",
-  "orcrrsrrcRo",
-  "orrccsccRRo",
-  ".orrrsrrRo.",
-  ".orrrsrRRo.",
+  "orrrrsrrRRo",
+  "orrrrsrrRRo",
+  "orrrrsrrRRo",
+  "orrhhhhhRRo",
+  ".orrrgrrRo.",
+  ".orrrcrRRo.",
   "..orrrRRo..",
   "...orRRo...",
   "....ooo....",
@@ -60,8 +60,8 @@ export default {
     // ---- 盾 ----
     const glint = done ? Math.floor(t * 4) % 2 : (t % 4 < .3);
     const pal = done
-      ? { o: "#6b4410", r: gold, R: goldD, s: "#fff6d6", h: "#7a3d12", c: "#fff2bf" }
-      : { o: dark ? "#e8d3a8" : "#3a2410", r: "#b3311f", R: "#7e1e14", s: glint ? "#ffffff" : "#e8e2d2", h: "#8a5a32", c: "#e8b04a" };
+      ? { o: "#6b4410", r: gold, R: goldD, s: "#fff6d6", w: "#ffffff", h: "#7a3d12", g: "#7a3d12", c: "#fff2bf" }
+      : { o: dark ? "#e8d3a8" : "#3a2410", r: "#b3311f", R: "#7e1e14", s: "#e8e2d2", w: glint ? "#ffffff" : "#e8e2d2", h: "#e8b04a", g: "#6e3f17", c: "#e8b04a" };
     SHIELD.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== ".") px(g, x, y + 1, pal[ch]); }));
     if (fresh && !done) { g.fillStyle = "rgba(255,255,255,.45)"; g.fillRect(1, 2, 4, 3); }
 
@@ -104,26 +104,26 @@ export default {
 
     // ---- 槽上方一行：EXP 字样 / 飘字 / LV UP! ----
     if (done) {
-      const s2 = "LV UP!", w = textW(s2), x0 = BX + Math.floor((BW - w) / 2);
+      const s2 = "LV UP!", w = textW(s2, 2), x0 = BX + Math.floor((BW - w) / 2);
       let x = x0;
       [...s2].forEach((ch, i) => {
         const hop = Math.floor(t * 6 + i) % 6 === 0 ? -1 : 0;
         const col = Math.floor(t * 3) % 2 ? "#fff2bf" : gold;
-        x = text(g, ch, x, hop, col, "#6b4410");
+        x = text(g, ch, x, 1 + hop, col, "#5a2e08");
       });
       // 盾边两颗闪星
       const tw = Math.floor(t * 3) % 3;
       if (tw === 0) { px(g, 0, 0, "#fff"); px(g, 1, 0, gold); }
       if (tw === 1) { px(g, 11, 2, "#fff"); px(g, 12, 2, gold); }
     } else {
-      text(g, "EXP", BX, 0, dark ? "#c9e89a" : "#3b7a22", dark ? "#14100a" : "rgba(255,255,255,.55)");
+      text(g, "EXP", BX + 1, 0, dark ? "#a8e870" : "#3b7a22", dark ? "#14100a" : null);
       if (s.bump < 1.2) {
-        // 「+EXP」从槽头往上飘，越往上越淡
+        // 「+XP」从槽头往上飘，越往上越淡
         const p = Math.min(1, s.bump / 1.2), y = Math.round(3 - p * 6);
-        const str = "+XP", w = textW(str);
+        const str = "+XP", w = textW(str, 2);
         const x0 = Math.max(BX + 14, Math.min(BX + BW - w, BX + n - 2));
         g.globalAlpha = 1 - p * p;
-        text(g, str, x0, y, "#fff2bf", "#3b7a22");
+        text(g, str, x0, y, "#fff2bf", "#2e5a14");
         g.globalAlpha = 1;
       }
     }

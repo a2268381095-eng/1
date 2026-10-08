@@ -103,7 +103,7 @@ function grain(g, w, h, t, rnd) {
     for (let k = 0; k < 26; k++) {
       let x = rnd() * w, y = rnd() * h;
       const a = rnd() * Math.PI, L = 4 + rnd() * 9, c = rnd() < .5 ? brown : light;
-      for (let i = 0; i < L; i++) { px(x, y, c, dark ? .16 : (c === brown ? .09 : .35)); x += Math.cos(a); y += Math.sin(a) * .6; }
+      for (let i = 0; i < L; i++) { px(x, y, c, dark ? .12 : (c === brown ? .08 : .16)); x += Math.cos(a); y += Math.sin(a) * .6; }
     }
   });
 }
@@ -208,34 +208,34 @@ function mapgrid(g, w, h, t, rnd) {
 }
 
 // ---------------- 像素装饰 ----------------
-// 红蜡封：边缘不规则地溢出来，中间压着剑与罗盘
-const SEAL = [
-  "......rrrrr......",
-  "....rrRRRRRrr....",
-  "..rrRRRRRRRRRrr..",
-  ".rRRRddddddddRRr.",
-  ".rRRdRRRRhRRRdRR.",
-  "rRRdRRRRRhRRRRdRr",
-  "rRRdRRRwwhwwRRdRr",
-  "rRdRRRwRRhRRwRRdR",
-  "rRdRRhhhhhhhhhRdr",
-  "rRdRRRwRRhRRwRRdr",
-  "rRRdRRRwwhwwRRdRr",
-  ".rRdRRRRRhRRRRdRr",
-  ".rRRdRRRRhRRRdRr.",
-  "..rRRddddddddRr..",
-  "...rrRRRRRRRrr...",
-  "....rr.rrrr.rr...",
-  ".......r..r......",
-];
-// 两条垂下来的麻绳
+// 红蜡封：边缘不规则地溢出来，里面压出一圈凸边，圈里是一把剑竖着穿过罗盘环
+function seal() {
+  const N = 19, c = 9;
+  const g = Array.from({ length: N }, () => Array(N).fill("."));
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    const dx = x - c, dy = y - c, d = Math.hypot(dx, dy), a = Math.atan2(dy, dx);
+    const R = 8.4 + .7 * Math.sin(a * 5 + 1) + .4 * Math.sin(a * 11);
+    if (d > R) continue;
+    g[y][x] = d > R - 1.1 ? "r" : Math.abs(d - 6.6) < .55 ? "d" : Math.abs(d - 5.9) < .5 && dy < 0 ? "l" : "R";
+  }
+  const put = (x, y, ch) => { if (g[y] && g[y][x] !== undefined && g[y][x] !== ".") g[y][x] = ch; };
+  // 罗盘环（半径 3.6）和东西两个刻度
+  for (let k = 0; k < 64; k++) { const t = k / 64 * Math.PI * 2; put(Math.round(c + Math.cos(t) * 3.6), Math.round(c + Math.sin(t) * 3.6), "h"); }
+  put(c - 5, c, "h"); put(c + 5, c, "h");
+  // 剑：剑尖在上，护手短，剑柄、剑首在下
+  for (let y = c - 6; y <= c + 3; y++) put(c, y, y === c - 6 ? "h" : "w");
+  for (let x = c - 2; x <= c + 2; x++) put(x, c + 4, "h");
+  put(c, c + 5, "g"); put(c, c + 6, "h");
+  return g.map((r) => r.join(""));
+}
+// 两条垂下来的红缎带，末端剪成燕尾
 const SEAL_TAIL = [
-  "....tt.....tt....",
-  "....tT....tT.....",
-  "...tT.....tT.....",
-  "...tT......tT....",
-  "..tT.......tT....",
-  "..tt........tt...",
+  ".....RRR...RRR.....",
+  ".....RRd...dRR.....",
+  "....RRd.....dRR....",
+  "....RRd.....dRR....",
+  "...RRd.......dRR...",
+  "...R.d.......d.R...",
 ];
 // 铁钉：钉帽 + 钉在纸上压出来的一圈皱
 const NAIL = [
@@ -277,10 +277,10 @@ export default {
   compass: { size: [47, 47], scale: 3, texture: compass },
   map: { size: [64, 50], scale: 3, texture: mapgrid },
   // 纸上的东西
-  seal: { rows: SEAL, colors: { r: "#7e1e14", R: "#b3311f", d: "#8d2416", h: "#e8b04a", w: "#f0c76a" }, scale: 3 },
-  sealTail: { rows: SEAL_TAIL, colors: { t: "#8a6a3a", T: "#c9a465" }, scale: 3 },
+  seal: { rows: seal(), colors: { r: "#6e180f", R: "#b3311f", d: "#82200f", l: "#d4553a", h: "#e8b04a", w: "#f6dc94", g: "#7a4a1c" }, scale: 3 },
+  sealTail: { rows: SEAL_TAIL, colors: { R: "#9e2a1a", d: "#6e180f" }, scale: 3 },
   nail: { rows: NAIL, colors: { c: "#2b2520", h: "#9a958a", w: "#e6e0d0", g: "#6d665c", d: "#433c34" }, scale: 3 },
-  roll: { rows: ROLL, colors: { o: "#5a3a1a", l: "#fbf1d6", L: "#efdcb0", m: "#e2c78e", M: "#cfae70", s: "#b48d4f", O: "#7a5428", d: "#3a2410" }, scale: 3 },
-  knobL: { rows: KNOB_L, colors: { k: "#2e1a0a", w: "#d9a466", l: "#a8692f", b: "#6e3f17" }, scale: 3 },
-  knobR: { rows: flip(KNOB_L), colors: { k: "#2e1a0a", w: "#d9a466", l: "#a8692f", b: "#6e3f17" }, scale: 3 },
+  roll: { rows: ROLL, colors: { o: "#5a3a1a", l: "#fbf1d6", L: "#efdcb0", m: "#e2c78e", M: "#cfae70", s: "#b48d4f", O: "#7a5428", d: "#3a2410" }, scale: 4 },
+  knobL: { rows: KNOB_L, colors: { k: "#2e1a0a", w: "#d9a466", l: "#a8692f", b: "#6e3f17" }, scale: 4 },
+  knobR: { rows: flip(KNOB_L), colors: { k: "#2e1a0a", w: "#d9a466", l: "#a8692f", b: "#6e3f17" }, scale: 4 },
 };

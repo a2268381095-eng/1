@@ -9,7 +9,7 @@
   --av-light: rgba(255, 248, 222, .42); --av-vig: rgba(120, 72, 24, .30);
   --av-burn: rgba(70, 36, 10, .55); --av-burn2: rgba(150, 96, 40, .0); }
 :root[data-paper="adventurer"][data-dark] {
-  --av-tint: rgba(92, 64, 30, .30); --av-tint2: rgba(70, 46, 20, .32);
+  --av-tint: rgba(110, 70, 30, .34); --av-tint2: rgba(80, 48, 18, .38);
   --av-light: rgba(255, 220, 160, .06); --av-vig: rgba(0, 0, 0, .40);
   --av-burn: rgba(0, 0, 0, .6); --av-burn2: rgba(0, 0, 0, 0); }
 
@@ -48,8 +48,9 @@
   /* 上下撕开的口子：右上角、左下角各撕掉一块 */
   clip-path: polygon(0% 9px, 4.1% 4px, 8.2% 9px, 12.3% 7px, 16.4% 9px, 20.5% 6px, 24.5% 9px, 28.6% 5px, 32.7% 2px, 36.8% 3px, 40.9% 14px, 45.0% 10px, 49.1% 6px, 53.2% 6px, 57.3% 6px, 61.4% 11px, 65.5% 8px, 69.5% 8px, 73.6% 5px, 77.7% 6px, 81.8% 13px, 85.9% 5px, 90.0% 6px, 92.6% 13px, 94.1% 11px, 95.4% 21px, 96.8% 24px, 98.2% 33px, 100% 38px, 100% calc(100% - 9px), 96.0% calc(100% - 3px), 92.0% calc(100% - 8px), 88.0% calc(100% - 9px), 84.0% calc(100% - 5px), 80.0% calc(100% - 3px), 76.0% calc(100% - 15px), 72.0% calc(100% - 3px), 68.0% calc(100% - 6px), 64.0% calc(100% - 6px), 60.0% calc(100% - 3px), 56.0% calc(100% - 3px), 52.0% calc(100% - 12px), 48.0% calc(100% - 8px), 44.0% calc(100% - 3px), 40.0% calc(100% - 7px), 36.0% calc(100% - 9px), 32.0% calc(100% - 4px), 28.0% calc(100% - 12px), 24.0% calc(100% - 5px), 20.0% calc(100% - 5px), 16.0% calc(100% - 6px), 12.0% calc(100% - 8px), 10.8% calc(100% - 12px), 8.9% calc(100% - 20px), 7.2% calc(100% - 18px), 5.1% calc(100% - 29px), 3.0% calc(100% - 33px), 1.4% calc(100% - 42px), 0% calc(100% - 46px));
   box-shadow: none; }
-/* 停笔：羊皮纸只剩一层极淡的影子 */
+/* 停笔：羊皮纸只剩一层极淡的影子；醒来时不等慢慢淡入，跟着卷轴一起出来 */
 :root[data-paper="adventurer"] body.has-scene.paper-rest .ws-body > .center::before { opacity: .1; }
+:root[data-paper="adventurer"] body.has-scene.paper-wake .ws-body > .center::before { transition-duration: .5s, .6s, .6s, .15s; }
 
 /* ---------- 纸上的东西：顶上一颗铁钉，右下角红蜡封和两根麻绳 ---------- */
 :root[data-paper="adventurer"] body.has-scene .ws-body > .center::after {
@@ -59,7 +60,7 @@
     var(--pa-seal), var(--pa-sealTail), radial-gradient(closest-side, rgba(60, 10, 4, .3), transparent);
   background-size: var(--pa-nail-w) var(--pa-nail-h), 44px 16px,
     var(--pa-seal-w) var(--pa-seal-h), var(--pa-sealTail-w) var(--pa-sealTail-h), 66px 30px;
-  background-position: 50% 4px, 50% 22px, right 40px bottom 44px, right 40px bottom 26px, right 33px bottom 34px;
+  background-position: 50% 4px, 50% 22px, right 40px bottom 44px, right 40px bottom 26px, right 36px bottom 38px;
   background-repeat: no-repeat;
   image-rendering: pixelated; }
 :root[data-paper="adventurer"][data-motion="full"] body.has-scene .ws-body > .center::after { animation: av-orn-in .45s cubic-bezier(.3, 1.6, .5, 1) backwards; }
@@ -68,15 +69,15 @@
 /* ---------- 复写回来：上下两卷羊皮从中间往两头滚开，纸跟着展开 ---------- */
 @property --av-r { syntax: "<number>"; inherits: false; initial-value: 1; }
 :root[data-paper="adventurer"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::before {
-  animation: av-unroll .7s cubic-bezier(.35, .1, .25, 1) both, av-warm .9s ease-out both; }
+  animation: av-unroll .72s cubic-bezier(.45, .05, .3, 1) both, av-warm .9s ease-out both; }
 @keyframes av-unroll {
   from { clip-path: polygon(0% 50%, 4.1% 50%, 8.2% 50%, 12.3% 50%, 16.4% 50%, 20.5% 50%, 24.5% 50%, 28.6% 50%, 32.7% 50%, 36.8% 50%, 40.9% 50%, 45.0% 50%, 49.1% 50%, 53.2% 50%, 57.3% 50%, 61.4% 50%, 65.5% 50%, 69.5% 50%, 73.6% 50%, 77.7% 50%, 81.8% 50%, 85.9% 50%, 90.0% 50%, 92.6% 50%, 94.1% 50%, 95.4% 50%, 96.8% 50%, 98.2% 50%, 100% 50%, 100% 50%, 96.0% 50%, 92.0% 50%, 88.0% 50%, 84.0% 50%, 80.0% 50%, 76.0% 50%, 72.0% 50%, 68.0% 50%, 64.0% 50%, 60.0% 50%, 56.0% 50%, 52.0% 50%, 48.0% 50%, 44.0% 50%, 40.0% 50%, 36.0% 50%, 32.0% 50%, 28.0% 50%, 24.0% 50%, 20.0% 50%, 16.0% 50%, 12.0% 50%, 10.8% 50%, 8.9% 50%, 7.2% 50%, 5.1% 50%, 3.0% 50%, 1.4% 50%, 0% 50%); }
 }
 /* 展开那一下纸面泛一层暖光，像刚从皮筒里抽出来 */
 @keyframes av-warm { 0%, 40% { filter: sepia(.35) brightness(1.08); } 100% { filter: none; } }
 :root[data-paper="adventurer"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::after {
-  top: 12px; height: calc(100% - 24px); width: calc(var(--av-w) + 20px); margin-left: calc(var(--av-w) / -2 - 10px);
-  padding: 0 14px; box-sizing: border-box; opacity: 1; transform: none;
+  top: 12px; height: calc(100% - 24px); width: calc(var(--av-w) + 28px); margin-left: calc(var(--av-w) / -2 - 14px);
+  padding: 0 18px; box-sizing: border-box; opacity: 1; transform: none;
   background-image: var(--pa-knobL), var(--pa-knobR), var(--pa-roll), var(--pa-knobL), var(--pa-knobR), var(--pa-roll);
   background-size: var(--pa-knobL-w) var(--pa-knobL-h), var(--pa-knobR-w) var(--pa-knobR-h), var(--pa-roll-w) var(--pa-roll-h),
     var(--pa-knobL-w) var(--pa-knobL-h), var(--pa-knobR-w) var(--pa-knobR-h), var(--pa-roll-w) var(--pa-roll-h);
@@ -89,8 +90,8 @@
   filter: drop-shadow(0 3px 2px rgba(40, 20, 6, .4));
   animation: av-rods .9s both; }
 @keyframes av-rods {
-  0% { --av-r: 0; opacity: 1; animation-timing-function: cubic-bezier(.35, .1, .25, 1); }
-  78% { --av-r: 1; opacity: 1; }
+  0% { --av-r: 0; opacity: 1; animation-timing-function: cubic-bezier(.45, .05, .3, 1); }
+  80% { --av-r: 1; opacity: 1; }
   100% { --av-r: 1; opacity: 0; }
 }
 
@@ -103,13 +104,10 @@
 .demon[data-style="adventurer"] .demon-badge { border: 2px solid #3a2410; border-radius: 2px; padding: 4px 6px 5px;
   background: radial-gradient(ellipse at 30% 20%, rgba(255, 250, 230, .6), transparent 70%), #f0deb4; color: #3a2a18;
   box-shadow: 0 0 0 3px #a8692f, 0 0 0 4px #3a2410, 3px 5px 0 4px rgba(40, 20, 6, .3); }
-.demon[data-style="adventurer"] .demon-badge::before { content: ""; position: absolute; inset: -4px; pointer-events: none;
-  background: radial-gradient(circle, #ffe2a0 0 1px, #b8862e 1.5px 2.5px, transparent 3px) 0 0 / 100% 100%;
-  -webkit-mask: radial-gradient(circle at 3px 3px, #000 4px, transparent 4.5px), radial-gradient(circle at calc(100% - 3px) 3px, #000 4px, transparent 4.5px),
-    radial-gradient(circle at 3px calc(100% - 3px), #000 4px, transparent 4.5px), radial-gradient(circle at calc(100% - 3px) calc(100% - 3px), #000 4px, transparent 4.5px);
+/* 四角铜钉 */
+.demon[data-style="adventurer"] .demon-badge::before { content: ""; position: absolute; inset: 1px; pointer-events: none;
   background-image: radial-gradient(circle at 3px 3px, #ffe2a0 1px, #b8862e 1.6px 2.6px, transparent 3px), radial-gradient(circle at calc(100% - 3px) 3px, #ffe2a0 1px, #b8862e 1.6px 2.6px, transparent 3px),
-    radial-gradient(circle at 3px calc(100% - 3px), #ffe2a0 1px, #b8862e 1.6px 2.6px, transparent 3px), radial-gradient(circle at calc(100% - 3px) calc(100% - 3px), #ffe2a0 1px, #b8862e 1.6px 2.6px, transparent 3px);
-  mask: none; -webkit-mask: none; }
+    radial-gradient(circle at 3px calc(100% - 3px), #ffe2a0 1px, #b8862e 1.6px 2.6px, transparent 3px), radial-gradient(circle at calc(100% - 3px) calc(100% - 3px), #ffe2a0 1px, #b8862e 1.6px 2.6px, transparent 3px); }
 .demon[data-style="adventurer"] .db-label { color: #3a2a18; letter-spacing: .05em; }
 .demon[data-style="adventurer"] .demon-badge.done { border-color: #6b4410; box-shadow: 0 0 0 3px #f2b51c, 0 0 0 4px #6b4410, 3px 5px 0 4px rgba(40, 20, 6, .3); }
 .demon[data-style="adventurer"] .demon-badge.done .db-label { color: #8a4a0a; }
@@ -119,7 +117,7 @@
 /* ---------- 连击：RPG 的伤害数字。「连斩」是一块皮牌子，数字是黄色描黑边的斜体大字，
    每敲一下数字从下面弹上来、一道剑光斜着划过、右上角跳一个「HIT!」。
    200 橙；500 起变「暴击!」、背后炸开一团锯齿光；1000 红字、交叉两道剑光、整个在抖；2000「会心一击!」红白闪 ---------- */
-.demon[data-style="adventurer"] .demon-combo { --av-c: #fff1b8; --av-o: #3a1606; --av-hit: "HIT!"; --av-hc: #ffffff; --av-ho: #a63d2a;
+.demon[data-style="adventurer"] .demon-combo { --av-c: #fff1b8; --av-o: #3a1606; --av-hit: "HIT!"; --av-hc: #fff6d6; --av-ho: #a63d2a;
   left: -98px; top: 13%; gap: 1px; filter: drop-shadow(1px 2px 0 rgba(30, 12, 4, .35)); }
 .demon.near-left[data-style="adventurer"] .demon-combo { left: auto; right: -98px; }
 .demon[data-style="adventurer"] .demon-combo .dc-label { position: relative; z-index: 2; padding: 2px 9px 3px; font-size: 10px; line-height: 1.1; letter-spacing: .2em; text-indent: .2em;
@@ -130,7 +128,7 @@
   color: var(--av-c); background: none; -webkit-text-stroke: 0; transform: skewX(-10deg);
   text-shadow: 2px 0 0 var(--av-o), -2px 0 0 var(--av-o), 0 2px 0 var(--av-o), 0 -2px 0 var(--av-o), 2px 2px 0 var(--av-o), -2px 2px 0 var(--av-o), 2px -2px 0 var(--av-o), -2px -2px 0 var(--av-o), 1px 4px 0 var(--av-o); }
 /* 右上角的「HIT!」 */
-.demon[data-style="adventurer"] .demon-combo .dc-num::after { content: var(--av-hit); position: absolute; left: 68%; top: -11px; white-space: nowrap; font-size: 11px; letter-spacing: .02em;
+.demon[data-style="adventurer"] .demon-combo .dc-num::after { content: var(--av-hit); position: absolute; left: 82%; top: -6px; white-space: nowrap; font-size: 12px; letter-spacing: .02em;
   color: var(--av-hc); rotate: 14deg;
   text-shadow: 1px 0 0 var(--av-ho), -1px 0 0 var(--av-ho), 0 1px 0 var(--av-ho), 0 -1px 0 var(--av-ho), 1px 1px 0 var(--av-ho), -1px -1px 0 var(--av-ho), 1px 2px 0 var(--av-ho); }
 /* 剑光：一道斜着的白光 */
@@ -152,7 +150,7 @@
 .demon[data-style="adventurer"] .demon-combo[data-level="2000"] { --av-hit: "会心一击!"; }
 .demon[data-style="adventurer"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"])::before { opacity: .85; }
 .demon[data-style="adventurer"] .demon-combo:is([data-level="1000"], [data-level="2000"]) .dc-num { font-size: 32px; }
-.demon[data-style="adventurer"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"]) .dc-num::after { font-size: 12px; top: -13px; }
+.demon[data-style="adventurer"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"]) .dc-num::after { font-size: 13px; top: -9px; }
 
 /* 动起来 */
 [data-motion="full"] .demon[data-style="adventurer"] .demon-combo .dc-num { animation: none; }
