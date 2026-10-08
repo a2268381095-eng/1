@@ -38,6 +38,7 @@ async function writeNow(id, text, ts = Date.now(), note = "") {
   const enc = encode(hd ? hd.text : null, text, hd ? hd.sinceFull : 0);
   const row = { id: uid("v"), chapterId: id, ts, kind: enc.kind, data: enc.data, words: countWords(text), len: text.length };
   if (note) row.note = note;
+  console.log("[ver] write", text.length, ts, note);
   await db.put("versions", row);
   heads.set(id, { text, ts, sinceFull: enc.kind === "full" ? 0 : hd.sinceFull + 1 });
   warned = false;
@@ -49,9 +50,11 @@ async function writeNow(id, text, ts = Date.now(), note = "") {
 function onSaved({ chapter, text }) {
   if (!chapter || typeof text !== "string") return;
   const id = chapter.id;
+  console.log("[ver] saved", text.length, Date.now());
   serial(async () => {
     const hd = await headOf(id);
     const wait = hd ? hd.ts + MIN_GAP - Date.now() : 0;
+    console.log("[ver] onSaved in queue", text.length, "hd.ts", hd && hd.ts, "now", Date.now(), "wait", wait);
     if (wait <= 0) { dropPending(id); await writeNow(id, text); return; }
     const p = pending.get(id) || { text, timer: 0 };
     p.text = text;
@@ -61,6 +64,7 @@ function onSaved({ chapter, text }) {
 }
 
 function firePending(id, p) {
+  console.log("[ver] fire", Date.now());
   p.timer = 0;
   serial(async () => {
     if (pending.get(id) !== p) return;
@@ -103,8 +107,10 @@ function failed(e) {
  * 启动时顺便：给还没有版本的章记第一版；清掉彻底删除（回收站里也没有了）的章留下的版本。
  */
 export function maintain({ startup = false } = {}) {
+  console.log("[ver] maintain called", Date.now());
   return serial(async () => {
     const now = Date.now();
+    console.log("[ver] maintain run", now);
     const by = new Map();
     for (const r of await db.all("versions")) {
       if (!by.has(r.chapterId)) by.set(r.chapterId, []);

@@ -25,7 +25,6 @@ const S = {
   kind: "all",
   list: [],          // 当前范围内的条目
   books: {},         // bookId → { book, live, chapters }
-  loading: null,
 };
 
 const onTrash = () => { const c = nav.current(); return !!(c && c.name === "trash" && S.view && S.view.isConnected); };
@@ -34,7 +33,7 @@ const onTrash = () => { const c = nav.current(); return !!(c && c.name === "tras
 async function load() {
   const list = await listTrash(S.bookId || undefined);
   const books = {};
-  for (const id of new Set(list.map((t) => t.bookId).concat(S.bookId ? [S.bookId] : []))) {
+  for (const id of new Set([...list.map((t) => t.bookId), S.bookId, S.fromBook])) {
     if (!id) continue;
     const b = await getBook(id);
     if (b) { books[id] = { book: b, live: true, chapters: await listChapters(id) }; continue; }
@@ -46,10 +45,9 @@ async function load() {
 }
 
 /** 编辑器里正开着这一章 / 这本书时，先把没存的正文存进去 */
-async function flushIfOpen(bookId, chapterId) {
-  if (!ws.book || !ws.editor || ws.book.id !== bookId) return;
-  if (chapterId && (!ws.current || ws.current.id !== chapterId)) return;
-  await ws.editor.flush();
+async function flushIfOpen({ bookId, chapterId }) {
+  if (!ws.book || !ws.editor) return;
+  if (chapterId ? ws.current && ws.current.id === chapterId : ws.book.id === bookId) await ws.editor.flush();
 }
 
 /**
@@ -59,7 +57,7 @@ async function flushIfOpen(bookId, chapterId) {
 async function putBack(snap) {
   if (snap.kind === "chapter") {
     const was = snap.data.chapter;
-    await flushIfOpen(snap.bookId, was.id);
+    await flushIfOpen({ chapterId: was.id });
     const cur = await getChapter(was.id);
     if (!cur) return false;
     const chapter = { ...cur, bookId: was.bookId, order: was.order, volumeId: was.volumeId ?? null };
@@ -69,7 +67,7 @@ async function putBack(snap) {
     return true;
   }
   if (snap.kind === "book") {
-    await flushIfOpen(snap.bookId);
+    await flushIfOpen({ bookId: snap.bookId });
     const book = await getBook(snap.bookId);
     if (!book) return false;
     const chapters = await listChapters(book.id);
@@ -275,7 +273,7 @@ function pickBook(books) {
     let result = null;
     const listEl = h("div.trash-pick");
     books.forEach((b) => {
-      const btn = h("button.trash-pick-item", { type: "button" }, h("span.grow", {}, "《" + b.title + "》"), icon("back"));
+      const btn = h("button.trash-pick-item", { type: "button" }, "《" + b.title + "》");
       btn.addEventListener("click", () => { result = b; m.close(true); });
       listEl.append(btn);
     });
@@ -317,9 +315,10 @@ async function moveToBook(entry, books) {
 async function purge(entries, { all = false } = {}) {
   if (!entries.length) return;
   const snaps = entries.map((e) => structuredClone(e));
+  const nm = nameOf(snaps[0]);
   try { await delEntries(snaps); }
   catch (e) { await refresh(); return failed("没能删除。", e, () => purge(entries, { all })); }
-  const what = all ? (S.bookId ? "清空本书的" + L() : "清空" + L()) : "彻底删除" + nameOf(snaps[0]);
+  const what = all ? (S.bookId ? "清空本书的" + L() : "清空" + L()) : "彻底删除" + nm;
   const u = pushUndo({
     label: what,
     undo: guard("没能撤销删除。", async () => { await putEntries(snaps); await afterChange({}); }),
@@ -327,7 +326,7 @@ async function purge(entries, { all = false } = {}) {
   });
   bus.emit("trash:purged", { count: snaps.length, all });
   await refresh();
-  toast(all ? `已清空 ${snaps.length} 项` : "已删除" + nameOf(snaps[0]), { action: { label: "撤销", run: () => runUndo(u) }, timeout: 9000 });
+  toast(all ? `已清空 ${snaps.length} 项` : "已删除" + nm, { action: { label: "撤销", run: () => runUndo(u) }, timeout: 9000 });
   return u;
 }
 
@@ -415,7 +414,6 @@ async function refresh() {
   }
   const scopeBook = S.bookId && S.books[S.bookId] && S.books[S.bookId].book;
   S.titleEl.textContent = L() + (scopeBook ? " · 《" + scopeBook.title + "》" : "");
-  document.title = L() + " · 小恶魔文书";
   renderBar();
   renderList();
   S.main.scrollTop = scroll;

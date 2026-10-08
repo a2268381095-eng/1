@@ -15,7 +15,7 @@ export function daysLeft(deletedAt, now = Date.now(), keep = KEEP_DAYS) {
 export function leftText(deletedAt, now = Date.now(), keep = KEEP_DAYS) {
   const d = daysLeft(deletedAt, now, keep);
   if (d <= 0) return "已到期，下次打开软件时清理";
-  if (d === 1) return "明天前清理";
+  if (d === 1) return "还剩不到 1 天";
   return `还剩 ${d} 天`;
 }
 
