@@ -1,0 +1,72 @@
+# 桌面版安装包：推送 app/ 的改动后自动在 Windows 上打包，安装包在这次运行的 Artifacts 里下载。
+# macOS 包比较费构建时间，需要时在 Actions 页面手动运行并勾选「同时打 macOS 包」。
+name: 桌面版安装包
+
+on:
+  push:
+    paths:
+      - "app/**"
+      - "assistant_sprite/styles/**"
+      - ".github/workflows/desktop.yml"
+  workflow_dispatch:
+    inputs:
+      mac:
+        description: "同时打 macOS 包"
+        type: boolean
+        default: false
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "app/src-tauri -> target"
+      - name: 安装依赖
+        working-directory: app
+        run: npm ci
+      - name: 打包
+        working-directory: app
+        run: npx tauri build --bundles nsis
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 小恶魔文书-Windows安装包
+          path: app/src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: error
+
+  macos:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.mac }}
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: "app/src-tauri -> target"
+      - name: 安装依赖
+        working-directory: app
+        run: npm ci
+      - name: 打包
+        working-directory: app
+        run: npx tauri build --bundles dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: 小恶魔文书-macOS安装包
+          path: app/src-tauri/target/release/bundle/dmg/*.dmg
+          if-no-files-found: error
