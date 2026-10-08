@@ -33,7 +33,9 @@ body.has-scene .ws-body > .center::before { content: ""; position: absolute; top
   -webkit-backdrop-filter: blur(var(--b-paper)) saturate(1.1); backdrop-filter: blur(var(--b-paper)) saturate(1.1);
   box-shadow: 0 10px 40px rgba(0, 0, 0, .16);
   transition: background-color 1.2s ease, -webkit-backdrop-filter 1.6s ease, backdrop-filter 1.6s ease, opacity 1.6s ease; }
-body.has-scene .ws-body > .center::after { content: none; }
+/* ::after 留给各套纸的装饰：把旧的底纹剪影规则（固定 144px 高、专注模式压暗）重置掉 */
+body.has-scene .ws-body > .center::after { content: none; height: auto; background: none; opacity: 1; }
+body.has-scene:not(.paper-rest) .ws.focus .ws-body > .center::after { opacity: 1; }
 body.has-scene.scene-typing .ws-body > .center::before { background-color: color-mix(in srgb, var(--paper) var(--a-paper-typing), transparent); transition-duration: .5s; }
 body.has-scene .ws-body > .center > * { position: relative; z-index: 1; }
 /* 字加一圈和纸同色的淡描边，画透过来也看得清 */
