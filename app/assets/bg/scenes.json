@@ -5,6 +5,10 @@
     "out": {
       "focus": [288, 134], "anchor": [0.6, 0.45],
       "fx": [
+        {"type": "sway", "rect": [50, 8, 26, 96], "pin": "top", "amp": 2, "period": 4600, "ripple": 0.4},
+        {"type": "bob", "rect": [244, 98, 80, 80], "amp": 1, "period": 6400},
+        {"type": "bob", "rect": [124, 120, 30, 30], "amp": 1, "period": 3800},
+        {"type": "sway", "rect": [0, 176, 96, 80], "pin": "bottom", "amp": 1, "period": 3600, "ripple": 0.2},
         {"type": "mist", "y": 150, "h": 22, "color": "#fff3f8", "alpha": 0.32, "speed": 2.2},
         {"type": "glow", "at": [343, 58], "r": 30, "color": "#ffc8e6", "period": 4200, "amp": 0.34},
         {"type": "twinkle", "color": "#fffbe8", "pts": [[343, 58, 3], [232, 33, 2], [197, 11], [263, 55, 2], [285, 20], [160, 70], [300, 10], [130, 42], [220, 74], [180, 40], [248, 8], [52, 122], [90, 133]]},
@@ -13,6 +17,11 @@
         {"type": "fly", "sprite": "bird", "color": "#a77fb8", "every": [14, 28], "from": [394, 70], "to": [-10, 40], "count": [2, 3], "speed": 26}
       ],
       "spots": [
+        {"id": "orb", "name": "魔法水晶球", "rect": [312, 26, 62, 66], "act": "sparkle", "color": "#ffc8e6"},
+        {"id": "castle", "name": "浮空城", "rect": [248, 100, 74, 76], "act": "flock", "color": "#a77fb8", "sprite": "bird"},
+        {"id": "roses", "name": "玫瑰花丛", "rect": [0, 180, 100, 76], "act": "shower", "color": "#f7a8c8"},
+        {"id": "crystal", "name": "水晶柱", "rect": [44, 112, 56, 30], "act": "sparkle", "color": "#ffffff"},
+        {"id": "sky", "name": "天空", "rect": [96, 0, 200, 64], "act": "meteor", "color": "#ffffff"}
       ]
     },
     "in": {
@@ -95,15 +104,22 @@
     "out": {
       "focus": [345, 128], "anchor": [0.55, 0.5],
       "fx": [
+        {"type": "wave", "rect": [96, 172, 190, 34], "amp": 1, "speed": 1.6, "k": 0.5},
+        {"type": "sway", "rect": [40, 0, 156, 74], "pin": "left", "amp": 2, "period": 5200, "ripple": 0.3},
+        {"type": "sway", "rect": [304, 186, 80, 70], "pin": "bottom", "amp": 2, "period": 3200, "ripple": 0.3},
         {"type": "glow", "at": [293, 28], "r": 11, "color": "#f2a184", "period": 6000, "amp": 0.26},
         {"type": "mist", "y": 58, "h": 14, "color": "#f6f0e2", "alpha": 0.3, "speed": -1.6},
         {"type": "mist", "y": 134, "h": 18, "color": "#f6f0e2", "alpha": 0.42, "speed": 2.4},
         {"type": "glint", "rect": [60, 166, 324, 68], "color": "#ffffff", "rate": 3},
-        {"type": "bob", "rect": [222, 148, 40, 22], "amp": 1, "period": 3400},
         {"type": "fall", "from": [0, 0, 190, 110], "sprite": "petal", "colors": ["#c8323c", "#e0564f", "#a8242c"], "rate": 1.0, "vx": [4, 12], "vy": [6, 12], "sway": 5},
         {"type": "fly", "sprite": "bird", "color": "#3a3a36", "every": [12, 25], "from": [-10, 44], "to": [394, 22], "count": [2, 3], "speed": 22}
       ],
       "spots": [
+        {"id": "plum", "name": "红梅", "rect": [0, 0, 190, 110], "act": "shower", "color": "#c8323c"},
+        {"id": "lake", "name": "湖面", "rect": [90, 168, 220, 50], "act": "ripple", "color": "#ffffff"},
+        {"id": "sun", "name": "夕阳", "rect": [282, 18, 22, 20], "act": "flare", "color": "#f2a184"},
+        {"id": "pavilion", "name": "水榭", "rect": [322, 96, 60, 58], "act": "sparkle", "color": "#ffe9c8"},
+        {"id": "mountain", "name": "远山", "rect": [190, 40, 120, 60], "act": "flock", "color": "#3a3a36", "sprite": "bird"}
       ]
     },
     "in": {
@@ -136,6 +152,12 @@
     "out": {
       "focus": [290, 142], "anchor": [0.5, 0.4], "night": true,
       "fx": [
+        {"type": "sway", "rect": [338, 40, 34, 112], "pin": "top", "amp": 2, "period": 5000, "ripple": 0.5},
+        {"type": "sway", "rect": [26, 0, 26, 72], "pin": "top", "amp": 1, "period": 4400, "ripple": 0.4},
+        {"type": "wave", "rect": [156, 168, 80, 22], "amp": 1, "speed": 1.4, "k": 0.6},
+        {"type": "sway", "rect": [0, 150, 30, 106], "pin": "bottom", "amp": 1, "period": 3800, "ripple": 0.2},
+        {"type": "sway", "rect": [88, 200, 60, 56], "pin": "bottom", "amp": 1, "period": 4200, "ripple": 0.2},
+        {"type": "mist", "y": 92, "h": 14, "color": "#6a4a7e", "alpha": 0.28, "speed": -1.4},
         {"type": "glow", "at": [196, 38], "r": 36, "color": "#ffd6e8", "period": 5200, "amp": 0.2},
         {"type": "twinkle", "color": "#ffffff", "pts": [[110, 20], [150, 62], [250, 15], [272, 62], [132, 82], [240, 86], [96, 50]]},
         {"type": "flicker", "color": "#ffb060", "pts": [[10, 44, 7], [320, 46, 7]]},
@@ -145,6 +167,12 @@
         {"type": "fly", "sprite": "bat", "color": "#1c1020", "every": [6, 14], "from": [394, 64], "to": [-10, 18], "count": [1, 3], "speed": 40}
       ],
       "spots": [
+        {"id": "moon", "name": "满月", "rect": [164, 6, 66, 66], "act": "flare", "color": "#ffd6e8"},
+        {"id": "lantern", "name": "提灯", "rect": [310, 30, 22, 34], "act": "flare", "color": "#ffb060"},
+        {"id": "lantern2", "name": "廊灯", "rect": [0, 28, 22, 30], "act": "flare", "color": "#ffb060"},
+        {"id": "roses", "name": "玫瑰", "rect": [300, 150, 84, 70], "act": "shower", "color": "#b02840"},
+        {"id": "river", "name": "河面", "rect": [150, 165, 92, 28], "act": "ripple", "color": "#ffd6e8"},
+        {"id": "castle", "name": "城堡尖塔", "rect": [232, 60, 90, 70], "act": "flock", "color": "#1c1020", "sprite": "bat"}
       ]
     },
     "in": {
@@ -177,6 +205,8 @@
     "in": {
       "focus": [312, 80], "anchor": [0.5, 0.55],
       "fx": [
+        {"type": "sway", "rect": [206, 4, 30, 150], "pin": "top", "amp": 1, "period": 5200, "ripple": 0.3},
+        {"type": "sway", "rect": [356, 92, 28, 36], "pin": "bottom", "amp": 1, "period": 3400, "ripple": 0.2},
         {"type": "flicker", "color": "#ffd890", "pts": [[35, 110, 22]], "amp": 0.16},
         {"type": "dust", "rect": [0, 96, 100, 96], "color": "#ffe6a8", "n": 12},
         {"type": "flicker", "color": "#ffd070", "pts": [[252, 136, 1], [274, 137, 1], [244, 131, 1], [300, 124, 1], [330, 128, 1]]},
@@ -184,6 +214,11 @@
         {"type": "fly", "sprite": "bird", "color": "#3a2418", "every": [10, 20], "from": [392, 52], "to": [230, 28], "count": [1, 3], "speed": 20, "clip": [238, 12, 146, 128]}
       ],
       "spots": [
+        {"id": "lamp", "name": "绿罩台灯", "rect": [0, 84, 72, 40], "act": "flare", "color": "#ffd890"},
+        {"id": "tea", "name": "红茶", "rect": [248, 172, 44, 26], "act": "puff", "color": "#ffffff"},
+        {"id": "lens", "name": "放大镜", "rect": [124, 198, 44, 24], "act": "sparkle", "color": "#fff3c8"},
+        {"id": "globe", "name": "地球仪", "rect": [22, 34, 30, 34], "act": "sparkle", "color": "#e8d8a8"},
+        {"id": "window", "name": "窗外", "rect": [240, 14, 140, 120], "act": "flock", "color": "#3a2418", "sprite": "bird"}
       ]
     },
     "out": {
@@ -212,6 +247,54 @@
     }
   },
   "adventurer": {
-    "transition": "tiles"
+    "transition": "tiles",
+    "out": {
+      "focus": [122, 122], "anchor": [0.36, 0.45],
+      "fx": [
+        {"type": "sway", "rect": [136, 11, 34, 65], "pin": "top", "amp": 2, "period": 4200, "ripple": 0.45},
+        {"type": "sway", "rect": [322, 73, 27, 58], "pin": "top", "amp": 1, "period": 5200, "ripple": 0.4},
+        {"type": "sway", "rect": [179, 96, 15, 23], "pin": "top", "amp": 2, "period": 3200},
+        {"type": "sway", "rect": [258, 0, 92, 42], "pin": "right", "amp": 2, "period": 5600, "ripple": 0.45},
+        {"type": "sway", "rect": [0, 188, 31, 30], "pin": "left", "amp": 2, "period": 3600, "ripple": 0.4},
+        {"type": "sway", "rect": [359, 144, 25, 26], "pin": "bottom", "amp": 2, "period": 4400, "ripple": 0.3},
+        {"type": "flicker", "color": "#ffdc9a", "amp": 0.22, "pts": [[104, 89, 5], [118, 128, 3], [195, 135, 3], [368, 52, 4]]},
+        {"type": "glow", "at": [121, 122], "r": 10, "color": "#ffcf8a", "period": 5600, "amp": 0.16},
+        {"type": "twinkle", "color": "#fff6d8", "pts": [[283, 91, 2], [293, 101], [274, 100], [367, 51], [194, 134], [247, 185], [251, 184], [152, 38, 2]]},
+        {"type": "fall", "from": [262, 0, 80, 22], "sprite": "petal", "colors": ["#57603e", "#5e6c3d", "#bfb87c", "#aca087"], "rate": 0.35, "vx": [-12, -4], "vy": [8, 14], "sway": 5},
+        {"type": "fly", "sprite": "bird", "color": "#3f4339", "every": [14, 26], "from": [394, 22], "to": [-10, 50], "count": [3, 5], "speed": 30}
+      ],
+      "spots": [
+        {"id": "board", "name": "委托告示板", "rect": [0, 70, 90, 92], "act": "sparkle", "color": "#fff2c4"},
+        {"id": "banner", "name": "公会旗", "rect": [137, 10, 32, 66], "act": "sparkle", "color": "#ffd27a"},
+        {"id": "lamp", "name": "铁艺吊灯", "rect": [357, 36, 22, 32], "act": "flare", "color": "#ffdc9a"},
+        {"id": "tree", "name": "大树树冠", "rect": [258, 0, 92, 30], "act": "flock", "color": "#3f4339", "sprite": "bird"},
+        {"id": "daisy", "name": "白色雏菊", "rect": [0, 188, 31, 28], "act": "shower", "color": "#f1ebdb"},
+        {"id": "roses", "name": "蔷薇花丛", "rect": [356, 144, 28, 28], "act": "shower", "color": "#dabc98"}
+      ]
+    },
+    "in": {
+      "focus": [139, 84], "anchor": [0.29, 0.42],
+      "fx": [
+        {"type": "sway", "rect": [45, 8, 32, 64], "pin": "top", "amp": 2, "period": 4800, "ripple": 0.3},
+        {"type": "sway", "rect": [289, 18, 27, 75], "pin": "top", "amp": 2, "period": 5600, "ripple": 0.3},
+        {"type": "sway", "rect": [336, 163, 35, 67], "pin": "top", "amp": 2, "period": 4100, "ripple": 0.3},
+        {"type": "wave", "rect": [51, 100, 22, 19], "amp": 1, "speed": 3, "k": 0.8},
+        {"type": "flicker", "color": "#ff9a48", "amp": 0.35, "pts": [[61, 111, 10], [57, 116, 6], [67, 114, 5]]},
+        {"type": "flicker", "color": "#ffd27a", "amp": 0.3, "pts": [[6, 5, 4], [98, 22, 4], [36, 69, 3], [40, 72, 3], [87, 71, 3], [90, 74, 3], [125, 29, 2], [136, 16, 3], [143, 19, 2], [149, 28, 2], [152, 31, 2], [158, 2, 3], [183, 1, 3], [209, 2, 3], [214, 8, 3], [198, 7, 2], [173, 15, 3], [178, 33, 2], [195, 30, 2], [203, 30, 2], [277, 35, 4], [317, 40, 6], [344, 53, 5]]},
+        {"type": "steam", "at": [61, 107], "color": "#ffc070", "rate": 2.5},
+        {"type": "dust", "rect": [114, 70, 76, 120], "color": "#fff1d6", "n": 20},
+        {"type": "glow", "at": [139, 80], "r": 24, "color": "#fff0d8", "period": 7500, "amp": 0.14},
+        {"type": "fly", "sprite": "bird", "color": "#6f513e", "every": [14, 26], "from": [158, 57], "to": [116, 53], "count": [1, 3], "speed": 12, "clip": [121, 50, 33, 17]},
+        {"type": "twinkle", "color": "#fff6dc", "pts": [[303, 103, 2], [307, 116, 1], [297, 172, 1], [366, 151, 1], [96, 43, 1]]}
+      ],
+      "spots": [
+        {"id": "fire", "name": "壁炉", "rect": [47, 90, 36, 33], "act": "flare", "color": "#ffa050"},
+        {"id": "wizard", "name": "老法师", "rect": [12, 88, 32, 39], "act": "puff", "color": "#e6dcff"},
+        {"id": "mugs", "name": "麦酒杯", "rect": [23, 128, 24, 20], "act": "sparkle", "color": "#ffe08a"},
+        {"id": "lamp", "name": "壁灯", "rect": [312, 29, 14, 21], "act": "flare", "color": "#ffd890"},
+        {"id": "flowers", "name": "花束", "rect": [276, 89, 18, 23], "act": "shower", "color": "#f3e2c8"},
+        {"id": "coins", "name": "金币袋", "rect": [340, 140, 21, 16], "act": "sparkle", "color": "#ffd666"}
+      ]
+    }
   }
 }
