@@ -5,30 +5,129 @@
     "out": {
       "focus": [288, 134], "anchor": [0.6, 0.45],
       "fx": [
-        { "type": "mist", "y": 150, "h": 22, "color": "#fff3f8", "alpha": 0.32, "speed": 2.2 },
-        { "type": "glow", "at": [343, 58], "r": 30, "color": "#ffc8e6", "period": 4200, "amp": 0.34 },
-        { "type": "twinkle", "color": "#fffbe8", "pts": [[343, 58, 3], [232, 33, 2], [197, 11], [263, 55, 2], [285, 20], [160, 70], [300, 10], [130, 42], [220, 74], [180, 40], [248, 8], [52, 122], [90, 133]] },
-        { "type": "meteor", "every": [9, 22], "area": [110, 0, 200, 56], "color": "#ffffff" },
-        { "type": "fall", "from": [-30, -10, 260, 6], "sprite": "petal", "colors": ["#f7a8c8", "#ffd3e2", "#ec7fa8"], "rate": 0.9, "vx": [8, 20], "vy": [10, 18], "sway": 6 },
-        { "type": "fly", "sprite": "bird", "color": "#a77fb8", "every": [14, 28], "from": [394, 70], "to": [-10, 40], "count": [2, 3], "speed": 26 }
+        {"type": "mist", "y": 150, "h": 22, "color": "#fff3f8", "alpha": 0.32, "speed": 2.2},
+        {"type": "glow", "at": [343, 58], "r": 30, "color": "#ffc8e6", "period": 4200, "amp": 0.34},
+        {"type": "twinkle", "color": "#fffbe8", "pts": [[343, 58, 3], [232, 33, 2], [197, 11], [263, 55, 2], [285, 20], [160, 70], [300, 10], [130, 42], [220, 74], [180, 40], [248, 8], [52, 122], [90, 133]]},
+        {"type": "meteor", "every": [9, 22], "area": [110, 0, 200, 56], "color": "#ffffff"},
+        {"type": "fall", "from": [-30, -10, 260, 6], "sprite": "petal", "colors": ["#f7a8c8", "#ffd3e2", "#ec7fa8"], "rate": 0.9, "vx": [8, 20], "vy": [10, 18], "sway": 6},
+        {"type": "fly", "sprite": "bird", "color": "#a77fb8", "every": [14, 28], "from": [394, 70], "to": [-10, 40], "count": [2, 3], "speed": 26}
+      ],
+      "spots": [
+      ]
+    },
+    "in": {
+      "focus": [336, 74], "anchor": [0.8, 0.42],
+      "fx": [
+        {"type": "sway", "rect": [364, 0, 20, 62], "pin": "top", "amp": 2, "period": 4400, "ripple": 0.4},
+        {"type": "sway", "rect": [297, 0, 14, 100], "pin": "top", "amp": 2, "period": 5600, "ripple": 0.3},
+        {"type": "sway", "rect": [150, 0, 20, 55], "pin": "top", "amp": 2, "period": 4900, "ripple": 0.35},
+        {"type": "bob", "rect": [311, 38, 61, 66], "amp": 1, "period": 6200},
+        {"type": "bob", "rect": [87, 41, 30, 35], "amp": 2, "period": 3200},
+        {"type": "bob", "rect": [114, 88, 21, 23], "amp": 1, "period": 2600},
+        {"type": "glow", "at": [215, 40], "r": 22, "color": "#ffc8e6", "period": 3800, "amp": 0.3},
+        {"type": "twinkle", "color": "#fffbe8", "pts": [[210, 32, 3], [243, 25, 2], [240, 41], [222, 48], [134, 186, 2], [92, 190], [323, 119], [380, 114], [342, 34]]},
+        {"type": "flicker", "color": "#ffd6c8", "pts": [[52, 182, 4], [355, 213, 7], [379, 126, 4], [140, 34, 4]], "amp": 0.3},
+        {"type": "steam", "at": [323, 116], "color": "#fdf5e9", "rate": 3},
+        {"type": "fly", "sprite": "bird", "color": "#9a7fa8", "every": [16, 30], "from": [392, 70], "to": [300, 92], "count": [2, 3], "speed": 20, "clip": [312, 24, 72, 76]}
+      ],
+      "spots": [
+        {"id": "orb", "name": "水晶球", "rect": [196, 18, 50, 48], "act": "sparkle", "color": "#ffc8e6"},
+        {"id": "teapot", "name": "魔法茶壶", "rect": [314, 113, 18, 18], "act": "puff", "color": "#fdf5e9"},
+        {"id": "roses", "name": "玫瑰花瓶", "rect": [64, 150, 48, 54], "act": "shower", "color": "#e9a3ac"},
+        {"id": "lantern", "name": "提灯", "rect": [345, 194, 19, 30], "act": "flare", "color": "#ffd6c8"},
+        {"id": "island", "name": "浮空岛", "rect": [310, 40, 62, 62], "act": "flock", "color": "#9a7fa8", "sprite": "bird"},
+        {"id": "book", "name": "飞书", "rect": [87, 43, 30, 32], "act": "sparkle", "color": "#fffbe8"}
       ]
     }
   },
   "sailor": {
-    "transition": "blinds"
+    "transition": "blinds",
+    "out": {
+      "focus": [263, 72], "anchor": [0.62, 0.36],
+      "fx": [
+        {"type": "wave", "rect": [74, 111, 22, 12], "amp": 1, "speed": 1.8, "k": 0.6},
+        {"type": "sway", "rect": [253, 64, 14, 17], "pin": "top", "amp": 2, "period": 2600, "ripple": 0.6},
+        {"type": "sway", "rect": [60, 0, 132, 76], "pin": "left", "amp": 2, "period": 5000, "ripple": 0.4},
+        {"type": "sway", "rect": [270, 0, 114, 30], "pin": "bottom", "amp": 2, "period": 4200, "ripple": 0.3},
+        {"type": "glow", "at": [244, -8], "r": 46, "color": "#fff6e0", "period": 6500, "amp": 0.12},
+        {"type": "glint", "rect": [76, 112, 20, 9], "color": "#ffffff", "rate": 1.6},
+        {"type": "twinkle", "color": "#ffffff", "pts": [[113, 100, 2], [206, 51, 2], [298, 66], [232, 74], [270, 68]]},
+        {"type": "fall", "from": [0, 0, 180, 70], "sprite": "petal", "colors": ["#f7c6d2", "#e7bac3", "#ffe4ea", "#dfa7af"], "rate": 1, "vx": [6, 16], "vy": [9, 16], "sway": 6},
+        {"type": "fall", "from": [276, 0, 108, 45], "sprite": "petal", "colors": ["#f4dcde", "#e7bac3", "#efcdc9"], "rate": 0.5, "vx": [3, 10], "vy": [8, 14], "sway": 5},
+        {"type": "fly", "sprite": "bird", "color": "#5a6378", "every": [14, 26], "from": [-10, 60], "to": [394, 20], "count": [2, 4], "speed": 24}
+      ],
+      "spots": [
+        {"id": "sakura", "name": "樱花树", "rect": [40, 0, 140, 76], "act": "shower", "color": "#f4b8c8"},
+        {"id": "window", "name": "教室窗户", "rect": [249, 62, 27, 20], "act": "sparkle", "color": "#dfeaff"},
+        {"id": "clock", "name": "校钟", "rect": [196, 46, 15, 16], "act": "sparkle", "color": "#fff3c4"},
+        {"id": "light", "name": "灯塔", "rect": [105, 95, 14, 18], "act": "flare", "color": "#fff3c0"},
+        {"id": "sea", "name": "海面", "rect": [72, 110, 28, 15], "act": "ripple", "color": "#dbe9fb"},
+        {"id": "treetop", "name": "樱树梢", "rect": [290, 0, 94, 45], "act": "flock", "color": "#5a6378", "sprite": "bird"}
+      ]
+    },
+    "in": {
+      "focus": [54, 52], "anchor": [0.17, 0.4],
+      "fx": [
+        {"type": "sway", "rect": [0, 0, 31, 108], "pin": "top", "amp": 2, "period": 4300, "ripple": 0.5},
+        {"type": "sway", "rect": [101, 46, 14, 40], "pin": "top", "amp": 3, "period": 3400, "ripple": 0.4},
+        {"type": "sway", "rect": [41, 77, 27, 30], "pin": "bottom", "amp": 2, "period": 3000, "ripple": 0.3},
+        {"type": "wave", "rect": [40, 67, 27, 10], "amp": 1, "speed": 1.6, "k": 0.7},
+        {"type": "sway", "rect": [296, 47, 10, 12], "pin": "top", "amp": 1, "period": 2800, "ripple": 0.3},
+        {"type": "glow", "at": [44, 22], "r": 34, "color": "#fff6e0", "period": 6500, "amp": 0.12},
+        {"type": "glint", "rect": [40, 67, 22, 8], "color": "#ffffff", "rate": 1.2},
+        {"type": "twinkle", "color": "#ffffff", "pts": [[61, 54], [306, 22, 2], [372, 34, 2], [133, 111], [80, 18]]},
+        {"type": "dust", "rect": [126, 26, 96, 70], "color": "#fff1c8", "n": 14},
+        {"type": "fall", "from": [10, 0, 80, 100], "sprite": "petal", "colors": ["#f7c6d2", "#e7bac3", "#ffe4ea", "#dfa7af"], "rate": 0.9, "vx": [12, 26], "vy": [6, 13], "sway": 6},
+        {"type": "fly", "sprite": "bird", "color": "#6e7480", "every": [16, 30], "from": [76, 26], "to": [8, 42], "count": [2, 3], "speed": 18, "clip": [14, 0, 57, 60]}
+      ],
+      "spots": [
+        {"id": "sakura", "name": "窗外樱花", "rect": [39, 74, 28, 28], "act": "shower", "color": "#f7c6d2"},
+        {"id": "light", "name": "灯塔", "rect": [58, 52, 9, 14], "act": "flare", "color": "#fff3c0"},
+        {"id": "chalk", "name": "粉笔小猫", "rect": [204, 58, 42, 26], "act": "puff", "color": "#e8eceb"},
+        {"id": "clock", "name": "挂钟", "rect": [300, 17, 20, 20], "act": "sparkle", "color": "#fff3c4"},
+        {"id": "window", "name": "后窗", "rect": [358, 26, 26, 30], "act": "flare", "color": "#fff6e0"},
+        {"id": "vase", "name": "花瓶", "rect": [136, 72, 16, 22], "act": "shower", "color": "#f7d6dc"}
+      ]
+    }
   },
   "hanfu": {
     "transition": "ink",
     "out": {
       "focus": [345, 128], "anchor": [0.55, 0.5],
       "fx": [
-        { "type": "glow", "at": [293, 28], "r": 11, "color": "#f2a184", "period": 6000, "amp": 0.26 },
-        { "type": "mist", "y": 58, "h": 14, "color": "#f6f0e2", "alpha": 0.3, "speed": -1.6 },
-        { "type": "mist", "y": 134, "h": 18, "color": "#f6f0e2", "alpha": 0.42, "speed": 2.4 },
-        { "type": "glint", "rect": [60, 166, 324, 68], "color": "#ffffff", "rate": 3 },
-        { "type": "bob", "rect": [222, 148, 40, 22], "amp": 1, "period": 3400 },
-        { "type": "fall", "from": [0, 0, 190, 110], "sprite": "petal", "colors": ["#c8323c", "#e0564f", "#a8242c"], "rate": 1.0, "vx": [4, 12], "vy": [6, 12], "sway": 5 },
-        { "type": "fly", "sprite": "bird", "color": "#3a3a36", "every": [12, 25], "from": [-10, 44], "to": [394, 22], "count": [2, 3], "speed": 22 }
+        {"type": "glow", "at": [293, 28], "r": 11, "color": "#f2a184", "period": 6000, "amp": 0.26},
+        {"type": "mist", "y": 58, "h": 14, "color": "#f6f0e2", "alpha": 0.3, "speed": -1.6},
+        {"type": "mist", "y": 134, "h": 18, "color": "#f6f0e2", "alpha": 0.42, "speed": 2.4},
+        {"type": "glint", "rect": [60, 166, 324, 68], "color": "#ffffff", "rate": 3},
+        {"type": "bob", "rect": [222, 148, 40, 22], "amp": 1, "period": 3400},
+        {"type": "fall", "from": [0, 0, 190, 110], "sprite": "petal", "colors": ["#c8323c", "#e0564f", "#a8242c"], "rate": 1.0, "vx": [4, 12], "vy": [6, 12], "sway": 5},
+        {"type": "fly", "sprite": "bird", "color": "#3a3a36", "every": [12, 25], "from": [-10, 44], "to": [394, 22], "count": [2, 3], "speed": 22}
+      ],
+      "spots": [
+      ]
+    },
+    "in": {
+      "focus": [280, 86], "anchor": [0.72, 0.42],
+      "fx": [
+        {"type": "wave", "rect": [264, 88, 74, 9], "amp": 1, "speed": 1.8, "k": 0.6},
+        {"type": "bob", "rect": [256, 97, 71, 12], "amp": 1, "period": 3600},
+        {"type": "wave", "rect": [244, 109, 70, 7], "amp": 1, "speed": 2.4, "k": 0.75},
+        {"type": "sway", "rect": [182, 31, 6, 21], "pin": "top", "amp": 1, "period": 4200, "ripple": 0.3},
+        {"type": "sway", "rect": [221, 28, 32, 21], "pin": "top", "amp": 2, "period": 4800, "ripple": 0.3},
+        {"type": "sway", "rect": [273, 33, 49, 26], "pin": "top", "amp": 2, "period": 5400, "ripple": 0.4},
+        {"type": "steam", "at": [13, 159], "color": "#f1f1eb", "rate": 3},
+        {"type": "steam", "at": [132, 103], "color": "#cac4b5", "rate": 2},
+        {"type": "fall", "from": [282, 20, 88, 36], "sprite": "petal", "colors": ["#e3c397", "#cca379", "#bd9169", "#a87b59"], "rate": 0.45, "vx": [-10, -3], "vy": [6, 11], "sway": 4},
+        {"type": "glint", "rect": [258, 88, 76, 27], "color": "#ffffff", "rate": 2},
+        {"type": "fly", "sprite": "bird", "color": "#4d4a42", "every": [14, 28], "from": [338, 74], "to": [178, 64], "count": [2, 3], "speed": 20, "clip": [181, 30, 157, 58]}
+      ],
+      "spots": [
+        {"id": "lake", "name": "湖面", "rect": [258, 88, 78, 28], "act": "ripple", "color": "#ffffff"},
+        {"id": "plum", "name": "梅枝", "rect": [283, 18, 87, 42], "act": "shower", "color": "#cca379"},
+        {"id": "lamp", "name": "木格灯", "rect": [292, 143, 23, 24], "act": "flare", "color": "#f1d5a1"},
+        {"id": "incense", "name": "香炉", "rect": [125, 100, 14, 19], "act": "puff", "color": "#e7ddcd"},
+        {"id": "stove", "name": "茶炉", "rect": [5, 156, 21, 16], "act": "puff", "color": "#f1f1eb"},
+        {"id": "hills", "name": "远山", "rect": [186, 38, 92, 48], "act": "flock", "color": "#4d4a42", "sprite": "bird"}
       ]
     }
   },
@@ -37,13 +136,39 @@
     "out": {
       "focus": [290, 142], "anchor": [0.5, 0.4], "night": true,
       "fx": [
-        { "type": "glow", "at": [196, 38], "r": 36, "color": "#ffd6e8", "period": 5200, "amp": 0.2 },
-        { "type": "twinkle", "color": "#ffffff", "pts": [[110, 20], [150, 62], [250, 15], [272, 62], [132, 82], [240, 86], [96, 50]] },
-        { "type": "flicker", "color": "#ffb060", "pts": [[10, 44, 7], [320, 46, 7]] },
-        { "type": "flicker", "color": "#ffc890", "pts": [[246, 146, 2], [262, 148, 2], [279, 150, 2], [300, 118, 2], [312, 121, 2], [230, 150, 2]] },
-        { "type": "glint", "rect": [150, 168, 90, 22], "color": "#ffd6e8", "rate": 2 },
-        { "type": "fall", "from": [200, -6, 184, 4], "sprite": "petal", "colors": ["#8a1a30", "#b02840"], "rate": 0.35, "vx": [-14, -6], "vy": [8, 14], "sway": 4 },
-        { "type": "fly", "sprite": "bat", "color": "#1c1020", "every": [6, 14], "from": [394, 64], "to": [-10, 18], "count": [1, 3], "speed": 40 }
+        {"type": "glow", "at": [196, 38], "r": 36, "color": "#ffd6e8", "period": 5200, "amp": 0.2},
+        {"type": "twinkle", "color": "#ffffff", "pts": [[110, 20], [150, 62], [250, 15], [272, 62], [132, 82], [240, 86], [96, 50]]},
+        {"type": "flicker", "color": "#ffb060", "pts": [[10, 44, 7], [320, 46, 7]]},
+        {"type": "flicker", "color": "#ffc890", "pts": [[246, 146, 2], [262, 148, 2], [279, 150, 2], [300, 118, 2], [312, 121, 2], [230, 150, 2]]},
+        {"type": "glint", "rect": [150, 168, 90, 22], "color": "#ffd6e8", "rate": 2},
+        {"type": "fall", "from": [200, -6, 184, 4], "sprite": "petal", "colors": ["#8a1a30", "#b02840"], "rate": 0.35, "vx": [-14, -6], "vy": [8, 14], "sway": 4},
+        {"type": "fly", "sprite": "bat", "color": "#1c1020", "every": [6, 14], "from": [394, 64], "to": [-10, 18], "count": [1, 3], "speed": 40}
+      ],
+      "spots": [
+      ]
+    },
+    "in": {
+      "focus": [188, 104], "anchor": [0.49, 0.42], "night": true,
+      "fx": [
+        {"type": "sway", "rect": [0, 0, 16, 118], "pin": "top", "amp": 2, "period": 5200, "ripple": 0.4},
+        {"type": "sway", "rect": [120, 0, 18, 149], "pin": "top", "amp": 2, "period": 5800, "ripple": 0.3},
+        {"type": "sway", "rect": [360, 133, 23, 24], "pin": "bottom", "amp": 2, "period": 2500, "ripple": 0.4},
+        {"type": "sway", "rect": [171, 120, 36, 20], "pin": "bottom", "amp": 2, "period": 3400, "ripple": 0.4},
+        {"type": "sway", "rect": [158, 6, 62, 22], "pin": "top", "amp": 1, "period": 4600},
+        {"type": "glow", "at": [63, 41], "r": 24, "color": "#ffd6e8", "period": 6000, "amp": 0.18},
+        {"type": "flicker", "color": "#ffc0d4", "amp": 0.32, "pts": [[227, 26, 4], [239, 13, 4], [250, 6, 4], [262, 4, 3], [277, 11, 4], [289, 19, 4], [374, 36, 4], [150, 105, 6], [238, 106, 6], [331, 54, 3], [113, 129, 5], [38, 137, 3], [294, 118, 4], [365, 148, 5], [377, 141, 6]]},
+        {"type": "twinkle", "color": "#ffe6f0", "pts": [[188, 54, 2], [197, 61, 1], [181, 67, 1], [195, 72, 2], [50, 6, 1], [61, 6, 2], [73, 8, 1], [55, 2, 1], [86, 22, 1], [38, 30, 1], [35, 74, 1], [100, 22, 1], [106, 54, 2], [102, 96, 1], [376, 97, 1], [370, 231, 1], [364, 209, 1]]},
+        {"type": "fly", "sprite": "bat", "color": "#160f15", "every": [10, 20], "from": [192, 22], "to": [-12, 50], "count": [1, 3], "speed": 30},
+        {"type": "fall", "from": [174, 112, 32, 16], "sprite": "petal", "colors": ["#9a5063", "#7e3847", "#b26788"], "rate": 0.25, "vx": [-12, 8], "vy": [4, 9], "sway": 4},
+        {"type": "steam", "at": [260, 131], "color": "#e8d4de", "rate": 2}
+      ],
+      "spots": [
+        {"id": "moon", "name": "粉色满月", "rect": [42, 18, 44, 46], "act": "flare", "color": "#ffd6e8"},
+        {"id": "glass", "name": "彩色玻璃", "rect": [96, 2, 17, 118], "act": "sparkle", "color": "#e8d0ff"},
+        {"id": "bats", "name": "倒挂蝙蝠", "rect": [150, 0, 72, 30], "act": "flock", "color": "#160f15", "sprite": "bat"},
+        {"id": "tea", "name": "红茶托盘", "rect": [255, 129, 20, 14], "act": "puff", "color": "#f0dde6"},
+        {"id": "roses", "name": "玫瑰花瓶", "rect": [320, 150, 40, 36], "act": "shower", "color": "#9a5063"},
+        {"id": "candles", "name": "长烛台", "rect": [358, 132, 26, 50], "act": "flare", "color": "#ffc8d8"}
       ]
     }
   },
@@ -52,11 +177,37 @@
     "in": {
       "focus": [312, 80], "anchor": [0.5, 0.55],
       "fx": [
-        { "type": "flicker", "color": "#ffd890", "pts": [[35, 110, 22]], "amp": 0.16 },
-        { "type": "dust", "rect": [0, 96, 100, 96], "color": "#ffe6a8", "n": 12 },
-        { "type": "flicker", "color": "#ffd070", "pts": [[252, 136, 1], [274, 137, 1], [244, 131, 1], [300, 124, 1], [330, 128, 1]] },
-        { "type": "steam", "at": [272, 174], "color": "#ffffff", "rate": 5 },
-        { "type": "fly", "sprite": "bird", "color": "#3a2418", "every": [10, 20], "from": [392, 52], "to": [230, 28], "count": [1, 3], "speed": 20, "clip": [238, 12, 146, 128] }
+        {"type": "flicker", "color": "#ffd890", "pts": [[35, 110, 22]], "amp": 0.16},
+        {"type": "dust", "rect": [0, 96, 100, 96], "color": "#ffe6a8", "n": 12},
+        {"type": "flicker", "color": "#ffd070", "pts": [[252, 136, 1], [274, 137, 1], [244, 131, 1], [300, 124, 1], [330, 128, 1]]},
+        {"type": "steam", "at": [272, 174], "color": "#ffffff", "rate": 5},
+        {"type": "fly", "sprite": "bird", "color": "#3a2418", "every": [10, 20], "from": [392, 52], "to": [230, 28], "count": [1, 3], "speed": 20, "clip": [238, 12, 146, 128]}
+      ],
+      "spots": [
+      ]
+    },
+    "out": {
+      "focus": [294, 52], "anchor": [0.68, 0.4],
+      "fx": [
+        {"type": "wave", "rect": [66, 192, 112, 64], "amp": 2, "speed": 2.2, "k": 0.6, "grow": true},
+        {"type": "wave", "rect": [180, 228, 204, 28], "amp": 2, "speed": 2.2, "k": 0.6, "grow": true},
+        {"type": "wave", "rect": [62, 0, 112, 72], "amp": 1, "speed": 0.5, "k": 0.25},
+        {"type": "sway", "rect": [300, 22, 12, 44], "pin": "top", "amp": 1, "period": 4600, "ripple": 0.5},
+        {"type": "sway", "rect": [366, 98, 18, 62], "pin": "top", "amp": 1, "period": 4400, "ripple": 0.5},
+        {"type": "flicker", "color": "#ffd27a", "amp": 0.3, "pts": [[47, 64, 8], [208, 86, 7], [291, 69, 4], [308, 123, 4], [70, 137, 3], [163, 135, 3], [152, 144, 2], [77, 147, 2], [33, 141, 1], [375, 120, 1]]},
+        {"type": "glow", "at": [133, 127], "r": 16, "color": "#ffd27a", "period": 6500, "amp": 0.18},
+        {"type": "glint", "rect": [70, 196, 106, 58], "color": "#ffe6a8", "rate": 2.4},
+        {"type": "mist", "y": 140, "h": 30, "color": "#f2c49a", "alpha": 0.14, "speed": -3},
+        {"type": "steam", "at": [209, 21], "color": "#eed8c8", "rate": 3},
+        {"type": "fly", "sprite": "bird", "color": "#3b2a2a", "every": [12, 24], "from": [-10, 60], "to": [394, 0], "count": [3, 5], "speed": 30}
+      ],
+      "spots": [
+        {"id": "lamp", "name": "煤气路灯", "rect": [36, 34, 22, 40], "act": "flare", "color": "#ffd27a"},
+        {"id": "lit", "name": "刚点的灯", "rect": [198, 64, 20, 30], "act": "flare", "color": "#ffd27a"},
+        {"id": "study", "name": "书房窗户", "rect": [276, 17, 38, 70], "act": "flare", "color": "#ffd27a"},
+        {"id": "street", "name": "积水街面", "rect": [66, 192, 112, 64], "act": "ripple", "color": "#ffe6b0"},
+        {"id": "puddle", "name": "门前水洼", "rect": [216, 230, 168, 26], "act": "ripple", "color": "#ffe6b0"},
+        {"id": "chimney", "name": "烟囱", "rect": [198, 18, 20, 32], "act": "flock", "color": "#3b2a2a", "sprite": "bird"}
       ]
     }
   },
