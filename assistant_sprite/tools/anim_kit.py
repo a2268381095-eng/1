@@ -262,3 +262,80 @@ def export(frames, durations, out_dir, action, name, loop, scale=3):
         "action": action, "name": name, "loop": loop, "frame_w": W, "frame_h": H,
         "frames": len(frames), "ms": list(durations)}, ensure_ascii=False, indent=1))
     return out
+
+
+# ---------------- 互动动效用的小工具 ----------------
+def effects_split(img, max_area=160):
+    """把散在身边的小爱心、星星、蝙蝠（和身体不连着的小块）单独拿出来，让它们自己飘、自己闪。"""
+    import cv2
+    a = solid(img).astype(np.uint8)
+    n, lab, st, _ = cv2.connectedComponentsWithStats(a, connectivity=8)
+    if n <= 1:
+        return img, np.zeros_like(img)
+    main = 1 + int(np.argmax(st[1:, cv2.CC_STAT_AREA]))
+    m = np.zeros(img.shape[:2], bool)
+    for i in range(1, n):
+        if i != main and st[i, cv2.CC_STAT_AREA] < max_area:
+            m |= lab == i
+    body = img.copy()
+    body[m] = 0
+    fx = np.zeros_like(img)
+    fx[m] = img[m]
+    return body, fx
+
+
+def overlay(base, layer):
+    out = base.copy()
+    put = layer[..., 3] > 0
+    out[put] = layer[put]
+    return out
+
+
+def head_anchor(img):
+    """头顶位置：(头顶中心 x, 头顶 y, 头的大致半宽)。取人物最上面 30 行里像素最集中的那一段。"""
+    al = solid(img)
+    rows = np.where(al.any(1))[0]
+    if not len(rows):
+        return img.shape[1] // 2, 0, 10
+    top = rows[0]
+    band = al[top:top + 30]
+    xs = np.where(band.any(0))[0]
+    weights = band.sum(0)[xs]
+    cx = int(round((xs * weights).sum() / max(weights.sum(), 1)))
+    return cx, int(top), max(8, (xs.max() - xs.min()) // 4)
+
+
+ICONS = {
+    # 字符：# 描边  r 桃红  p 粉  w 白  b 浅蓝  y 黄  v 蓝紫  . 透明
+    "bang": [".####.", "#rrrr#", "#rrrr#", "#rrrr#", ".#rr#.", ".#rr#.", ".#rr#.", "..##..", "......",
+             ".####.", "#rrrr#", "#rrrr#", ".####."],
+    "ques": ["..####..", ".#pppp#.", "#pp##pp#", "#p#..#p#", ".#...#p#", "....#pp#", "...#pp#.", "...#p#..",
+             "...###..", "........", "...###..", "...#p#..", "...###.."],
+    "dot": [".##.", "#ww#", "#ww#", ".##."],
+    "sweat": ["...#...", "..#b#..", "..#b#..", ".#bbb#.", "#bbbbb#", "#wbbbb#", "#wbbbb#", ".#bbb#.", "..###.."],
+    "heart": [".##...##.", "#rr#.#rr#", "#wrrrrrr#", "#rrrrrrr#", ".#rrrrr#.", "..#rrr#..", "...#r#...", "....#...."],
+    "heart_s": [".#.#.", "#r#r#", "#rrr#", ".#r#.", "..#.."],
+    "spark_l": ["...#...", "..#y#..", ".#yyy#.", "#yywyy#", ".#yyy#.", "..#y#..", "...#..."],
+    "spark_s": ["..#..", ".#y#.", "#ywy#", ".#y#.", "..#.."],
+    "twinkle": [".y.", "ywy", ".y."],
+    "z_s": ["vvvv", "..v.", ".v..", "vvvv"],
+    "z_m": ["vvvvv", "...v.", "..v..", ".v...", "vvvvv"],
+    "z_l": ["vvvvvvv", ".....v.", "....v..", "...v...", "..v....", ".v.....", "vvvvvvv"],
+    "tick_l": ["#..", ".#.", "..#"],
+    "tick_r": ["..#", ".#.", "#.."],
+    "tick_u": ["#", "#", "#"],
+    "arc_l": ["..#..#", ".#..#.", "#..#..", "#..#..", ".#..#.", "..#..#"],
+    "arc_r": ["#..#..", ".#..#.", "..#..#", "..#..#", ".#..#.", "#..#.."],
+}
+ICON_COLORS = {"#": (58, 26, 44), "r": (236, 72, 112), "p": (247, 150, 186), "w": (255, 255, 255),
+               "b": (150, 206, 240), "y": (255, 214, 102), "v": (120, 110, 200)}
+
+
+def icon_size(name):
+    rows = ICONS[name]
+    return len(rows[0]), len(rows)
+
+
+def icon(img, name, x, y):
+    """把小图标印到 (x, y) 左上角，超出画布的部分裁掉。"""
+    return stamp(img, ICONS[name], ICON_COLORS, x, y)

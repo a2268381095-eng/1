@@ -2,7 +2,7 @@
 
     python3 tools/make_wardrobe_page.py
 
-读取 styles/<id>/actions/<动作>/anim.json 和 frames.png，把清单内嵌进页面。
+读取 styles/<id>/actions/<动作>/anim.json 和 frames.png，以及 styles/<id>/persona.json（台词），把清单内嵌进页面。
 页面引用的图片路径是 styles/<id>/actions/<动作>/frames.png，发布时把这些文件一起带上。
 """
 import json
@@ -32,7 +32,9 @@ def manifest():
             acts.append({"key": key, "name": m["name"], "frames": m["frames"], "ms": m["ms"],
                          "loop": m["loop"], "kind": m.get("kind", "basic"),
                          "src": f"styles/{sid}/actions/{key}/frames.png"})
-        out.append({"id": sid, "name": name, "genres": genres, "w": 128, "h": 224, "actions": acts})
+        pf = ROOT / "styles" / sid / "persona.json"
+        persona = json.loads(pf.read_text()) if pf.exists() else None
+        out.append({"id": sid, "name": name, "genres": genres, "w": 128, "h": 224, "actions": acts, "persona": persona})
     return out
 
 

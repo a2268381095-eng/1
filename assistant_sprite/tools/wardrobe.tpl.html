@@ -46,6 +46,7 @@ button { font: inherit; color: inherit; }
 .badge { font-size: 11.5px; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
 .badge.custom { background: var(--done-soft); color: var(--done); }
 .badge.basic { background: var(--grid); color: var(--muted); }
+.badge.fx { background: var(--accent-soft); color: var(--accent); }
 .label { margin: 0; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; color: var(--muted); }
 
 .overview { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
@@ -60,6 +61,7 @@ button { font: inherit; color: inherit; }
 .detail { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); gap: 20px; align-items: start;
   background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
 @media (max-width: 760px) { .detail { grid-template-columns: minmax(0, 1fr); } }
+@media (min-width: 761px) { .detail > .stage { position: sticky; top: 12px; } }
 .stage { display: grid; justify-items: center; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 6px;
   background-color: var(--surface);
   background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
@@ -99,15 +101,39 @@ button { font: inherit; color: inherit; }
 .copy { padding: 8px 14px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 6px; cursor: pointer; font-size: 14px; }
 .copied { font-size: 12.5px; color: var(--muted); }
 #fallback { width: 100%; font: inherit; font-size: 12px; }
+
+/* 说话气泡 + 戳一下 */
+.stage { position: relative; }
+.bubble { position: relative; justify-self: stretch; min-height: 64px; display: grid; align-items: center; }
+.bubble-in { position: relative; padding: 9px 12px; border: 2px solid var(--ink); border-radius: 8px; background: var(--surface);
+  box-shadow: 3px 3px 0 var(--accent-soft); font-size: 14px; line-height: 1.6; max-width: 280px; justify-self: center;
+  transition: opacity .15s ease; }
+.bubble-in::after { content: ""; position: absolute; left: 50%; bottom: -8px; width: 12px; height: 12px; background: var(--surface);
+  border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink); transform: translateX(-50%) rotate(45deg); }
+.bubble[data-on="false"] .bubble-in { opacity: 0; }
+.bubble .who { display: block; font-size: 11.5px; color: var(--accent); font-weight: 500; letter-spacing: 0.04em; }
+.caret { display: inline-block; width: 0.5em; color: var(--accent); }
+.poke { border: 0; padding: 0; background: transparent; cursor: pointer; display: block; max-width: 100%; }
+.poke:active canvas { transform: translateY(1px); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.persona { margin: 0; font-size: 13px; line-height: 1.7; color: var(--muted); }
+.persona b { color: var(--ink); font-weight: 500; }
+.events { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+@media (max-width: 480px) { .events { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.ev { padding: 7px 8px; border: 1px dashed var(--line); background: var(--bg); border-radius: 6px; cursor: pointer; text-align: left;
+  font-size: 13px; display: grid; gap: 2px; }
+.ev small { color: var(--muted); font-size: 11.5px; }
+.ev[aria-pressed="true"] { border-style: solid; border-color: var(--accent); background: var(--accent-soft); }
+.box { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
 </style>
 
 <div class="wrap">
   <header class="head">
     <h1>小恶魔衣橱</h1>
-    <p>6 套候选风格，每套 7 个动作，都是从你用 GPT 出的设定图转成的 128×224 像素小人。点一套放大看，再点动作逐个播放；挑出 5 套作为默认风格，底部一键复制给我。</p>
+    <p>6 套候选风格，每套 7 个动作，都是从你用 GPT 出的设定图转成的 128×224 像素小人。点一套放大看，再点动作逐个播放；下面「和作者联动」模拟你在软件里的操作，看她怎么接话，直接点她本人也有反应。挑出 5 套作为默认风格，底部一键复制给我。</p>
     <div class="legend">
       <span class="badge custom">精修</span><span>已经加了挥手、漩涡转动、尾巴甩动这类专门的动画</span>
-      <span class="badge basic">基础浮动</span><span>暂时只有整体浮动和眨眼，接下来逐个精修</span>
+      <span class="badge fx">动效</span><span>身体摇摆、跳动，加上「!」「?」、Zzz、星星、爱心这些小特效；等关键帧图到了换成连贯动作</span>
     </div>
   </header>
 
@@ -118,7 +144,11 @@ button { font: inherit; color: inherit; }
 
   <section class="detail" aria-label="当前这套">
     <div class="stage">
-      <canvas id="big" aria-label="放大的小恶魔"></canvas>
+      <div class="bubble" id="bubble" data-on="false">
+        <div class="bubble-in"><span class="who" id="b-who"></span><span id="b-text" aria-hidden="true"></span><span class="caret" id="b-caret" aria-hidden="true"></span></div>
+        <span class="sr" id="b-live" role="status" aria-live="polite"></span>
+      </div>
+      <button type="button" class="poke" id="poke" aria-label="戳她一下"><canvas id="big" aria-hidden="true"></canvas></button>
       <div class="meta"><span id="m-act">idle</span><span id="m-frame">01/12</span></div>
     </div>
     <div class="side">
@@ -127,7 +157,16 @@ button { font: inherit; color: inherit; }
         <button type="button" class="pick" id="d-pick" aria-pressed="false">选入默认 5 套</button>
       </div>
       <div class="chips" id="d-genres"></div>
+      <p class="persona" id="d-persona"></p>
       <div class="acts" id="acts" role="group" aria-label="动作"></div>
+      <div class="box">
+        <div class="title-row">
+          <h3 class="label">和作者联动</h3>
+          <button type="button" class="pick" id="auto" aria-pressed="false">自动演示</button>
+        </div>
+        <p class="note">模拟你在软件里的操作，她会做对应的动作并接一句话。直接点她本人是「戳一下」，连着戳几下会有别的反应。</p>
+        <div class="events" id="events" role="group" aria-label="作者的操作"></div>
+      </div>
       <div class="row">
         <div class="seg" role="group" aria-label="播放速度">
           <button type="button" id="sp-05" data-speed="0.5" aria-pressed="false">0.5×</button>
@@ -174,9 +213,12 @@ button { font: inherit; color: inherit; }
 
   // 一个播放器：一段动作的逐帧播放；播一遍的动作停顿一下再重播，方便反复看
   function player(canvas, scale) {
-    return { canvas, scale, act: null, f: 0, acc: 0, hold: 0 };
+    return { canvas, scale, act: null, f: 0, acc: 0, hold: 0, t: 0, until: 0, onEnd: null };
   }
-  function setAct(p, act) { p.act = act; p.f = 0; p.acc = 0; p.hold = 0; img(act.src); draw(p); }
+  function setAct(p, act, onEnd, until) {
+    p.act = act; p.f = 0; p.acc = 0; p.hold = 0; p.t = 0; p.onEnd = onEnd || null; p.until = until || 0;
+    img(act.src); draw(p);
+  }
   function draw(p) {
     if (!p.act) return;
     const c = p.canvas, w = W * p.scale, h = H * p.scale;
@@ -190,11 +232,14 @@ button { font: inherit; color: inherit; }
   function tick(p, dt) {
     if (!p.act) return false;
     if (p.hold > 0) { p.hold -= dt; if (p.hold <= 0) { p.f = 0; return true; } return false; }
+    p.t += dt;
+    if (p.onEnd && p.until && p.t >= p.until) { const f = p.onEnd; p.onEnd = null; f(); return true; }
     p.acc += dt;
     let changed = false;
     while (p.acc >= p.act.ms[p.f]) {
       p.acc -= p.act.ms[p.f]; changed = true;
       if (p.f + 1 >= p.act.frames) {
+        if (p.onEnd && !p.until) { const f = p.onEnd; p.onEnd = null; p.acc = 0; f(); return true; }
         if (p.act.loop) p.f = 0; else { p.hold = 700; p.acc = 0; break; }
       } else p.f++;
     }
@@ -234,21 +279,28 @@ button { font: inherit; color: inherit; }
       const b = document.createElement("button");
       b.type = "button"; b.className = "act"; b.id = "act-" + a.key; b.setAttribute("aria-pressed", String(i === 0));
       const n = document.createElement("span"); n.className = "an"; n.textContent = a.name;
-      const k = document.createElement("span"); k.className = "badge " + (a.kind === "custom" ? "custom" : "basic");
-      k.textContent = a.kind === "custom" ? "精修 · " + a.frames + " 帧" : "基础浮动";
+      const k = document.createElement("span"); k.className = "badge " + (a.kind === "custom" ? "custom" : a.kind === "fx" ? "fx" : "basic");
+      k.textContent = (a.kind === "custom" ? "精修" : a.kind === "fx" ? "动效" : "基础浮动") + " · " + a.frames + " 帧";
       b.append(n, k);
       b.addEventListener("click", () => playAct(a));
       box.append(b);
     });
     const custom = s.actions.filter(a => a.kind === "custom").map(a => a.name);
-    $("d-note").textContent = custom.length
-      ? "已精修：" + custom.join("、") + "。其余动作暂时是基础浮动，接下来逐个加专门的动画。"
-      : "这套的 7 个动作目前都是基础浮动，接下来逐个加专门的动画。";
-    playAct(s.actions[0]);
+    $("d-note").textContent = (custom.length ? "已精修：" + custom.join("、") + "。其余是" : "7 个动作目前都是")
+      + "动效版：身体只做摇摆、跳动、眨眼，表情和手势要等关键帧图到了才会变。";
+    const ps = s.persona;
+    $("d-persona").textContent = "";
+    if (ps) {
+      const add = (label, val) => { const b = document.createElement("b"); b.textContent = val; $("d-persona").append(label, b); };
+      add("自称 ", ps.self); add(" · 叫你 ", ps.call); add(" · 口头禅 ", ps.catchphrase);
+      $("d-persona").append(document.createElement("br"), ps.tagline);
+    }
+    hush();
+    if (ps) trigger("open"); else playAct(s.actions[0]);
   }
-  function playAct(a) {
+  function playAct(a, onEnd, until) {
     document.querySelectorAll(".act").forEach(b => b.setAttribute("aria-pressed", String(b.id === "act-" + a.key)));
-    setAct(big, a);
+    setAct(big, a, onEnd, until);
     buildStrip(a);
     meta();
   }
@@ -287,6 +339,103 @@ button { font: inherit; color: inherit; }
   const setPaused = (v) => { paused = v; $("pause").textContent = v ? "播放" : "暂停"; };
   $("pause").addEventListener("click", () => setPaused(!paused));
   setPaused(paused);
+
+  // ---------- 和作者联动：事件 → 动作 + 台词 ----------
+  const EVENTS = [
+    { key: "open", name: "打开软件", act: "wave" },
+    { key: "start", name: "开始码字", act: "point" },
+    { key: "idle", name: "停笔很久", act: "doze" },
+    { key: "goal", name: "达成今日字数", act: "cheer" },
+    { key: "chapter", name: "写完一章", act: "cheer" },
+    { key: "delete", name: "要删整章", act: "shock" },
+    { key: "ai_wait", name: "等 AI 回复", act: "think" },
+    { key: "ai_error", name: "AI 报错", act: "shock" },
+    { key: "lost", name: "找不到功能", act: "point" },
+    { key: "late", name: "凌晨还在写", act: "doze" },
+    { key: "foreshadow", name: "伏笔没回收", act: "think" },
+    { key: "format", name: "一键排版完", act: "cheer" },
+    { key: "save", name: "自动保存", act: "idle" },
+    { key: "back", name: "离开又回来", act: "wave" },
+  ];
+  const ACT_NAME = { wave: "打招呼", point: "指路", doze: "打瞌睡", cheer: "欢呼", shock: "吓一跳", think: "思考", idle: "待机" };
+  EVENTS.forEach(ev => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "ev"; b.id = "ev-" + ev.key; b.setAttribute("aria-pressed", "false");
+    const n = document.createElement("span"); n.textContent = ev.name;
+    const k = document.createElement("small"); k.textContent = "→ " + ACT_NAME[ev.act];
+    b.append(n, k);
+    b.addEventListener("click", () => { stopAuto(); trigger(ev.key); });
+    $("events").append(b);
+  });
+  const findAct = (s, key) => s.actions.find(a => a.key === key);
+  const idleOf = (s) => findAct(s, "idle") || s.actions[0];
+  const lastLine = {};
+  function pickLine(s, key) {
+    const lines = (s.persona && s.persona.lines && s.persona.lines[key]) || [];
+    if (!lines.length) return "";
+    const id = s.id + ":" + key;
+    let i = Math.floor(Math.random() * lines.length);
+    if (lines.length > 1 && i === lastLine[id]) i = (i + 1) % lines.length;
+    lastLine[id] = i;
+    return lines[i];
+  }
+  function trigger(key, actKey) {
+    const s = cur, ev = EVENTS.find(e => e.key === key);
+    const a = findAct(s, actKey || (ev ? ev.act : "shock")) || idleOf(s);
+    const text = pickLine(s, key);
+    document.querySelectorAll(".ev").forEach(b => b.setAttribute("aria-pressed", String(b.id === "ev-" + key)));
+    const back = () => { playAct(idleOf(s)); document.querySelectorAll(".ev").forEach(b => b.setAttribute("aria-pressed", "false")); };
+    const stay = Math.max(2600, text.length * 90 + 1600);
+    if (a.key === "idle") playAct(a, back, stay);
+    else if (a.loop) playAct(a, back, stay);
+    else playAct(a, back);
+    say(text);
+  }
+
+  // 气泡：一个字一个字打出来；读屏软件直接读整句
+  let typeT = 0, hideT = 0;
+  function say(text) {
+    clearInterval(typeT); clearTimeout(hideT);
+    if (!text) { hush(); return; }
+    const who = cur.persona ? cur.persona.self : "";
+    $("b-who").textContent = who;
+    $("b-live").textContent = (who ? who + "：" : "") + text;
+    $("bubble").dataset.on = "true";
+    const chars = [...text];
+    if (reduce) { $("b-text").textContent = text; $("b-caret").textContent = ""; }
+    else {
+      let n = 0; $("b-text").textContent = ""; $("b-caret").textContent = "▍";
+      typeT = setInterval(() => {
+        n++; $("b-text").textContent = chars.slice(0, n).join("");
+        if (n >= chars.length) { clearInterval(typeT); $("b-caret").textContent = ""; }
+      }, 55);
+    }
+    hideT = setTimeout(hush, Math.max(3200, chars.length * 55 + 2600));
+  }
+  function hush() { clearInterval(typeT); clearTimeout(hideT); $("bubble").dataset.on = "false"; $("b-caret").textContent = ""; }
+
+  // 戳她：1.6 秒内连戳 3 下换成「连续戳」
+  const pokes = [];
+  const POKE_ACTS = ["shock", "wave", "cheer", "think"];
+  let pokeN = 0;
+  $("poke").addEventListener("click", () => {
+    stopAuto();
+    const now = performance.now();
+    pokes.push(now); while (pokes.length && now - pokes[0] > 1600) pokes.shift();
+    if (pokes.length >= 3) { pokes.length = 0; trigger("poke_many", "shock"); }
+    else trigger("poke", POKE_ACTS[pokeN++ % POKE_ACTS.length]);
+  });
+
+  // 自动演示：每隔几秒随机来一个作者操作
+  let autoT = 0;
+  function stopAuto() { clearInterval(autoT); autoT = 0; $("auto").setAttribute("aria-pressed", "false"); $("auto").textContent = "自动演示"; }
+  $("auto").addEventListener("click", () => {
+    if (autoT) { stopAuto(); return; }
+    $("auto").setAttribute("aria-pressed", "true"); $("auto").textContent = "停止演示";
+    let i = Math.floor(Math.random() * EVENTS.length);
+    const step = () => { if (paused) return; i = (i + 1 + Math.floor(Math.random() * 3)) % EVENTS.length; trigger(EVENTS[i].key); };
+    step(); autoT = setInterval(step, 6500);
+  });
 
   // ---------- 选入默认 5 套 ----------
   function syncPick() {
