@@ -376,8 +376,14 @@ async function e2e(dist, fails) {
     await page.waitForSelector('.sr-q');
     await page.fill('.sr-q', '林栀');
     await wait(page);
+    await page.waitForTimeout(1800);   // 侧栏底色有渐变
     const dark = await page.evaluate(() => {
-      const lum = (s) => { const [r, g, b] = s.match(/\d+/g).map(Number); return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255; };
+      // rgb(…) 或半透明的 color(srgb r g b / a)（背景插画开着时侧栏、输入框是半透明的）
+      const lum = (s) => {
+        const m = s.match(/^color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)/);
+        const [r, g, b] = m ? m.slice(1, 4).map((x) => Number(x) * 255) : s.match(/\d+/g).map(Number);
+        return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+      };
       return { panel: lum(getComputedStyle(document.querySelector('.side-right')).backgroundColor), input: lum(getComputedStyle(document.querySelector('.sr-q')).backgroundColor),
         mark: getComputedStyle(document.querySelector('.sr-m')).backgroundColor, text: lum(getComputedStyle(document.querySelector('.sr-gt')).color) };
     });

@@ -35,7 +35,7 @@ export function renderPoints(root, chapter, onChange) {
       cb.checked = !!p.done;
       cb.addEventListener("change", () => { p.done = cb.checked; save(); });
       const text = h("span.pt-text", { contenteditable: "plaintext-only", spellcheck: "false", role: "textbox", "aria-label": "要点内容" }, p.text);
-      text.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); text.blur(); } });
+      text.addEventListener("keydown", (e) => { if (e.key === "Enter" && !(e.isComposing || e.keyCode === 229)) { e.preventDefault(); text.blur(); } });
       text.addEventListener("blur", () => {
         const v = text.textContent.trim();
         if (!v) { points.splice(i, 1); save(); return; }
@@ -62,7 +62,7 @@ export function renderPoints(root, chapter, onChange) {
   }
 
   input.addEventListener("keydown", (e) => {
-    if (e.key !== "Enter" || e.isComposing) return;
+    if (e.key !== "Enter" || e.isComposing || e.keyCode === 229) return;
     const v = input.value.trim();
     if (!v) return;
     points.push({ id: uid("p"), text: v, done: false });

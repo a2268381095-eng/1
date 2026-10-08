@@ -60,6 +60,7 @@ const isCN = (c) => isHan(c) || FW.has(c);
 const isAlnum = (c) => !!c && /^[A-Za-z0-9]$/.test(c);
 const isBlank = (l) => !/\S/u.test(l);
 const DOTS = new Set(Array.from(".．。…⋯·"));
+const ZW = new Set(["\u200b", "\u200c", "\u200d", "\u2060", "\ufeff"]);   // 零宽字符：作者特意隔开的，旁边的标点不动
 /** out（字符数组）是不是以 s 结尾：两段省略号、破折号之间的空格去掉后合成一个 */
 const endsWith = (out, s) => out.length >= s.length && out.slice(-s.length).join("") === s;
 
@@ -165,7 +166,13 @@ function fixPunct(body, r) {
     return k > j && k < n && glued(s, cs[k]) ? k : j;
   };
 
-  let dq = 0, sq = 0, i = 0;
+  let dq = 0, sq = 0, i = 0, dqAt = -1, sqAt = -1;   // dqAt/sqAt：开引号在 out 里的位置
+  // 引号里没有汉字（He said, "OK."）：是英文引文，引号外面的空格留着
+  const englishQuote = (at) => {
+    if (at < 0) return false;
+    const inner = out.slice(at + 1);
+    return inner.some((ch) => /[A-Za-z]/.test(ch)) && !inner.some((ch) => isHan(ch) || FW.has(ch));
+  };
   while (i < n) {
     const c = cs[i];
     const L = lastOut();
@@ -240,14 +247,21 @@ function fixPunct(body, r) {
           else { q = "‘"; sq = 1; }
         }
       }
-      if (q) { put(q, true); i = skipAfter(i + 1, true); continue; }
+      if (q) {
+        const closing = q === "”" || q === "’";
+        const eng = closing && englishQuote(q === "”" ? dqAt : sqAt);
+        if (q === "“") dqAt = out.length; else if (q === "‘") sqAt = out.length;
+        put(q, !eng);
+        i = eng ? i + 1 : skipAfter(i + 1, true);
+        continue;
+      }
       put(c, false);
       i++;
       continue;
     }
 
-    // 半角标点：挨着中文才改
-    if (r.punct) {
+    // 半角标点：挨着中文才改；零宽字符隔着的不算挨着
+    if (r.punct && !ZW.has(cs[i - 1]) && !ZW.has(cs[i + 1])) {
       let to = null;
       if (HALF[c]) {
         if (isCN(L) || isHan(nextFrom(i + 1))) to = HALF[c];
@@ -269,10 +283,11 @@ function fixPunct(body, r) {
   return out.join("");
 }
 
+const isEnglish = (body) => !HAN_RE.test(body) && /[A-Za-z]/.test(body);
 function fixBody(body, r) {
   if (!body) return body;
   const han = HAN_RE.test(body);
-  if (!han && /[A-Za-z]/.test(body)) return body;   // 整段英文不动
+  if (isEnglish(body)) return body;   // 整段英文不动
   if (isSceneBreak(body)) return body;               // 分隔线不动
   if (r.punct || r.quotes || r.ellipsis || r.dash) body = fixPunct(body, r);
   if (r.cjkSpace && han) body = body.replace(SP1, " ").replace(SP2, " ");
@@ -288,6 +303,7 @@ export function formatText(text, rules) {
   lines = lines.map((l) => {
     if (isBlank(l)) return l;
     const lead = l.match(/^\s*/u)[0];
+    if (isEnglish(l.slice(lead.length))) return l;   // 整段英文：连缩进也不加
     return (r.indent ? INDENT : lead) + fixBody(l.slice(lead.length), r);
   });
   if (!r.gap) return lines.join("\n");

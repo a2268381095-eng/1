@@ -139,7 +139,7 @@ function buildLayout(app) {
     const id = ws.current.id, v = chTitle.value;
     titleTimer = setTimeout(async () => { await updateChapter(id, { title: v.trim() }); const c = ws.chapters.find((x) => x.id === id); if (c) c.title = v.trim(); renderList(); }, 400);
   });
-  chTitle.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); ws.editor.focus(); } });
+  chTitle.addEventListener("keydown", (e) => { if (e.key === "Enter" && !(e.isComposing || e.keyCode === 229)) { e.preventDefault(); ws.editor.focus(); } });
   const edHost = h("div.ed-host");
   const nameAI = h("button.icon-btn.ch-name-ai", { type: "button", title: "让 AI 根据本章内容出几个章名", "aria-label": "AI 起章名" }, "AI");
   nameAI.addEventListener("click", () => commands.run("chapter.nameAI"));
@@ -600,15 +600,21 @@ function toggleRight(force) {
 }
 
 // ---------------- 撤销 ----------------
-/** 编辑器里按 Ctrl+Z：如果最近一步是包含这一章的批量操作，并且之后没再打字，就整体撤销 */
+const lastEdit = new Map();   // 每章最后一次手动改正文的时间
+/** 最近一步是批量操作，并且在这一章里之后没再打字：Ctrl+Z 先整体撤销批量。
+ *  批量改到了这一章：看编辑器的撤销深度；没改到这一章：看时间（批量之后没在这章动过字） */
+function batchFirst(top, chapterId, depth) {
+  if (!top || !top.chapters || !chapterId) return false;
+  if (chapterId in top.chapters) return top.chapters[chapterId] === depth;
+  return top.at != null && (lastEdit.get(chapterId) || 0) < top.at;
+}
 function batchUndoFor(chapterId, depth) {
-  const top = appUndo.peek();
-  if (top && top.chapters && top.chapters[chapterId] === depth) { appUndo.undo(); return true; }
+  if (batchFirst(appUndo.peek(), chapterId, depth)) { appUndo.undo(); return true; }
   return false;
 }
 function smartUndo() {
   const top = appUndo.peek();
-  if (ws.editor && ws.current && top && top.chapters && top.chapters[ws.current.id] === ws.editor.depth()) return appUndo.undo();
+  if (ws.editor && ws.current && batchFirst(top, ws.current.id, ws.editor.depth())) return appUndo.undo();
   if (top && !top.chapters && (!ws.editor || !ws.editor.hasFocus())) return appUndo.undo();
   if (ws.editor) { ws.editor.undo(); ws.editor.focus(); }
 }
@@ -637,9 +643,9 @@ async function applyBatch(lbl, changes) {
     updateStatus();
     return depths;
   };
-  const entry = { label: lbl, chapters: await write((c) => c.after) };
+  const entry = { label: lbl, chapters: await write((c) => c.after), at: performance.now() };
   entry.undo = async () => { entry.chapters = await write((c) => befores.get(c.chapterId)); };
-  entry.redo = async () => { entry.chapters = await write((c) => c.after); };
+  entry.redo = async () => { entry.chapters = await write((c) => c.after); entry.at = performance.now(); };
   // 撤销以后编辑器里的深度变了，Ctrl+Z 判断用的是最新的
   appUndo.push(entry);
   return entry;
@@ -666,6 +672,7 @@ function toggleFocus() {
 
 // ---------------- 注册 ----------------
 export function registerWorkspace() {
+  bus.on("typing:input", ({ chapterId }) => lastEdit.set(chapterId, performance.now()));
   nav.route("book", "/book/:bookId/:chapterId?", (params, restore) => renderBook(params, restore));
   bus.on("route", ({ name }) => {
     if (name === "book") return;

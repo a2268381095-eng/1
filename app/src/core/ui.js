@@ -98,7 +98,7 @@ export const topLayer = () => layers[layers.length - 1] || null;
 export const hasLayers = () => layers.length > 0;
 
 document.addEventListener("keydown", (e) => {
-  if (e.key !== "Escape" || e.isComposing) return;
+  if (e.key !== "Escape" || e.isComposing || e.keyCode === 229) return;
   const top = topLayer();
   if (top) { e.preventDefault(); e.stopPropagation(); top.close(); }
 }, true);
@@ -161,7 +161,7 @@ export function prompt(title, value = "", placeholder = "") {
       title, body: input, onClose: () => resolve(result),
       actions: [{ label: "确定", primary: true, onClick: () => { result = input.value; m.close(true); } }, { label: "取消", onClick: () => m.close(true) }],
     });
-    input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); result = input.value; m.close(true); } });
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !(e.isComposing || e.keyCode === 229)) { e.preventDefault(); result = input.value; m.close(true); } });
     setTimeout(() => input.select(), 0);
   });
 }

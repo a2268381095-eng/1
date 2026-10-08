@@ -619,7 +619,8 @@ async function mobileDark(dist, fails) {
     await fillQ(page, '林栀');
     await page.click('.sr-all');
     await wait(page, 800);
-    await fillQ(page, '林');
+    // 「林栀」已经全换掉了：搜换进去的字，结果列表和替换预览才有东西
+    await fillQ(page, '替换');
     const dark = await page.evaluate(() => {
       const v = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
       const rgb = (hex) => { const m = hex.replace('#', '').match(/../g).map((x) => parseInt(x, 16)); return `rgb(${m.join(', ')})`; };

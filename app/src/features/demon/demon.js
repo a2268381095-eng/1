@@ -222,7 +222,7 @@ export function openHelp() {
   const runItem = (c) => { layer.close(true); setTimeout(() => c.run(), 0); };
   input.addEventListener("input", () => { sel = 0; render(); });
   input.addEventListener("keydown", (e) => {
-    if (e.isComposing) return;
+    if (e.isComposing || e.keyCode === 229) return;
     if (e.key === "ArrowDown") { sel = Math.min(items.length - 1, sel + 1); render(); e.preventDefault(); }
     else if (e.key === "ArrowUp") { sel = Math.max(0, sel - 1); render(); e.preventDefault(); }
     else if (e.key === "Enter" && items[sel]) { runItem(items[sel]); e.preventDefault(); }
@@ -588,6 +588,9 @@ function wireEvents() {
   bus.on("io:exported", () => react("export"));
   bus.on("io:backup", () => react("export", { force: true }));
   bus.on("save:failed", () => react("ai_error", { text: "保存出错了！别关窗口，正文还在，我帮你看着。", act: "shock" }));
+  // 停笔、屏幕变回背景时她打瞌睡；一动鼠标就醒
+  bus.on("paper:rest", () => { if (player.act === "idle") { hush(); play("doze", 3600000); } });
+  bus.on("paper:wake", () => { if (player.act === "doze") play("idle"); });
   // 换了配色就换衣服；随时间、随季节的配色每分钟看一次
   bus.on("settings:changed", ({ patch }) => { if (patch && "palette" in patch) syncStyle(true); });
   setInterval(() => { const p = getSettings().palette; if (p === "time" || p === "season") syncStyle(true); }, 60000);

@@ -62,7 +62,7 @@ export function setCustomKeys(map) { custom = map || {}; }
 export function keyOf(cmd) { return cmd.id in custom ? custom[cmd.id] || "" : cmd.key || ""; }
 
 window.addEventListener("keydown", (e) => {
-  if (e.isComposing) return;
+  if (e.isComposing || e.keyCode === 229) return;
   const k = keyName(e);
   for (const c of commands.available()) {
     if (keyOf(c) && keyOf(c) === k) {

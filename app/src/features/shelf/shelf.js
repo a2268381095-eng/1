@@ -8,33 +8,13 @@ import { bus } from "../../core/bus.js";
 import { fmtTime } from "../../core/text.js";
 import { setDemonBook, tip } from "../demon/demon.js";
 import { lookButton } from "../../core/look.js";
+import { styledCover } from "./covers.js";
 
 const GENRES = ["奇幻", "玄幻", "仙侠", "武侠", "都市", "校园", "恋爱", "悬疑", "推理", "科幻", "历史", "西幻", "异世界", "穿越", "游戏", "种田", "轻小说", "古言", "日常"];
 
-/** 没有封面时画一张默认封面（按书名生成颜色），返回 dataURL */
+/** 没有封面时的默认书封：按现在的主题画成那一套的书（covers.js） */
 export function defaultCover(title) {
-  const c = document.createElement("canvas");
-  c.width = 300; c.height = 400;
-  const g = c.getContext("2d");
-  let hash = 0;
-  for (const ch of title || "无题") hash = (hash * 31 + ch.codePointAt(0)) >>> 0;
-  const hue = hash % 360;
-  const grad = g.createLinearGradient(0, 0, 300, 400);
-  grad.addColorStop(0, `hsl(${hue}, 45%, 86%)`);
-  grad.addColorStop(1, `hsl(${(hue + 40) % 360}, 50%, 72%)`);
-  g.fillStyle = grad;
-  g.fillRect(0, 0, 300, 400);
-  g.fillStyle = "rgba(255,255,255,.55)";
-  g.fillRect(24, 24, 252, 352);
-  g.fillStyle = `hsl(${hue}, 35%, 28%)`;
-  g.font = "600 34px 'Noto Serif SC', serif";
-  g.textAlign = "center";
-  const t = [...(title || "无题")];
-  // 竖排书名
-  const n = Math.min(t.length, 8);
-  const step = Math.min(42, 300 / n);
-  for (let i = 0; i < n; i++) g.fillText(t[i], 150, 90 + i * step);
-  return c.toDataURL("image/jpeg", 0.85);
+  return styledCover(title, document.documentElement.dataset.paper || "magical");
 }
 
 /** 读取图片文件，裁成 3:4 后缩放到 600×800，返回 JPEG dataURL */
@@ -76,7 +56,7 @@ export function bookForm(book = null) {
       });
       const add = h("input.input.tag-add", { placeholder: "自己加一个，回车" });
       add.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !e.isComposing && add.value.trim()) { e.preventDefault(); data.tags.push(add.value.trim()); renderTags(); }
+        if (e.key === "Enter" && !(e.isComposing || e.keyCode === 229) && add.value.trim()) { e.preventDefault(); data.tags.push(add.value.trim()); renderTags(); }
       });
       tagBox.append(add);
     };
@@ -151,7 +131,7 @@ export async function renderShelf(root, restore) {
 
 function bookCard(b) {
   const card = h("article.book-card", { tabindex: "0", "aria-label": b.title },
-    h("img.book-cover", { src: b.cover || defaultCover(b.title), alt: "" }),
+    h("img.book-cover", { src: b.cover || defaultCover(b.title), alt: "", "data-default-title": b.cover ? null : b.title || "" }),
     h("div.book-meta", {},
       h("h3.book-title", {}, b.title),
       h("p.book-intro", {}, b.intro || "还没有简介"),
@@ -236,4 +216,13 @@ export function registerShelf() {
   commands.register({ id: "book.new", title: "新建作品", keywords: "新书 开新坑 创建", hint: "填书名就能开写", run: newBook });
   commands.register({ id: "nav.shelf", title: "回到书架", keywords: "书架 首页 作品列表", run: () => nav.go("/") });
   bus.on("book:deleted", () => {});
+  // 换主题：没有自己封面的书换成那一套的书封
+  const recover = () => setTimeout(() => {
+    for (const im of document.querySelectorAll("img.book-cover[data-default-title]")) {
+      const src = defaultCover(im.dataset.defaultTitle);
+      if (im.src !== src) im.src = src;
+    }
+  }, 0);
+  bus.on("settings:changed", recover);
+  bus.on("demon:style", recover);
 }

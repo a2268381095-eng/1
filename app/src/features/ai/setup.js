@@ -102,7 +102,7 @@ export async function renderSetup(root, opts = {}) {
     }
 
     keyIn.addEventListener("paste", () => setTimeout(() => { if (keyIn.value.trim() && (!p.custom || baseIn.value.trim())) fetchModels(); }, 0));
-    keyIn.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.isComposing) fetchModels(); });
+    keyIn.addEventListener("keydown", (e) => { if (e.key === "Enter" && !(e.isComposing || e.keyCode === 229)) fetchModels(); });
     fetchBtn.addEventListener("click", fetchModels);
     testBtn.addEventListener("click", test);
     if (removeBtn) removeBtn.addEventListener("click", async () => {

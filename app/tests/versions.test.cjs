@@ -429,12 +429,14 @@ async function flows(dist, fails) {
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.click('.ver-item[data-i="0"]');
   await page.waitForSelector('.ver-overlay');
+  await page.waitForTimeout(1800);   // 侧栏底色有渐变（背景插画开着时侧栏是半透明的）
   const dark = await page.evaluate(() => ({
     bg: getComputedStyle(document.querySelector('.ver-overlay')).backgroundColor,
     del: getComputedStyle(document.querySelector('.ver-del')).color,
     list: getComputedStyle(document.querySelector('.side-right')).backgroundColor,
   }));
-  check(dark.bg === 'rgb(27, 21, 29)' && dark.del === 'rgb(255, 143, 162)' && dark.list === 'rgb(23, 18, 25)', '深色模式跟着变：' + JSON.stringify(dark), fails);
+  check(dark.bg === 'rgb(27, 21, 29)' && dark.del === 'rgb(255, 143, 162)' && (dark.list === 'rgb(23, 18, 25)' || /^color\(srgb 0\.0901961 0\.0705882 0\.0980392 \/ [\d.]+\)$/.test(dark.list)),
+    '深色模式跟着变（侧栏可以是半透明的同一种深色）：' + JSON.stringify(dark), fails);
   await page.emulateMedia({ colorScheme: 'light' });
   if (process.env.SHOT) await page.screenshot({ path: path.join(process.env.SHOT, 'versions-desktop.png') });
   await page.keyboard.press('Escape');

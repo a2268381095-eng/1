@@ -240,7 +240,7 @@ function buildPanel() {
   q.addEventListener("input", (e) => { if (e.isComposing) return; S.query = q.value; S.pristine = false; changed(); });
   q.addEventListener("compositionend", () => { S.query = q.value; S.pristine = false; changed(); });
   q.addEventListener("keydown", (e) => {
-    if (e.key !== "Enter" || e.isComposing) return;
+    if (e.key !== "Enter" || e.isComposing || e.keyCode === 229) return;
     e.preventDefault();
     e.shiftKey ? prev() : next();
   });
@@ -249,7 +249,7 @@ function buildPanel() {
   r.addEventListener("input", (e) => { if (!e.isComposing) onRep(); });
   r.addEventListener("compositionend", onRep);
   r.addEventListener("keydown", (e) => {
-    if (e.key !== "Enter" || e.isComposing || e.ctrlKey || e.metaKey) return;
+    if (e.key !== "Enter" || e.isComposing || e.keyCode === 229 || e.ctrlKey || e.metaKey) return;
     e.preventDefault();
     replaceOne();
   });

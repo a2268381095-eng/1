@@ -41,17 +41,24 @@ body.has-scene .ed-host .cm-content, body.has-scene .ch-head { text-shadow: 0 0 
 body.has-scene .side-left, body.has-scene .side-right, body.has-scene .topbar, body.has-scene .statusbar {
   text-shadow: 0 0 4px color-mix(in srgb, var(--side) var(--halo), transparent); }
 
-/* ---------- 停笔一阵：纸和侧栏淡下去，屏幕交给动态背景（core/paper.js） ---------- */
-body.has-scene.paper-rest { --a-paper: 10%; --a-paper-typing: 10%; --b-paper: 0px; --a-side: 14%; --a-bar: 14%; --b-side: 0px; --b-bar: 0px; }
+/* ---------- 停笔一阵：侧栏、顶栏、状态栏、纸都隐去，屏幕只剩动态背景，正文淡成一层；一动鼠标就回来（core/paper.js） ---------- */
+body.has-scene.paper-rest { --a-paper: 0%; --a-paper-typing: 0%; --b-paper: 0px; --a-side: 0%; --a-bar: 0%; --b-side: 0px; --b-bar: 0px; }
 body.has-scene .ws .side-left, body.has-scene .ws .side-right, body.has-scene .ws .topbar, body.has-scene .ws .statusbar {
-  transition: background-color 1.6s ease, -webkit-backdrop-filter 1.6s ease, backdrop-filter 1.6s ease; }
+  transition: background-color 1.6s ease, -webkit-backdrop-filter 1.6s ease, backdrop-filter 1.6s ease, border-color 1.6s ease, box-shadow 1.6s ease; }
 body.has-scene .ws .ed-host, body.has-scene .ws .ch-head, body.has-scene .ws .side-left > *, body.has-scene .ws .side-right > *,
-body.has-scene .ws .topbar > *, body.has-scene .ws .statusbar > * { transition: opacity .5s ease; }
-body.has-scene.paper-rest .ws .ed-host, body.has-scene.paper-rest .ws .ch-head { opacity: .42; transition-duration: 2s; }
+body.has-scene .ws .topbar > *, body.has-scene .ws .statusbar > * { transition: opacity .45s ease, transform .45s ease; }
+body.has-scene.paper-rest .ws .ed-host, body.has-scene.paper-rest .ws .ch-head { opacity: .36; transition-duration: 2.2s; }
 body.has-scene.paper-rest .ws .side-left > *, body.has-scene.paper-rest .ws .side-right > *, body.has-scene.paper-rest .ws .topbar > *,
-body.has-scene.paper-rest .ws .statusbar > * { opacity: .22; transition-duration: 2s; }
+body.has-scene.paper-rest .ws .statusbar > * { opacity: 0; transition-duration: 1.4s; }
+[data-motion="full"] body.has-scene.paper-rest .ws .side-left > * { transform: translateX(-14px); }
+[data-motion="full"] body.has-scene.paper-rest .ws .side-right > * { transform: translateX(14px); }
+[data-motion="full"] body.has-scene.paper-rest .ws .topbar > * { transform: translateY(-8px); }
+[data-motion="full"] body.has-scene.paper-rest .ws .statusbar > * { transform: translateY(8px); }
+body.has-scene.paper-rest .ws .side-left, body.has-scene.paper-rest .ws .side-right, body.has-scene.paper-rest .ws .topbar, body.has-scene.paper-rest .ws .statusbar {
+  border-color: transparent !important; box-shadow: none !important; background-image: none !important; text-shadow: none; }
 body.has-scene.paper-rest .ws-body > .center::before { box-shadow: none; }
-body.has-scene.paper-rest .ws-body > .center::after { opacity: .2; transition: opacity 2s ease; }
+body.has-scene.paper-rest .ws-body > .center::after { opacity: 0; transition: opacity 1.6s ease; }
+/* 回来的时候侧栏从两边滑进来，顶栏从上面落下来 */
 /* 动一下：纸复写回来。默认从上往下一行一行印出来；各套风格在自己的纸里换 animation-name */
 [data-motion="full"] body.has-scene.paper-wake .ws-body > .center::before { animation: paper-wake .8s steps(12) both; }
 @keyframes paper-wake { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }

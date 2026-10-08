@@ -333,7 +333,7 @@ function renderLook(body) {
       seg("内外轮换", [[0, "不轮换"], [5, "5 分钟"], [10, "10 分钟"], [30, "30 分钟"]], () => Number(s().sceneCycle) || 0,
         (v) => change({ sceneCycle: v }, v ? `背景每 ${v} 分钟换一次` : "背景不再轮换")),
       h("button.btn.small.st-scene-now", { type: "button", onclick: () => { if (!nextScene()) toast("现在这套风格只有一张背景图。"); } }, "现在换一次")),
-    row("停笔后变回背景", "写字页停笔、不动鼠标一阵以后，纸和侧栏淡下去，屏幕交给动态背景。一动鼠标或打字，纸按这套风格的方式复写回来。",
+    row("停笔后变回背景", "写字页停笔、不动鼠标一阵以后，侧栏、顶栏隐去，纸变透明，屏幕只剩动态背景。一动鼠标或打字，界面回来，纸按这套风格的方式复写回来。",
       seg("停笔后变回背景", [[0, "不变"], [15, "15 秒"], [30, "30 秒"], [60, "1 分钟"], [180, "3 分钟"]], () => Number(s().paperRest) || 0,
         (v) => change({ paperRest: v }, v ? `停笔 ${v >= 60 ? v / 60 + " 分钟" : v + " 秒"}后变回背景` : "停笔后不再变回背景"))),
     row("走进作品", "打开一本书，镜头走进内景；回到书架，走回外景。",
@@ -650,7 +650,7 @@ function startRecording(c) {
   stopRecording(false);
   const rec = { id: c.id, err: "" };
   const onKey = (e) => {
-    if (e.isComposing) return;
+    if (e.isComposing || e.keyCode === 229) return;
     e.preventDefault();
     e.stopImmediatePropagation();
     if (PURE_MODS.includes(e.key)) return;

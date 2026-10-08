@@ -1,5 +1,5 @@
 // 写字的纸：每套风格一种纸（魔法信笺、作业本、宣纸、魔典书页、案卷、羊皮纸），样式在 styles/paper/*.css，
-// 纸上的像素小装饰（印章、夹子、蜡封……）在 core/paper-art/*.js，这里把它们画成图，写成 CSS 变量 --pa-<名字>。
+// 纸上的像素小装饰（印章、夹子、蜡封……）和纸纹（纤维、颗粒、斑驳……）在 core/paper-art/*.js，这里把它们画成图，写成 CSS 变量 --pa-<名字>。
 // 停笔一阵（设置里「停笔后变回背景」），纸和侧栏淡下去，屏幕交给动态背景；一动鼠标、打字，纸按这套风格的方式复写回来。
 import { bus } from "./bus.js";
 import { getSettings } from "./settings.js";
@@ -34,6 +34,22 @@ function artURL(a, theme) {
   return url;
 }
 
+/** 程序画的纹理（纸纤维、颗粒、斑驳……）：a.texture(g, w, h, theme, rnd)，a.size = [w, h]；rnd 是固定种子的随机数，每次画出来一样 */
+function textureURL(name, a, theme) {
+  const key = name + JSON.stringify([a.size, a.scale, theme]) + a.texture.toString().length;
+  if (cache.has(key)) return cache.get(key);
+  const [w, hgt] = a.size || [64, 64];
+  const c = document.createElement("canvas");
+  c.width = w; c.height = hgt;
+  let seed = 0;
+  for (const ch of name) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+  const rnd = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
+  a.texture(c.getContext("2d"), w, hgt, theme, rnd);
+  const url = c.toDataURL("image/png");
+  cache.set(key, url);
+  return url;
+}
+
 let shownKeys = [];
 /** applyLook 调：换上这套纸的装饰图 */
 export function applyPaper(style) {
@@ -46,11 +62,12 @@ export function applyPaper(style) {
   shownKeys = [];
   const art = ART[style] || {};
   for (const [name, a] of Object.entries(art)) {
-    if (!a || !a.rows) continue;
-    const k = "--pa-" + name, s = a.scale || 3;
-    root.style.setProperty(k, `url(${artURL(a, theme)})`);
-    root.style.setProperty(k + "-w", Math.max(...a.rows.map((r) => r.length)) * s + "px");
-    root.style.setProperty(k + "-h", a.rows.length * s + "px");
+    if (!a || (!a.rows && !a.texture)) continue;
+    const k = "--pa-" + name, s = a.scale || (a.texture ? 1 : 3);
+    const [w, hgt] = a.texture ? a.size || [64, 64] : [Math.max(...a.rows.map((r) => r.length)), a.rows.length];
+    root.style.setProperty(k, `url(${a.texture ? textureURL(style + name, a, theme) : artURL(a, theme)})`);
+    root.style.setProperty(k + "-w", w * s + "px");
+    root.style.setProperty(k + "-h", hgt * s + "px");
     shownKeys.push(k);
   }
 }
@@ -81,7 +98,7 @@ function rest() {
 }
 /** 有动静：纸复写回来 */
 export function wake() {
-  if (resting) {
+  if (resting || document.body.classList.contains("paper-rest")) {
     resting = false;
     document.body.classList.remove("paper-rest");
     document.body.classList.add("paper-wake");
