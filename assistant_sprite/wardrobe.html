@@ -1,0 +1,328 @@
+<title>小恶魔衣橱</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: 上面 6 套总览（每套都在动），中间放大看选中的一套、逐个播放 7 个动作，底部常驻「选入默认 5 套」栏 */
+:root {
+  --bg: #f5eff2;
+  --surface: #fffafc;
+  --ink: #2f1d28;
+  --muted: #7d6874;
+  --line: #e6d7df;
+  --accent: #b23f77;
+  --accent-ink: #ffffff;
+  --accent-soft: #f7dfea;
+  --grid: #f0e5eb;
+  --done: #2f7d5b;
+  --done-soft: #dff0e7;
+  --f-ui: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --f-pixel: "DotGothic16", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151017; --surface: #1e1720; --ink: #f1e5ec; --muted: #a58f9c; --line: #352a38;
+    --accent: #ec82b1; --accent-ink: #2a0f1e; --accent-soft: #3b2231; --grid: #241b27;
+    --done: #7fd1a8; --done-soft: #1f3a2d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #151017; --surface: #1e1720; --ink: #f1e5ec; --muted: #a58f9c; --line: #352a38;
+  --accent: #ec82b1; --accent-ink: #2a0f1e; --accent-soft: #3b2231; --grid: #241b27;
+  --done: #7fd1a8; --done-soft: #1f3a2d;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--f-ui); }
+canvas { image-rendering: crisp-edges; image-rendering: pixelated; display: block; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 140px; display: grid; gap: 22px; }
+.head { display: grid; gap: 8px; }
+.head h1 { margin: 0; font-size: 22px; letter-spacing: 0.02em; text-wrap: balance; }
+.head p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.75; max-width: 64ch; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12.5px; color: var(--muted); align-items: center; }
+.badge { font-size: 11.5px; padding: 1px 7px; border-radius: 999px; white-space: nowrap; }
+.badge.custom { background: var(--done-soft); color: var(--done); }
+.badge.basic { background: var(--grid); color: var(--muted); }
+.label { margin: 0; font-size: 12px; font-weight: 500; letter-spacing: 0.08em; color: var(--muted); }
+
+.overview { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 900px) { .overview { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.mini { display: grid; gap: 6px; padding: 8px 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface);
+  cursor: pointer; text-align: left; min-width: 0; }
+.mini[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.mini canvas { width: 100%; height: auto; max-width: 128px; justify-self: center; }
+.mini .nm { font-size: 13px; font-weight: 500; line-height: 1.4; }
+.mini .pick-dot { font-size: 11.5px; color: var(--accent); min-height: 1.2em; }
+
+.detail { display: grid; grid-template-columns: minmax(0, auto) minmax(0, 1fr); gap: 20px; align-items: start;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+@media (max-width: 760px) { .detail { grid-template-columns: minmax(0, 1fr); } }
+.stage { display: grid; justify-items: center; gap: 8px; padding: 12px; border: 1px solid var(--line); border-radius: 6px;
+  background-color: var(--surface);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 16px 16px; }
+#big { max-width: 100%; height: auto; }
+.meta { width: 100%; display: flex; justify-content: space-between; gap: 8px; font-family: var(--f-pixel); font-size: 12px;
+  color: var(--muted); font-variant-numeric: tabular-nums; }
+.side { display: grid; gap: 16px; min-width: 0; }
+.title-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.title-row h2 { margin: 0; font-size: 19px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); }
+.pick { padding: 7px 14px; border: 1px solid var(--line); background: var(--bg); border-radius: 6px; cursor: pointer; font-size: 13.5px; }
+.pick[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.acts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+@media (max-width: 480px) { .acts { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.act { display: grid; gap: 4px; justify-items: start; padding: 8px 9px; border: 1px solid var(--line); background: var(--bg);
+  border-radius: 6px; cursor: pointer; text-align: left; }
+.act .an { font-size: 14px; font-weight: 500; }
+.act[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.row { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.seg button { border: 0; border-right: 1px solid var(--line); background: transparent; padding: 6px 12px; cursor: pointer; font-size: 13px; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); font-weight: 500; }
+.strip { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 4px; }
+@media (max-width: 480px) { .strip { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.strip canvas { width: 100%; height: auto; border: 1px solid var(--line); border-radius: 3px; background: var(--bg); }
+.strip canvas.on { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.note { margin: 0; font-size: 13px; line-height: 1.7; color: var(--muted); max-width: 60ch; }
+
+.bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); }
+.bar-in { max-width: 1180px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.count { font-family: var(--f-pixel); font-size: 14px; font-variant-numeric: tabular-nums; }
+.picked { flex: 1 1 220px; min-width: 0; font-size: 13px; color: var(--muted); }
+.copy { padding: 8px 14px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 6px; cursor: pointer; font-size: 14px; }
+.copied { font-size: 12.5px; color: var(--muted); }
+#fallback { width: 100%; font: inherit; font-size: 12px; }
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <h1>小恶魔衣橱</h1>
+    <p>6 套候选风格，每套 7 个动作，都是从你用 GPT 出的设定图转成的 128×224 像素小人。点一套放大看，再点动作逐个播放；挑出 5 套作为默认风格，底部一键复制给我。</p>
+    <div class="legend">
+      <span class="badge custom">精修</span><span>已经加了挥手、漩涡转动、尾巴甩动这类专门的动画</span>
+      <span class="badge basic">基础浮动</span><span>暂时只有整体浮动和眨眼，接下来逐个精修</span>
+    </div>
+  </header>
+
+  <section aria-labelledby="ov-h">
+    <h2 class="label" id="ov-h">6 套总览</h2>
+    <div class="overview" id="overview"></div>
+  </section>
+
+  <section class="detail" aria-label="当前这套">
+    <div class="stage">
+      <canvas id="big" aria-label="放大的小恶魔"></canvas>
+      <div class="meta"><span id="m-act">idle</span><span id="m-frame">01/12</span></div>
+    </div>
+    <div class="side">
+      <div class="title-row">
+        <h2 id="d-name">原稿</h2>
+        <button type="button" class="pick" id="d-pick" aria-pressed="false">选入默认 5 套</button>
+      </div>
+      <div class="chips" id="d-genres"></div>
+      <div class="acts" id="acts" role="group" aria-label="动作"></div>
+      <div class="row">
+        <div class="seg" role="group" aria-label="播放速度">
+          <button type="button" id="sp-05" data-speed="0.5" aria-pressed="false">0.5×</button>
+          <button type="button" id="sp-1" data-speed="1" aria-pressed="true">1×</button>
+          <button type="button" id="sp-2" data-speed="2" aria-pressed="false">2×</button>
+        </div>
+        <div class="seg" role="group" aria-label="放大倍数">
+          <button type="button" id="sc-1" data-scale="1" aria-pressed="false">1×</button>
+          <button type="button" id="sc-2" data-scale="2" aria-pressed="true">2×</button>
+          <button type="button" id="sc-3" data-scale="3" aria-pressed="false">3×</button>
+        </div>
+        <button type="button" class="pick" id="pause">暂停</button>
+      </div>
+      <div class="side">
+        <h3 class="label">这个动作的每一帧</h3>
+        <div class="strip" id="strip"></div>
+      </div>
+      <p class="note" id="d-note"></p>
+    </div>
+  </section>
+</div>
+
+<div class="bar" role="region" aria-label="已选风格">
+  <div class="bar-in">
+    <span class="count" id="count">0 / 5</span>
+    <span class="picked" id="picked">还没选</span>
+    <button type="button" class="copy" id="copy">复制我的选择</button>
+    <span class="copied" id="copied" role="status"></span>
+    <textarea id="fallback" rows="3" readonly hidden aria-label="选择结果，可手动复制"></textarea>
+  </div>
+</div>
+
+<script>
+(() => {
+  const DATA = {"styles": [{"id": "magical", "name": "原稿·小恶魔魔法少女", "genres": ["通用", "奇幻", "轻小说"], "w": 128, "h": 224, "actions": [{"key": "idle", "name": "待机", "frames": 12, "ms": [130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130], "loop": true, "kind": "custom", "src": "styles/magical/actions/idle/frames.png"}, {"key": "blink", "name": "待机·眨眼", "frames": 12, "ms": [130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130, 130], "loop": true, "kind": "custom", "src": "styles/magical/actions/blink/frames.png"}, {"key": "wave", "name": "打招呼", "frames": 12, "ms": [110, 110, 110, 110, 110, 110, 110, 110, 110, 110, 110, 110], "loop": false, "kind": "custom", "src": "styles/magical/actions/wave/frames.png"}, {"key": "point", "name": "指路", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/magical/actions/point/frames.png"}, {"key": "think", "name": "思考", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": true, "kind": "basic", "src": "styles/magical/actions/think/frames.png"}, {"key": "cheer", "name": "欢呼", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/magical/actions/cheer/frames.png"}, {"key": "shock", "name": "吓一跳", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/magical/actions/shock/frames.png"}, {"key": "doze", "name": "打瞌睡", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": true, "kind": "basic", "src": "styles/magical/actions/doze/frames.png"}]}, {"id": "sailor", "name": "水手服·元气同桌", "genres": ["校园", "青春", "都市日常", "恋爱"], "w": 128, "h": 224, "actions": [{"key": "idle", "name": "待机", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": true, "kind": "basic", "src": "styles/sailor/actions/idle/frames.png"}, {"key": "wave", "name": "打招呼", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/sailor/actions/wave/frames.png"}, {"key": "point", "name": "指路", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/sailor/actions/point/frames.png"}, {"key": "think", "name": "思考", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": true, "kind": "basic", "src": "styles/sailor/actions/think/frames.png"}, {"key": "cheer", "name": "欢呼", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/sailor/actions/cheer/frames.png"}, {"key": "shock", "name": "吓一跳", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/sailor/actions/shock/frames.png"}, {"key": "doze", "name": "打瞌睡", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": true, "kind": "basic", "src": "styles/sailor/actions/doze/frames.png"}]}, {"id": "hanfu", "name": "古风·执笔仙子", "genres": ["仙侠", "玄幻", "古言", "武侠", "历史"], "w": 128, "h": 224, "actions": [{"key": "idle", "name": "待机", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": true, "kind": "basic", "src": "styles/hanfu/actions/idle/frames.png"}, {"key": "wave", "name": "打招呼", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/hanfu/actions/wave/frames.png"}, {"key": "point", "name": "指路", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/hanfu/actions/point/frames.png"}, {"key": "think", "name": "思考", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": true, "kind": "basic", "src": "styles/hanfu/actions/think/frames.png"}, {"key": "cheer", "name": "欢呼", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/hanfu/actions/cheer/frames.png"}, {"key": "shock", "name": "吓一跳", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/hanfu/actions/shock/frames.png"}, {"key": "doze", "name": "打瞌睡", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": true, "kind": "basic", "src": "styles/hanfu/actions/doze/frames.png"}]}, {"id": "gothic", "name": "哥特·暗夜魔典", "genres": ["西幻", "魔幻", "暗黑"], "w": 128, "h": 224, "actions": [{"key": "idle", "name": "待机", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": true, "kind": "basic", "src": "styles/gothic/actions/idle/frames.png"}, {"key": "wave", "name": "打招呼", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/gothic/actions/wave/frames.png"}, {"key": "point", "name": "指路", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/gothic/actions/point/frames.png"}, {"key": "think", "name": "思考", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": true, "kind": "basic", "src": "styles/gothic/actions/think/frames.png"}, {"key": "cheer", "name": "欢呼", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/gothic/actions/cheer/frames.png"}, {"key": "shock", "name": "吓一跳", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/gothic/actions/shock/frames.png"}, {"key": "doze", "name": "打瞌睡", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": true, "kind": "basic", "src": "styles/gothic/actions/doze/frames.png"}]}, {"id": "detective", "name": "侦探·推理少女", "genres": ["悬疑", "推理", "刑侦", "惊悚"], "w": 128, "h": 224, "actions": [{"key": "idle", "name": "待机", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": true, "kind": "basic", "src": "styles/detective/actions/idle/frames.png"}, {"key": "wave", "name": "打招呼", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/detective/actions/wave/frames.png"}, {"key": "point", "name": "指路", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/detective/actions/point/frames.png"}, {"key": "think", "name": "思考", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": true, "kind": "basic", "src": "styles/detective/actions/think/frames.png"}, {"key": "cheer", "name": "欢呼", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/detective/actions/cheer/frames.png"}, {"key": "shock", "name": "吓一跳", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/detective/actions/shock/frames.png"}, {"key": "doze", "name": "打瞌睡", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": true, "kind": "basic", "src": "styles/detective/actions/doze/frames.png"}]}, {"id": "adventurer", "name": "异世界·见习冒险者", "genres": ["异世界", "穿越", "冒险", "游戏", "种田"], "w": 128, "h": 224, "actions": [{"key": "idle", "name": "待机", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": true, "kind": "basic", "src": "styles/adventurer/actions/idle/frames.png"}, {"key": "wave", "name": "打招呼", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/adventurer/actions/wave/frames.png"}, {"key": "point", "name": "指路", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/adventurer/actions/point/frames.png"}, {"key": "think", "name": "思考", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": true, "kind": "basic", "src": "styles/adventurer/actions/think/frames.png"}, {"key": "cheer", "name": "欢呼", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/adventurer/actions/cheer/frames.png"}, {"key": "shock", "name": "吓一跳", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": false, "kind": "basic", "src": "styles/adventurer/actions/shock/frames.png"}, {"key": "doze", "name": "打瞌睡", "frames": 10, "ms": [140, 140, 140, 140, 140, 140, 140, 140, 140, 140], "loop": true, "kind": "basic", "src": "styles/adventurer/actions/doze/frames.png"}]}]};
+  const W = 128, H = 224;
+  const $ = (id) => document.getElementById(id);
+  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const imgs = {};
+  const img = (src) => {
+    if (!imgs[src]) { const i = new Image(); i.src = src; i.onload = () => drawAll(); imgs[src] = i; }
+    return imgs[src];
+  };
+
+  // 一个播放器：一段动作的逐帧播放；播一遍的动作停顿一下再重播，方便反复看
+  function player(canvas, scale) {
+    return { canvas, scale, act: null, f: 0, acc: 0, hold: 0 };
+  }
+  function setAct(p, act) { p.act = act; p.f = 0; p.acc = 0; p.hold = 0; img(act.src); draw(p); }
+  function draw(p) {
+    if (!p.act) return;
+    const c = p.canvas, w = W * p.scale, h = H * p.scale;
+    if (c.width !== w || c.height !== h) { c.width = w; c.height = h; }
+    const ctx = c.getContext("2d");
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, w, h);
+    const im = imgs[p.act.src];
+    if (im && im.complete && im.naturalWidth) ctx.drawImage(im, p.f * W, 0, W, H, 0, 0, w, h);
+  }
+  function tick(p, dt) {
+    if (!p.act) return false;
+    if (p.hold > 0) { p.hold -= dt; if (p.hold <= 0) { p.f = 0; return true; } return false; }
+    p.acc += dt;
+    let changed = false;
+    while (p.acc >= p.act.ms[p.f]) {
+      p.acc -= p.act.ms[p.f]; changed = true;
+      if (p.f + 1 >= p.act.frames) {
+        if (p.act.loop) p.f = 0; else { p.hold = 700; p.acc = 0; break; }
+      } else p.f++;
+    }
+    return changed;
+  }
+
+  // ---------- 总览 ----------
+  const minis = [];
+  const picked = new Set();
+  let cur = DATA.styles[0];
+  DATA.styles.forEach((s) => {
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "mini"; b.id = "mini-" + s.id; b.setAttribute("aria-pressed", "false");
+    const cv = document.createElement("canvas"); cv.width = W; cv.height = H; cv.setAttribute("aria-hidden", "true");
+    const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = s.name;
+    const dot = document.createElement("span"); dot.className = "pick-dot";
+    b.append(cv, nm, dot);
+    b.addEventListener("click", () => select(s));
+    $("overview").append(b);
+    const p = player(cv, 1);
+    setAct(p, s.actions.find(a => a.key === "idle") || s.actions[0]);
+    minis.push({ s, b, p, dot });
+  });
+
+  // ---------- 详情 ----------
+  const big = player($("big"), 2);
+  let speed = 1, paused = reduce;
+  function select(s) {
+    cur = s;
+    minis.forEach(m => m.b.setAttribute("aria-pressed", String(m.s === s)));
+    $("d-name").textContent = s.name;
+    $("d-genres").textContent = "";
+    s.genres.forEach(g => { const c = document.createElement("span"); c.className = "chip"; c.textContent = g; $("d-genres").append(c); });
+    syncPick();
+    const box = $("acts"); box.textContent = "";
+    s.actions.forEach((a, i) => {
+      const b = document.createElement("button");
+      b.type = "button"; b.className = "act"; b.id = "act-" + a.key; b.setAttribute("aria-pressed", String(i === 0));
+      const n = document.createElement("span"); n.className = "an"; n.textContent = a.name;
+      const k = document.createElement("span"); k.className = "badge " + (a.kind === "custom" ? "custom" : "basic");
+      k.textContent = a.kind === "custom" ? "精修 · " + a.frames + " 帧" : "基础浮动";
+      b.append(n, k);
+      b.addEventListener("click", () => playAct(a));
+      box.append(b);
+    });
+    const custom = s.actions.filter(a => a.kind === "custom").map(a => a.name);
+    $("d-note").textContent = custom.length
+      ? "已精修：" + custom.join("、") + "。其余动作暂时是基础浮动，接下来逐个加专门的动画。"
+      : "这套的 7 个动作目前都是基础浮动，接下来逐个加专门的动画。";
+    playAct(s.actions[0]);
+  }
+  function playAct(a) {
+    document.querySelectorAll(".act").forEach(b => b.setAttribute("aria-pressed", String(b.id === "act-" + a.key)));
+    setAct(big, a);
+    buildStrip(a);
+    meta();
+  }
+  function buildStrip(a) {
+    const box = $("strip"); box.textContent = "";
+    const im = img(a.src);
+    const fill = () => {
+      box.textContent = "";
+      for (let i = 0; i < a.frames; i++) {
+        const cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+        const ctx = cv.getContext("2d"); ctx.imageSmoothingEnabled = false;
+        if (im.naturalWidth) ctx.drawImage(im, i * W, 0, W, H, 0, 0, W, H);
+        box.append(cv);
+      }
+      markStrip();
+    };
+    if (im.complete && im.naturalWidth) fill(); else im.addEventListener("load", fill, { once: true });
+  }
+  function markStrip() { [...$("strip").children].forEach((c, i) => c.classList.toggle("on", i === big.f)); }
+  function meta() {
+    if (!big.act) return;
+    $("m-act").textContent = big.act.key + " · " + big.act.ms[big.f] + "ms";
+    $("m-frame").textContent = String(big.f + 1).padStart(2, "0") + "/" + String(big.act.frames).padStart(2, "0");
+  }
+  function drawAll() { minis.forEach(m => draw(m.p)); draw(big); }
+
+  document.querySelectorAll("[data-speed]").forEach(b => b.addEventListener("click", () => {
+    speed = Number(b.dataset.speed);
+    document.querySelectorAll("[data-speed]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  }));
+  document.querySelectorAll("[data-scale]").forEach(b => b.addEventListener("click", () => {
+    big.scale = Number(b.dataset.scale);
+    document.querySelectorAll("[data-scale]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+    draw(big);
+  }));
+  const setPaused = (v) => { paused = v; $("pause").textContent = v ? "播放" : "暂停"; };
+  $("pause").addEventListener("click", () => setPaused(!paused));
+  setPaused(paused);
+
+  // ---------- 选入默认 5 套 ----------
+  function syncPick() {
+    const on = picked.has(cur.id);
+    $("d-pick").setAttribute("aria-pressed", String(on));
+    $("d-pick").textContent = on ? "已选入" : "选入默认 5 套";
+    minis.forEach(m => { m.dot.textContent = picked.has(m.s.id) ? "已选入" : ""; });
+    $("count").textContent = picked.size + " / 5";
+    $("picked").textContent = picked.size ? DATA.styles.filter(s => picked.has(s.id)).map(s => s.name).join("、") : "还没选";
+  }
+  $("d-pick").addEventListener("click", () => {
+    if (picked.has(cur.id)) picked.delete(cur.id); else picked.add(cur.id);
+    syncPick();
+  });
+  $("copy").addEventListener("click", () => {
+    const lines = ["小恶魔衣橱 · 我选的默认 5 套："];
+    DATA.styles.filter(s => picked.has(s.id)).forEach((s, i) => lines.push((i + 1) + ". " + s.name + "（" + s.id + "）"));
+    if (!picked.size) lines.push("（还没选）");
+    const text = lines.join("\n");
+    const msg = $("copied"), fb = $("fallback");
+    const fallback = () => { fb.hidden = false; fb.value = text; fb.focus(); fb.select(); msg.textContent = "复制没成功，已选中下面的文字，手动复制即可"; };
+    try { navigator.clipboard.writeText(text).then(() => { msg.textContent = "已复制，粘贴给 Claude 就行"; fb.hidden = true; }, fallback); }
+    catch (e) { fallback(); }
+  });
+
+  // ---------- 主循环 ----------
+  let last = performance.now();
+  function loop(t) {
+    const dt = Math.min(t - last, 250); last = t;
+    if (!paused) {
+      minis.forEach(m => { if (tick(m.p, dt * speed)) draw(m.p); });
+      if (tick(big, dt * speed)) { draw(big); markStrip(); meta(); }
+    }
+    requestAnimationFrame(loop);
+  }
+  select(cur);
+  requestAnimationFrame(loop);
+})();
+</script>

@@ -18,6 +18,7 @@ https://claude.ai/artifact/5qDbaq5hUWxRFzHuvwhaEL
 - 每套至少 7 种动作：`idle` 待机、`wave` 打招呼、`point` 指路、`think` 思考、`cheer` 欢呼、`shock` 吓一跳、`doze` 打瞌睡。每套按自己的特点画不同姿势，原稿也要有多种姿势。说话和眨眼叠加在动作上，不算数。
 - 原稿 `styles/default/` 保持用户画的样子（白色长袜），黑丝之类的变化放在其他风格里。
 - 台词：**小恶魔的个性永远是核心**，每套服装是同一个小恶魔的不同表现（元气、文雅、腹黑……），不能变成另一个人。写作相关的内容（字数、章节、伏笔、节奏、排版）适量加入，不能盖过她的个性。
+- 预览页「小恶魔衣橱」：https://claude.ai/artifact/GgLruVPhDvngsmqvfhhBEo（`assistant_sprite/wardrobe.html`，用 `tools/make_wardrobe_page.py` 生成，改完在原路径重新发布）。
 - 画风规矩、文件格式和工具用法见 `assistant_sprite/styles/README.md`。
 
 ## 软件原则

@@ -54,43 +54,89 @@ def split_runs(profile, parts, min_gap_frac=0.15):
     return [0] + sorted(cuts) + [n]
 
 
-def figure_masks(fg, rows):
-    """先按行切；每行里认出 k 个人物身体（连在一起的就在最空的竖线处切开），
-    再把魔法球、星星这类分离的小块分给离它最近的身体。"""
-    ys = split_runs(fg.sum(1), len(rows), 0.2)
-    masks = []
-    for (y0, y1), k in zip(zip(ys[:-1], ys[1:]), rows):
-        band = np.zeros_like(fg)
-        band[y0:y1] = fg[y0:y1]
-        n, lab, st, cen = cv2.connectedComponentsWithStats(
-            cv2.dilate(band.astype(np.uint8), np.ones((3, 3), np.uint8)), connectivity=8)
-        lab = lab * band
-        comps = list(range(1, n))
-        big = max(st[i, cv2.CC_STAT_AREA] for i in comps)
-        bodies = [lab == i for i in comps if st[i, cv2.CC_STAT_AREA] >= big * 0.25]
-        rest = [i for i in comps if st[i, cv2.CC_STAT_AREA] < big * 0.25]
-        while len(bodies) < k:      # 两个人挨在一起：在最宽那块里找最空的竖线切开
-            bodies.sort(key=lambda b: np.ptp(np.where(b)[1]))
-            b = bodies.pop()
-            xs = np.where(b.any(0))[0]
-            prof = b[:, xs[0]:xs[-1] + 1].sum(0).astype(float)
-            cut = xs[0] + split_runs(prof, 2, 0.25)[1]
-            left, right = b.copy(), b.copy()
-            left[:, cut:] = False
-            right[:, :cut] = False
-            bodies += [left, right]
-        bodies.sort(key=lambda b: b.sum(), reverse=True)
-        bodies = sorted(bodies[:k], key=lambda b: np.where(b)[1].mean())
-        # 特效逐个归队：每次把离某个人物（含已归入的特效）最近的那一块并进去，
-        # 下落线会先挂到魔法球上，再跟着球归到对的人物
-        rest = [lab == i for i in rest]
-        while rest:
-            dist = [cv2.distanceTransform((~b).astype(np.uint8), cv2.DIST_L2, 3) for b in bodies]
-            best = min(((dist[j][r].min(), ri, j) for ri, r in enumerate(rest) for j in range(len(bodies))))
-            _, ri, j = best
-            bodies[j] |= rest.pop(ri)
-        masks += bodies
-    return masks
+def split_body(src, body, parts):
+    """把粘在一起的几个人物分开：在身体最厚的地方（躯干）各取一个种子，
+    再用分水岭沿着轮廓线把像素分给各自的种子，翅膀、袖子会顺着肩膀归回本人。"""
+    dt = cv2.distanceTransform(body.astype(np.uint8), cv2.DIST_L2, 5)
+    xs_all = np.where(body.any(0))[0]
+    min_sep = (xs_all[-1] - xs_all[0]) / (parts * 2.0)
+    seeds = None
+    for t in np.linspace(dt.max() * 0.9, 1, 80):
+        n, lab, st, cen = cv2.connectedComponentsWithStats((dt > t).astype(np.uint8), connectivity=8)
+        good = sorted((i for i in range(1, n) if st[i, cv2.CC_STAT_AREA] > 30),
+                      key=lambda i: st[i, cv2.CC_STAT_AREA], reverse=True)
+        chosen = []
+        for i in good:     # 种子要左右分开：每个人物一个躯干，不在同一个人身上取两个
+            if all(abs(cen[i][0] - cen[j][0]) >= min_sep for j in chosen):
+                chosen.append(i)
+            if len(chosen) == parts:
+                break
+        if len(chosen) == parts:
+            seeds = [lab == i for i in chosen]
+            break
+    if seeds is None:            # 实在找不到就退回竖线切
+        xs = np.where(body.any(0))[0]
+        cut = xs[0] + split_runs(body[:, xs[0]:xs[-1] + 1].sum(0).astype(float), 2, 0.25)[1]
+        a, b = body.copy(), body.copy()
+        a[:, cut:] = False
+        b[:, :cut] = False
+        return [a, b][:parts]
+    # 只在身体内部，从各个躯干同时一圈圈往外长，先到先得（不看颜色，背景漫不进来）
+    owner = np.zeros(body.shape, np.int32)
+    for i, sd in enumerate(seeds):
+        owner[sd & body] = i + 1
+    kernel = np.ones((3, 3), np.uint8)
+    while True:
+        free = body & (owner == 0)
+        if not free.any():
+            break
+        grew = False
+        for i in range(parts):
+            ring = cv2.dilate((owner == i + 1).astype(np.uint8), kernel).astype(bool) & free
+            if ring.any():
+                owner[ring] = i + 1
+                free &= ~ring
+                grew = True
+        if not grew:          # 和种子不连通的碎块：归给离得最近的那一个
+            d = [cv2.distanceTransform((owner != i + 1).astype(np.uint8), cv2.DIST_L2, 3) for i in range(parts)]
+            owner[free] = np.argmin(np.stack([x[free] for x in d]), 0) + 1
+            break
+    markers = owner
+    return [body & (markers == i + 1) for i in range(parts)]
+
+
+def figure_masks(fg, rows, src):
+    """认出每个姿势：先找整张图里的人物身体，按身体中心分行；粘在一起的人物用分水岭分开；
+    魔法球、星星、毛笔这类分离的小块，逐个并给离它最近的人物（下落线会先挂到球上再跟着走）。"""
+    n, lab, st, _ = cv2.connectedComponentsWithStats(
+        cv2.dilate(fg.astype(np.uint8), np.ones((3, 3), np.uint8)), connectivity=8)
+    lab = lab * fg
+    comps = list(range(1, n))
+    big = max(st[i, cv2.CC_STAT_AREA] for i in comps)
+    body_ids = [i for i in comps if st[i, cv2.CC_STAT_AREA] >= big * 0.15]
+    rest = [lab == i for i in comps if i not in body_ids]
+    cuts = split_runs(fg.sum(1), len(rows), 0.2)
+    by_row = [[] for _ in rows]
+    for i in body_ids:
+        cy = np.where(lab == i)[0].mean()
+        r = max(0, min(len(rows) - 1, int(np.searchsorted(cuts, cy, side="right")) - 1))
+        by_row[r].append(lab == i)
+    bodies = []
+    for k, row_bodies in zip(rows, by_row):
+        while len(row_bodies) < k:
+            row_bodies.sort(key=lambda b: b.sum())
+            merged = row_bodies.pop()
+            # 估计这一块里粘了几个人：按宽度和本行平均宽度的比例
+            parts = min(k - len(row_bodies), max(2, k - len(row_bodies)))
+            row_bodies += split_body(src, merged, parts)
+        row_bodies.sort(key=lambda b: b.sum(), reverse=True)
+        rest += row_bodies[k:]
+        bodies += sorted(row_bodies[:k], key=lambda b: np.where(b)[1].mean())
+    while rest:
+        dist = [cv2.distanceTransform((~b).astype(np.uint8), cv2.DIST_L2, 3) for b in bodies]
+        _, ri, j = min(((dist[j][r].min(), ri, j) for ri, r in enumerate(rest) for j in range(len(bodies))))
+        bodies[j] |= rest.pop(ri)
+    return bodies
 
 
 def pixelize_one(src, lum, m, scale, canvas):
@@ -158,7 +204,7 @@ def main():
     src = np.asarray(Image.open(a.image).convert("RGB")).astype(np.float32)
     lum = src @ np.array([0.299, 0.587, 0.114])
     fg = foreground(src)
-    masks = figure_masks(fg, rows)
+    masks = figure_masks(fg, rows, src)
     heights = [np.ptp(np.where(m)[0]) + 1 for m in masks]
     widths = [np.ptp(np.where(m)[1]) + 1 for m in masks]
     scale = a.char_height / float(np.median(heights))
