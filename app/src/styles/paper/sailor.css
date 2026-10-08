@@ -1,18 +1,18 @@
 /* sailor 这套的纸（写字页中间那张）。选择器用 :root[data-paper="sailor"] body.has-scene ... */
 /* 活页本的一页：左边一列打孔是真挖空的，透过孔看得见后面的教室；红色页边线、抬头双线；横格铺满整页，跟着字一起滚。
    右上角一颗金星贴纸，右下角是小恶魔随手画的尾巴。醒来时这页纸从上沿翻下来落平。 */
-:root[data-paper="sailor"] { --nb-rule: color-mix(in srgb, #5b7fd6 28%, transparent); --nb-margin: color-mix(in srgb, #c8333f 46%, transparent);
-  --nb-head: color-mix(in srgb, #3f63b8 46%, transparent); --nb-edge: color-mix(in srgb, #1f2a3d 12%, transparent); --nb-head-y: 58px; }
-:root[data-paper="sailor"][data-dark] { --nb-rule: color-mix(in srgb, #8fb0e0 17%, transparent); --nb-margin: color-mix(in srgb, #ff7a85 40%, transparent);
-  --nb-head: color-mix(in srgb, #8fb0e0 36%, transparent); --nb-edge: color-mix(in srgb, #8fb0e0 14%, transparent); }
+:root[data-paper="sailor"] { --sl-rule: color-mix(in srgb, #5b7fd6 28%, transparent); --sl-margin: color-mix(in srgb, #c8333f 46%, transparent);
+  --sl-head: color-mix(in srgb, #3f63b8 46%, transparent); --sl-edge: color-mix(in srgb, #1f2a3d 12%, transparent); --sl-head-y: 58px; }
+:root[data-paper="sailor"][data-dark] { --sl-rule: color-mix(in srgb, #8fb0e0 17%, transparent); --sl-margin: color-mix(in srgb, #ff7a85 40%, transparent);
+  --sl-head: color-mix(in srgb, #8fb0e0 36%, transparent); --sl-edge: color-mix(in srgb, #8fb0e0 14%, transparent); }
 
 /* 红线在打孔和正文中间：宽纸离孔 10px，纸窄到正文贴边时往左让（手机上贴着孔） */
-:root[data-paper="sailor"] body.has-scene .ws-body > .center::before { --nb-margin-x: max(28px, min(46px, calc((100% - min(100%, var(--text-width))) / 2 + 20px))); }
+:root[data-paper="sailor"] body.has-scene .ws-body > .center::before { --sl-margin-x: max(28px, min(46px, calc((100% - min(100%, var(--text-width))) / 2 + 20px))); }
 /* 纸：打孔一列 36px 宽，上下各留一段不打孔（padding 圈出打孔的范围，round 让孔整颗排满） */
 :root[data-paper="sailor"] body.has-scene .ws-body > .center::before {
-  padding: 36px 0 27px; image-rendering: pixelated; box-shadow: inset 0 0 0 1px var(--nb-edge);
-  background-image: var(--pa-rim), linear-gradient(var(--nb-margin) 0 0), linear-gradient(var(--nb-head) 0 0), linear-gradient(var(--nb-head) 0 0);
-  background-position: left top, var(--nb-margin-x) 0, 36px var(--nb-head-y), 36px calc(var(--nb-head-y) + 4px);
+  padding: 36px 0 27px; image-rendering: pixelated; box-shadow: inset 0 0 0 1px var(--sl-edge);
+  background-image: var(--pa-rim), linear-gradient(var(--sl-margin) 0 0), linear-gradient(var(--sl-head) 0 0), linear-gradient(var(--sl-head) 0 0);
+  background-position: left top, var(--sl-margin-x) 0, 36px var(--sl-head-y), 36px calc(var(--sl-head-y) + 4px);
   background-size: var(--pa-rim-w) var(--pa-rim-h), 2px 100%, calc(100% - 36px) 2px, calc(100% - 36px) 1px;
   background-repeat: no-repeat round, no-repeat, no-repeat, no-repeat;
   background-origin: content-box, border-box, border-box, border-box; background-clip: content-box, border-box, border-box, border-box;
@@ -38,15 +38,15 @@
 /* 横格：画在滚动层上（background-attachment: local），跟字一起走；宽度铺到整页，左边让出打孔那一列 */
 :root[data-paper="sailor"] body.has-scene .ed-host .cm-content { background-image: none; }
 :root[data-paper="sailor"] body.has-scene .ed-host .cm-scroller {
-  background-image: linear-gradient(transparent calc(100% - 1px), var(--nb-rule) calc(100% - 1px));
+  background-image: linear-gradient(transparent calc(100% - 1px), var(--sl-rule) calc(100% - 1px));
   background-size: calc(min(100%, calc(var(--text-width) + 120px)) - 36px) calc(var(--text-size) * var(--text-lh));
   background-position: calc(50% + 18px) 28px; background-repeat: repeat-y; background-attachment: local; }
 
 /* 醒来：这页纸从上沿往下翻，越落越快，落平时弹两下；贴纸和影子跟着纸一起翻。纸色不等慢慢渐变，跟着翻页一起到位 */
 :root[data-paper="sailor"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::before,
 :root[data-paper="sailor"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::after {
-  transform-origin: 50% 0; animation: nb-flip .82s linear both; transition-duration: .25s; }
-@keyframes nb-flip {
+  transform-origin: 50% 0; animation: sl-flip .82s linear both; transition-duration: .25s; }
+@keyframes sl-flip {
   0% { transform: translateX(-50%) perspective(1600px) rotateX(-80deg); opacity: .5; animation-timing-function: cubic-bezier(.5, 0, .9, .6); }
   56% { transform: translateX(-50%) perspective(1600px) rotateX(5deg); opacity: 1; animation-timing-function: ease-out; }
   74% { transform: translateX(-50%) perspective(1600px) rotateX(-2deg); opacity: 1; animation-timing-function: ease-in-out; }
@@ -72,38 +72,38 @@
 .demon[data-style="sailor"] .dc-unit { font-size: 11px; padding-bottom: 2px; }
 /* 粉笔字：两格一点的颗粒，像粉笔在黑板上蹭出来的 */
 .demon[data-style="sailor"] .dc-num { position: relative; font-size: 24px; color: transparent; text-shadow: none; -webkit-text-stroke: 0;
-  background: repeating-conic-gradient(var(--chalk, #f4f1e6) 0 25%, color-mix(in srgb, var(--chalk, #f4f1e6) 70%, transparent) 0 50%) 0 0 / 2px 2px;
+  background: repeating-conic-gradient(var(--sl-chalk, #f4f1e6) 0 25%, color-mix(in srgb, var(--sl-chalk, #f4f1e6) 70%, transparent) 0 50%) 0 0 / 2px 2px;
   -webkit-background-clip: text; background-clip: text; }
 /* 每敲一下：粉笔一按，掉两粒粉笔灰 */
 .demon[data-style="sailor"] .dc-num::after { content: ""; position: absolute; right: -2px; bottom: 2px; width: 2px; height: 2px; opacity: 0; pointer-events: none;
-  background: var(--chalk, #f4f1e6); box-shadow: -6px 3px 0 color-mix(in srgb, var(--chalk, #f4f1e6) 70%, transparent), -12px 1px 0 color-mix(in srgb, var(--chalk, #f4f1e6) 50%, transparent); }
+  background: var(--sl-chalk, #f4f1e6); box-shadow: -6px 3px 0 color-mix(in srgb, var(--sl-chalk, #f4f1e6) 70%, transparent), -12px 1px 0 color-mix(in srgb, var(--sl-chalk, #f4f1e6) 50%, transparent); }
 [data-motion="full"] .demon[data-style="sailor"] .demon-combo .dc-num { animation: none; }
-[data-motion="full"] .demon[data-style="sailor"] .demon-combo.bump .dc-num { animation: chalk-tap .16s steps(2); }
-[data-motion="full"] .demon[data-style="sailor"] .demon-combo.bump .dc-num::after { animation: chalk-dust .45s steps(4); }
-@keyframes chalk-tap { 0% { transform: translate(1px, 1px); } 100% { transform: none; } }
-@keyframes chalk-dust { 0% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translate(2px, 7px); } }
+[data-motion="full"] .demon[data-style="sailor"] .demon-combo.bump .dc-num { animation: sl-chalk-tap .16s steps(2); }
+[data-motion="full"] .demon[data-style="sailor"] .demon-combo.bump .dc-num::after { animation: sl-chalk-dust .45s steps(4); }
+@keyframes sl-chalk-tap { 0% { transform: translate(1px, 1px); } 100% { transform: none; } }
+@keyframes sl-chalk-dust { 0% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translate(2px, 7px); } }
 /* 200：换黄粉笔，「连写」底下划一道线 */
 .demon[data-style="sailor"] .demon-combo[data-level] { color: #f4f1e6; }
-.demon[data-style="sailor"] .demon-combo[data-level="200"] { --chalk: #ffe36e; }
+.demon[data-style="sailor"] .demon-combo[data-level="200"] { --sl-chalk: #ffe36e; }
 .demon[data-style="sailor"] .demon-combo:not([data-level="0"]) .dc-label { background-size: 100% 1px; }
-[data-motion="full"] .demon[data-style="sailor"] .demon-combo:not([data-level="0"]) .dc-label { animation: chalk-line .35s steps(5) both; }
-@keyframes chalk-line { from { background-size: 0 1px; } }
+[data-motion="full"] .demon[data-style="sailor"] .demon-combo:not([data-level="0"]) .dc-label { animation: sl-chalk-line .35s steps(5) both; }
+@keyframes sl-chalk-line { from { background-size: 0 1px; } }
 /* 500：粉色粉笔，右上角画一颗星 */
-.demon[data-style="sailor"] .demon-combo[data-level="500"] { --chalk: #ffb3c7; }
+.demon[data-style="sailor"] .demon-combo[data-level="500"] { --sl-chalk: #ffb3c7; }
 .demon[data-style="sailor"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"])::before { content: ""; position: absolute; right: 4px; top: 4px;
   width: 7px; height: 7px; background: #ffe36e; clip-path: polygon(50% 0, 64% 36%, 100% 38%, 72% 60%, 82% 100%, 50% 78%, 18% 100%, 28% 60%, 0 38%, 36% 36%); }
-[data-motion="full"] .demon[data-style="sailor"] .demon-combo[data-level="500"]::before { animation: chalk-pop .4s steps(4) both; }
-@keyframes chalk-pop { from { transform: scale(0) rotate(-90deg); } }
+[data-motion="full"] .demon[data-style="sailor"] .demon-combo[data-level="500"]::before { animation: sl-chalk-pop .4s steps(4) both; }
+@keyframes sl-chalk-pop { from { transform: scale(0) rotate(-90deg); } }
 /* 1000：老师用红粉笔在数字外面圈一个圈 */
-.demon[data-style="sailor"] .demon-combo:is([data-level="1000"], [data-level="2000"]) { --chalk: #ff9aa6; }
+.demon[data-style="sailor"] .demon-combo:is([data-level="1000"], [data-level="2000"]) { --sl-chalk: #ff9aa6; }
 .demon[data-style="sailor"] .demon-combo:is([data-level="1000"], [data-level="2000"]) .dc-num { margin: 2px 5px 1px; }
 .demon[data-style="sailor"] .demon-combo:is([data-level="1000"], [data-level="2000"]) .dc-num::before { content: ""; position: absolute; inset: -3px -7px -2px; pointer-events: none;
   border: 2px solid color-mix(in srgb, #ff6f7f 90%, transparent); border-top-color: color-mix(in srgb, #ff6f7f 55%, transparent); border-radius: 50%; }
-[data-motion="full"] .demon[data-style="sailor"] .demon-combo[data-level="1000"] .dc-num::before { animation: chalk-ring .4s cubic-bezier(.3, 1.6, .5, 1) both; }
-@keyframes chalk-ring { 0% { transform: scale(1.8) rotate(-30deg); opacity: 0; } 50% { opacity: 1; } }
+[data-motion="full"] .demon[data-style="sailor"] .demon-combo[data-level="1000"] .dc-num::before { animation: sl-chalk-ring .4s cubic-bezier(.3, 1.6, .5, 1) both; }
+@keyframes sl-chalk-ring { 0% { transform: scale(1.8) rotate(-30deg); opacity: 0; } 50% { opacity: 1; } }
 /* 2000：粉笔换着颜色写，整块板子跟着抖 */
-[data-motion="full"] .demon[data-style="sailor"] .demon-combo[data-level="2000"] { animation: chalk-colors 1.2s steps(1) infinite, dc-shake .25s steps(2) infinite; }
-@keyframes chalk-colors { 0% { --chalk: #ff9aa6; } 25% { --chalk: #ffe36e; } 50% { --chalk: #9fd8ff; } 75% { --chalk: #b8f0a0; } }
+[data-motion="full"] .demon[data-style="sailor"] .demon-combo[data-level="2000"] { animation: sl-chalk-colors 1.2s steps(1) infinite, dc-shake .25s steps(2) infinite; }
+@keyframes sl-chalk-colors { 0% { --sl-chalk: #ff9aa6; } 25% { --sl-chalk: #ffe36e; } 50% { --sl-chalk: #9fd8ff; } 75% { --sl-chalk: #b8f0a0; } }
 /* 连击停了：板擦从左往右擦掉 */
-[data-motion="full"] .demon[data-style="sailor"] .demon-combo.end .dc-num { animation: chalk-erase .6s steps(6) both; }
-@keyframes chalk-erase { from { clip-path: inset(-12px -12px -12px 0); } to { clip-path: inset(-12px -12px -12px calc(100% + 12px)); filter: blur(1px); } }
+[data-motion="full"] .demon[data-style="sailor"] .demon-combo.end .dc-num { animation: sl-chalk-erase .6s steps(6) both; }
+@keyframes sl-chalk-erase { from { clip-path: inset(-12px -12px -12px 0); } to { clip-path: inset(-12px -12px -12px calc(100% + 12px)); filter: blur(1px); } }
