@@ -1,0 +1,245 @@
+<title>小恶魔衣橱</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Noto+Sans+SC:wght@400;500;700&display=swap">
+<style>
+/* Layout: 一套风格一张卡，卡里是会动的小人 + 场景台词；底部常驻已选栏，挑满 5 套复制给 Claude */
+:root {
+  --bg: #f5eff2;
+  --surface: #fffafc;
+  --ink: #2f1d28;
+  --muted: #7d6874;
+  --line: #e6d7df;
+  --accent: #b23f77;
+  --accent-ink: #ffffff;
+  --accent-soft: #f7dfea;
+  --grid: #f0e5eb;
+  --bubble: #ffffff;
+  --bubble-line: #3a1a2c;
+  --warn: #9a5a12;
+  --f-ui: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --f-pixel: "DotGothic16", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151017; --surface: #1e1720; --ink: #f1e5ec; --muted: #a58f9c; --line: #352a38;
+    --accent: #ec82b1; --accent-ink: #2a0f1e; --accent-soft: #3b2231; --grid: #241b27;
+    --bubble: #2a2030; --bubble-line: #f0a8c8; --warn: #e2a65a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #151017; --surface: #1e1720; --ink: #f1e5ec; --muted: #a58f9c; --line: #352a38;
+  --accent: #ec82b1; --accent-ink: #2a0f1e; --accent-soft: #3b2231; --grid: #241b27;
+  --bubble: #2a2030; --bubble-line: #f0a8c8; --warn: #e2a65a;
+  color-scheme: dark;
+}
+body { background: var(--bg); color: var(--ink); font-family: var(--f-ui); }
+canvas { image-rendering: crisp-edges; image-rendering: pixelated; display: block; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 140px; display: grid; gap: 20px; }
+.head { display: grid; gap: 6px; }
+.head h1 { margin: 0; font-size: 22px; letter-spacing: 0.02em; text-wrap: balance; }
+.head p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.75; max-width: 62ch; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px; display: grid; gap: 12px; min-width: 0; }
+.card[data-picked="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.stage { position: relative; display: grid; place-items: end center; height: 268px; border-radius: 6px; border: 1px solid var(--line);
+  background-color: var(--surface);
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 12px 12px; overflow: hidden; }
+.stage canvas { margin-bottom: 8px; }
+.bubble { position: absolute; left: 10px; top: 10px; max-width: calc(100% - 20px); background: var(--bubble); border: 2px solid var(--bubble-line);
+  box-shadow: 3px 3px 0 var(--bubble-line); padding: 7px 10px; font-size: 13px; line-height: 1.6; min-height: 1.6em; }
+.title { display: flex; align-items: center; gap: 10px; justify-content: space-between; }
+.title h2 { margin: 0; font-size: 17px; font-weight: 700; min-width: 0; }
+.pick { flex: none; padding: 6px 12px; border: 1px solid var(--line); background: var(--bg); border-radius: 6px; cursor: pointer; font-size: 13px; }
+.pick[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--ink); }
+.facts { display: grid; gap: 4px; margin: 0; font-size: 13px; line-height: 1.7; }
+.facts div { display: grid; grid-template-columns: 4.5em minmax(0, 1fr); gap: 6px; }
+.facts dt { color: var(--muted); }
+.facts dd { margin: 0; }
+.label { margin: 0; font-size: 12px; color: var(--muted); letter-spacing: 0.06em; }
+.sits { display: flex; flex-wrap: wrap; gap: 6px; }
+.sit { padding: 4px 9px; border: 1px solid var(--line); background: var(--bg); border-radius: 5px; cursor: pointer; font-size: 12.5px; }
+.sit[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+details { font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+details summary { cursor: pointer; }
+details ul { margin: 6px 0 0; padding-left: 1.2em; }
+.warn { color: var(--warn); }
+
+.bar { position: fixed; left: 0; right: 0; bottom: 0; background: var(--surface); border-top: 1px solid var(--line);
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px)); }
+.bar-in { max-width: 1180px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.count { font-family: var(--f-pixel); font-size: 14px; font-variant-numeric: tabular-nums; }
+.picked { flex: 1 1 220px; min-width: 0; font-size: 13px; color: var(--muted); }
+.note { flex: 1 1 260px; min-width: 0; font: inherit; font-size: 13px; padding: 7px 9px; border: 1px solid var(--line); border-radius: 6px;
+  background: var(--bg); color: var(--ink); resize: vertical; min-height: 36px; }
+.copy { padding: 8px 14px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink); border-radius: 6px; cursor: pointer; font-size: 14px; }
+.copied { font-size: 12.5px; color: var(--muted); }
+#fallback { width: 100%; font: inherit; font-size: 12px; }
+</style>
+
+<div class="wrap">
+  <header class="head">
+    <h1>小恶魔衣橱</h1>
+    <p>挑 5 套作为默认风格。每套的服装、发型、姿势和性格是配好的一整套，写作时按作品题材切换。点卡片里的场景，看她在那个时候会说什么。</p>
+  </header>
+  <section class="cards" id="cards" aria-label="候选风格"></section>
+</div>
+
+<div class="bar" role="region" aria-label="已选风格">
+  <div class="bar-in">
+    <span class="count" id="count">0 / 5</span>
+    <span class="picked" id="picked">还没选</span>
+    <textarea class="note" id="note" rows="1" placeholder="想改的地方（可选），比如：水手服的袜子换白色"></textarea>
+    <button type="button" class="copy" id="copy">复制我的选择</button>
+    <span class="copied" id="copied" role="status"></span>
+    <textarea id="fallback" rows="3" readonly hidden aria-label="选择结果，可手动复制"></textarea>
+  </div>
+</div>
+
+<script>
+(() => {
+  const DATA = __DATA__;
+  const FW = 59, FH = 81, N = 8, SCALE = 3;
+  const ROW = { idle: 0, blink: 1, talk: 2 };
+  const MS = { idle: 160, blink: 160, talk: 120 };
+  const sitName = Object.fromEntries(DATA.situations);
+  const picked = new Set();
+  const cards = [];
+  const reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function el(tag, attrs, ...kids) {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs || {})) {
+      if (k === "class") e.className = v; else if (k === "text") e.textContent = v; else e.setAttribute(k, v);
+    }
+    for (const k of kids) if (k) e.append(k);
+    return e;
+  }
+
+  for (const s of DATA.styles) {
+    const p = s.persona || {};
+    const cv = el("canvas", { width: FW * SCALE, height: FH * SCALE, "aria-label": s.name });
+    const bubble = el("div", { class: "bubble", role: "status", "aria-live": "polite" });
+    bubble.hidden = true;
+    const pick = el("button", { type: "button", class: "pick", "aria-pressed": "false", id: "pick-" + s.id, text: "选这套" });
+    const facts = el("dl", { class: "facts" });
+    const fact = (k, v) => { if (v) facts.append(el("div", {}, el("dt", { text: k }), el("dd", { text: v }))); };
+    fact("性格", p.persona ? `${p.persona}：${p.summary || ""}` : s.personality);
+    fact("称呼你", p.calls_user);
+    fact("口头禅", p.catchphrase);
+    fact("招牌姿势", s.pose);
+    const sits = el("div", { class: "sits", role: "group", "aria-label": "场景" });
+    const card = el("article", { class: "card", "data-picked": "false" },
+      el("div", { class: "stage" }, bubble, cv),
+      el("div", { class: "title" }, el("h2", { text: s.name }), pick),
+      el("div", { class: "chips" }, ...s.genres.map(g => el("span", { class: "chip", text: g }))),
+      facts,
+    );
+    const st = { s, cv, bubble, row: "idle", f: 0, acc: 0, talking: false, blinkAt: 2000 + Math.random() * 3000, typer: null, img: new Image() };
+    st.img.onload = () => draw(st);
+    st.img.src = s.sheet;
+    if (p.lines) {
+      card.append(el("p", { class: "label", text: "点场景听她说" }), sits);
+      for (const [key, label] of DATA.situations) {
+        if (!p.lines[key]) continue;
+        const b = el("button", { type: "button", class: "sit", "aria-pressed": "false", text: label });
+        b.addEventListener("click", () => {
+          sits.querySelectorAll(".sit").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+          say(st, p.lines[key]);
+        });
+        sits.append(b);
+      }
+    }
+    if (s.issues && s.issues.length) {
+      const d = el("details", {}, el("summary", { class: s.verdict === "偏弱" ? "warn" : "", text: `审稿意见${s.verdict ? "（" + s.verdict + "）" : ""}：还能再打磨的地方` }),
+        el("ul", {}, ...s.issues.map(t => el("li", { text: t }))));
+      card.append(d);
+    }
+    pick.addEventListener("click", () => {
+      if (picked.has(s.id)) picked.delete(s.id); else picked.add(s.id);
+      const on = picked.has(s.id);
+      pick.setAttribute("aria-pressed", String(on)); pick.textContent = on ? "已选" : "选这套";
+      card.dataset.picked = String(on);
+      updateBar();
+    });
+    document.getElementById("cards").append(card);
+    cards.push(st);
+    if (p.lines && p.lines.greet) setTimeout(() => say(st, p.lines.greet), 400 + cards.length * 350);
+  }
+
+  function draw(st) {
+    const c = st.cv.getContext("2d");
+    c.imageSmoothingEnabled = false;
+    c.clearRect(0, 0, st.cv.width, st.cv.height);
+    if (st.img.complete && st.img.naturalWidth) {
+      c.drawImage(st.img, st.f * FW, ROW[st.row] * FH, FW, FH, 0, 0, FW * SCALE, FH * SCALE);
+    }
+  }
+
+  function say(st, text) {
+    clearInterval(st.typer);
+    st.bubble.hidden = false; st.bubble.textContent = "";
+    st.talking = true; if (st.row !== "talk") { st.row = "talk"; st.f = 0; }
+    const chars = [...text]; let i = 0;
+    st.typer = setInterval(() => {
+      st.bubble.textContent += chars[i++];
+      if (i >= chars.length) { clearInterval(st.typer); st.talking = false; }
+    }, reduce ? 0 : 55);
+  }
+
+  function tick(st, dt) {
+    st.acc += dt;
+    if (st.row === "idle") st.blinkAt -= dt;
+    let changed = false;
+    while (st.acc >= MS[st.row]) {
+      st.acc -= MS[st.row]; st.f++; changed = true;
+      if (st.f >= N) {
+        st.f = 0;
+        if (st.row === "talk" && !st.talking) st.row = "idle";
+        else if (st.row === "blink") st.row = "idle";
+        else if (st.row === "idle" && st.blinkAt <= 0) { st.row = "blink"; st.blinkAt = 2500 + Math.random() * 4000; }
+      }
+    }
+    if (changed) draw(st);
+  }
+
+  let last = performance.now();
+  function loop(t) {
+    const dt = Math.min(t - last, 250); last = t;
+    if (!reduce) cards.forEach(st => tick(st, dt));
+    requestAnimationFrame(loop);
+  }
+  requestAnimationFrame(loop);
+
+  const nameOf = id => (DATA.styles.find(s => s.id === id) || {}).name || id;
+  function updateBar() {
+    document.getElementById("count").textContent = `${picked.size} / 5`;
+    document.getElementById("picked").textContent = picked.size ? [...picked].map(nameOf).join("、") : "还没选";
+  }
+  function summary() {
+    const lines = ["小恶魔衣橱 · 我的选择："];
+    [...picked].forEach((id, i) => lines.push(`${i + 1}. ${nameOf(id)}（${id}）`));
+    if (!picked.size) lines.push("（还没选）");
+    const note = document.getElementById("note").value.trim();
+    if (note) lines.push("想改的地方：" + note);
+    return lines.join("\n");
+  }
+  document.getElementById("copy").addEventListener("click", () => {
+    const text = summary();
+    const msg = document.getElementById("copied");
+    const fb = document.getElementById("fallback");
+    const showFallback = () => { fb.hidden = false; fb.value = text; fb.focus(); fb.select(); msg.textContent = "复制没成功，已选中下面的文字，手动复制即可"; };
+    try {
+      navigator.clipboard.writeText(text).then(() => { msg.textContent = "已复制，粘贴给 Claude 就行"; fb.hidden = true; }, showFallback);
+    } catch (e) { showFallback(); }
+  });
+})();
+</script>
