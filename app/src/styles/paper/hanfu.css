@@ -1,1 +1,145 @@
-/* hanfu 这套的纸（写字页中间那张）。选择器用 :root[data-paper="hanfu"] body.has-scene ... */
+/* hanfu 这套的纸（写字页中间那张）。选择器用 :root[data-paper="hanfu"] body.has-scene ...
+   宣纸：长纤维、纤维团、吸墨不匀的斑驳，四边是撕开的毛边；纸上一道朱砂双线框，线洇进纸里，右上角一方白文朱印，左下角一小枝墨梅。
+   醒来：几滴墨落在纸上晕开，连成一整张；框和印随后显出来。 */
+:root[data-paper="hanfu"] {
+  --hf-verm: #b8432f; --hf-verm2: color-mix(in srgb, #b8432f 62%, transparent); --hf-bleed: rgba(184, 67, 47, .42);
+  --hf-light: rgba(255, 252, 240, .5); --hf-shade: rgba(120, 88, 48, .09); --hf-core: color-mix(in srgb, var(--paper) 42%, transparent);
+  --hf-ink: #2b2622; --hf-scroll: #f6efde; --hf-rod: #5a3d28; --hf-rod2: #8a6040; }
+:root[data-paper="hanfu"][data-dark] {
+  --hf-verm: #d9705a; --hf-verm2: color-mix(in srgb, #d9705a 48%, transparent); --hf-bleed: rgba(217, 112, 90, .3);
+  --hf-light: rgba(236, 222, 196, .05); --hf-shade: rgba(0, 0, 0, .22); --hf-core: color-mix(in srgb, var(--paper) 46%, transparent); }
+:root[data-paper="hanfu"] body.has-scene .ws-body > .center { --hf-w: min(100%, calc(var(--text-width) + 120px)); }
+
+/* ---------- 纸 ----------
+   毛边：左右两条遮罩只铺在上下毛边之间（padding 圈出 content-box），上下两条铺满整宽，中间一块实心 */
+:root[data-paper="hanfu"] body.has-scene .ws-body > .center::before {
+  padding: 16px 0; box-shadow: none; image-rendering: pixelated;
+  background-image:
+    radial-gradient(ellipse 46% 52% at 50% 44%, var(--hf-core), transparent 100%),
+    var(--pa-fiber), var(--pa-mottle),
+    linear-gradient(158deg, var(--hf-light), transparent 38%, transparent 62%, var(--hf-shade)),
+    radial-gradient(ellipse 120% 90% at 50% 50%, transparent 62%, var(--hf-shade));
+  background-size: 100% 100%, var(--pa-fiber-w) var(--pa-fiber-h), var(--pa-mottle-w) var(--pa-mottle-h), 100% 100%, 100% 100%;
+  background-position: center, 13px 7px, 0 0, center, center;
+  background-repeat: no-repeat, repeat, repeat, no-repeat, no-repeat;
+  background-origin: border-box; background-clip: border-box;
+  -webkit-mask-image: var(--pa-edgeL), var(--pa-edgeR), var(--pa-edgeT), var(--pa-edgeB), linear-gradient(#000 0 0);
+  mask-image: var(--pa-edgeL), var(--pa-edgeR), var(--pa-edgeT), var(--pa-edgeB), linear-gradient(#000 0 0);
+  -webkit-mask-size: var(--pa-edgeL-w) var(--pa-edgeL-h), var(--pa-edgeR-w) var(--pa-edgeR-h), var(--pa-edgeT-w) var(--pa-edgeT-h), var(--pa-edgeB-w) var(--pa-edgeB-h), calc(100% - 2 * var(--pa-edgeL-w) + 2px) 100%;
+  mask-size: var(--pa-edgeL-w) var(--pa-edgeL-h), var(--pa-edgeR-w) var(--pa-edgeR-h), var(--pa-edgeT-w) var(--pa-edgeT-h), var(--pa-edgeB-w) var(--pa-edgeB-h), calc(100% - 2 * var(--pa-edgeL-w) + 2px) 100%;
+  -webkit-mask-repeat: repeat-y, repeat-y, repeat-x, repeat-x, no-repeat; mask-repeat: repeat-y, repeat-y, repeat-x, repeat-x, no-repeat;
+  -webkit-mask-position: left top, right top, left top, left bottom, center; mask-position: left top, right top, left top, left bottom, center;
+  -webkit-mask-origin: content-box, content-box, border-box, border-box, content-box; mask-origin: content-box, content-box, border-box, border-box, content-box;
+  -webkit-mask-clip: content-box, content-box, border-box, border-box, content-box; mask-clip: content-box, content-box, border-box, border-box, content-box; }
+/* 停笔：纸整张隐去，框和印留个淡影 */
+:root[data-paper="hanfu"] body.has-scene.paper-rest .ws-body > .center::before { opacity: 0; }
+:root[data-paper="hanfu"] body.has-scene.paper-wake .ws-body > .center::before { transition-duration: .25s, .6s, .6s, .12s; }
+
+/* ---------- 朱砂双线框 + 朱印 + 墨梅（::after，框离纸边 22px）----------
+   外线 2px、内线 1px；整层用 bleed 遮罩打出浓淡，再加一圈朱红的晕，像印泥吃进纸里 */
+:root[data-paper="hanfu"] body.has-scene .ws-body > .center::after {
+  content: ""; position: absolute; z-index: 0; pointer-events: none; box-sizing: border-box;
+  top: 24px; bottom: 24px; height: auto; left: 50%; right: auto; width: calc(var(--hf-w) - 48px); transform: translateX(-50%);
+  image-rendering: pixelated;
+  background-image: var(--pa-seal), var(--pa-sprig),
+    linear-gradient(var(--hf-verm) 0 0), linear-gradient(var(--hf-verm) 0 0), linear-gradient(var(--hf-verm) 0 0), linear-gradient(var(--hf-verm) 0 0),
+    linear-gradient(var(--hf-verm2) 0 0), linear-gradient(var(--hf-verm2) 0 0), linear-gradient(var(--hf-verm2) 0 0), linear-gradient(var(--hf-verm2) 0 0);
+  background-size: var(--pa-seal-w) var(--pa-seal-h), var(--pa-sprig-w) var(--pa-sprig-h),
+    100% 2px, 100% 2px, 2px 100%, 2px 100%,
+    calc(100% - 12px) 1px, calc(100% - 12px) 1px, 1px calc(100% - 12px), 1px calc(100% - 12px);
+  background-position: right 12px top 12px, left 9px bottom 9px,
+    top left, bottom left, top left, top right,
+    6px 6px, 6px calc(100% - 6px), 6px 6px, calc(100% - 6px) 6px;
+  background-repeat: no-repeat;
+  -webkit-mask: var(--pa-bleed) 0 0 / var(--pa-bleed-w) var(--pa-bleed-h) repeat; mask: var(--pa-bleed) 0 0 / var(--pa-bleed-w) var(--pa-bleed-h) repeat;
+  filter: drop-shadow(0 0 1.5px var(--hf-bleed)); transition: opacity 1.6s ease; }
+:root[data-paper="hanfu"] body.has-scene.paper-rest .ws-body > .center::after { opacity: .2; }
+
+/* 章名下面一笔淡墨，起笔重、收笔轻 */
+:root[data-paper="hanfu"] body.has-scene .ch-head { padding-bottom: 10px;
+  background: radial-gradient(ellipse 4px 3px at 2px 50%, color-mix(in srgb, var(--ink) 55%, transparent) 90%, transparent) left bottom 1px / 8px 4px no-repeat content-box,
+    linear-gradient(90deg, color-mix(in srgb, var(--ink) 50%, transparent), color-mix(in srgb, var(--ink) 22%, transparent) 55%, transparent) left bottom 2px / 72% 2px no-repeat content-box; }
+
+/* ---------- 复写回来：墨滴落纸晕开 ----------
+   五滴墨先后落在纸上，各自往外洇（边是软的），连成一整张；纸先湿后干：一开始糊、发暗，慢慢清楚 */
+@property --hf-r { syntax: "<length>"; inherits: false; initial-value: 0px; }
+:root[data-paper="hanfu"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::before {
+  -webkit-mask: none; mask: none;
+  -webkit-mask-image: radial-gradient(circle at 50% 38%, #000 calc(var(--hf-r) * 1), transparent calc(var(--hf-r) * 1 + 70px)),
+    radial-gradient(circle at 22% 16%, #000 calc(var(--hf-r) * .7 - 120px), transparent calc(var(--hf-r) * .7 - 60px)),
+    radial-gradient(circle at 76% 70%, #000 calc(var(--hf-r) * .8 - 90px), transparent calc(var(--hf-r) * .8 - 30px)),
+    radial-gradient(circle at 30% 82%, #000 calc(var(--hf-r) * .6 - 160px), transparent calc(var(--hf-r) * .6 - 100px)),
+    radial-gradient(circle at 80% 12%, #000 calc(var(--hf-r) * .55 - 200px), transparent calc(var(--hf-r) * .55 - 150px));
+  mask-image: radial-gradient(circle at 50% 38%, #000 calc(var(--hf-r) * 1), transparent calc(var(--hf-r) * 1 + 70px)),
+    radial-gradient(circle at 22% 16%, #000 calc(var(--hf-r) * .7 - 120px), transparent calc(var(--hf-r) * .7 - 60px)),
+    radial-gradient(circle at 76% 70%, #000 calc(var(--hf-r) * .8 - 90px), transparent calc(var(--hf-r) * .8 - 30px)),
+    radial-gradient(circle at 30% 82%, #000 calc(var(--hf-r) * .6 - 160px), transparent calc(var(--hf-r) * .6 - 100px)),
+    radial-gradient(circle at 80% 12%, #000 calc(var(--hf-r) * .55 - 200px), transparent calc(var(--hf-r) * .55 - 150px));
+  animation: hf-spread .88s cubic-bezier(.45, .15, .55, 1) both, hf-dry .9s ease-out both; }
+@keyframes hf-spread { from { --hf-r: 0px; } to { --hf-r: 1500px; } }
+@keyframes hf-dry { 0% { filter: blur(3px) brightness(.8) saturate(.7); } 45% { filter: blur(1.2px) brightness(.92); } 100% { filter: none; } }
+/* 框和印：等纸洇开一半，朱砂才从淡到浓显出来 */
+:root[data-paper="hanfu"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::after { animation: hf-stamp .9s ease-out both; }
+@keyframes hf-stamp {
+  0%, 35% { opacity: 0; filter: blur(2px) drop-shadow(0 0 4px var(--hf-bleed)); transform: translateX(-50%) scale(1.012); }
+  70% { opacity: 1; filter: blur(.4px) drop-shadow(0 0 3px var(--hf-bleed)); transform: translateX(-50%) scale(.998); }
+  100% { opacity: 1; filter: drop-shadow(0 0 1.5px var(--hf-bleed)); transform: translateX(-50%); }
+}
+
+/* ---------- 字数牌子：左上角压一方小朱印 ---------- */
+.demon[data-style="hanfu"] .demon-badge::before { content: "墨"; position: absolute; left: -7px; top: -7px; width: 13px; height: 13px; display: grid; place-items: center;
+  font: 9px/1 "LXGW WenKai TC", "KaiTi", "STKaiti", serif; color: #fff; background: #b8432f; border-radius: 2px; rotate: -6deg;
+  box-shadow: 0 0 1px rgba(184, 67, 47, .6); }
+.demon[data-style="hanfu"] .demon-badge.done::before { content: "成"; background: #c9302c; }
+[data-motion="full"] .demon[data-style="hanfu"] .demon-badge.done::before { animation: hf-seal-press .5s cubic-bezier(.3, 1.6, .5, 1) both; }
+@keyframes hf-seal-press { from { scale: 2.2; opacity: 0; } }
+
+/* ---------- 连击：一幅小挂轴。「墨韵」竖写在上，楷体数字竖着往下排，底下压一方「字」朱印。
+   200 数字旁圈红点（圈点）；500 纸上洒金、数字转朱；1000 梅瓣飘落；2000 挂轴随风摆，瓣落得更急 ---------- */
+.demon[data-style="hanfu"] .demon-combo { left: -54px; top: 6%; display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 34px; padding: 9px 5px 8px;
+  color: var(--hf-ink); font-family: "LXGW WenKai TC", "KaiTi", "STKaiti", "Noto Serif SC", serif;
+  background: var(--pa-fiber) 0 0 / var(--pa-fiber-w) var(--pa-fiber-h), linear-gradient(90deg, rgba(120, 88, 48, .1), transparent 30%, transparent 70%, rgba(120, 88, 48, .1)), var(--hf-scroll, #f6efde);
+  border-top: 5px solid var(--hf-rod, #5a3d28); border-bottom: 6px solid var(--hf-rod, #5a3d28); border-radius: 1px;
+  box-shadow: 0 -2px 0 -1px var(--hf-rod2, #8a6040), 0 2px 0 -1px var(--hf-rod2, #8a6040), 2px 3px 0 rgba(43, 38, 34, .2); transform-origin: 50% -10px; }
+.demon.near-left[data-style="hanfu"] .demon-combo { left: auto; right: -54px; }
+.demon[data-style="hanfu"] .demon-combo .dc-label { writing-mode: vertical-rl; font-size: 11px; line-height: 1; letter-spacing: .2em; color: color-mix(in srgb, var(--hf-ink, #2b2622) 70%, transparent); text-shadow: none; }
+.demon[data-style="hanfu"] .demon-combo .dc-num { position: relative; z-index: 1; writing-mode: vertical-rl; text-orientation: upright; font-size: 19px; line-height: 1; letter-spacing: -1px;
+  color: var(--hf-c, var(--hf-ink, #2b2622)); background: none; -webkit-text-stroke: 0; text-shadow: 0 0 1px color-mix(in srgb, var(--hf-c, var(--hf-ink, #2b2622)) 60%, transparent); }
+/* 落笔溅开的一团墨晕（每敲一下） */
+.demon[data-style="hanfu"] .demon-combo .dc-num::before { content: ""; position: absolute; z-index: -1; left: 50%; top: 50%; width: 30px; height: 30px; margin: -15px 0 0 -15px; opacity: 0;
+  border-radius: 46% 54% 50% 50%; background: radial-gradient(circle, color-mix(in srgb, var(--hf-c, var(--hf-ink, #2b2622)) 28%, transparent), transparent 70%); }
+/* 圈点：数字右边一串朱红小圈（200 起） */
+.demon[data-style="hanfu"] .demon-combo .dc-num::after { content: ""; position: absolute; right: -6px; top: 4px; width: 3px; height: 3px; border-radius: 50%; opacity: 0;
+  box-shadow: 0 0 0 1px #c0392b, 0 7px 0 0 transparent, 0 7px 0 1px #c0392b, 0 14px 0 1px #c0392b; }
+.demon[data-style="hanfu"] .demon-combo .dc-unit { display: grid; place-items: center; width: 17px; height: 17px; font-size: 11px; line-height: 1; color: #fff; text-shadow: none;
+  background: #b8432f; border-radius: 2px; rotate: -5deg; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .45), 0 0 1px #b8432f; }
+/* 梅瓣：几片小红点挂在轴外，1000 起飘下来 */
+.demon[data-style="hanfu"] .demon-combo::before { content: ""; position: absolute; left: 50%; top: 0; width: 5px; height: 4px; border-radius: 60% 10% 60% 10%; opacity: 0; pointer-events: none;
+  background: #e0707f; box-shadow: -20px 12px 0 #e98a9a, 18px 30px 0 #d9566c, -16px 52px 0 #e0707f, 22px 70px 0 #e98a9a, -6px 88px 0 #d9566c; }
+
+.demon[data-style="hanfu"] .demon-combo:not([data-level="0"]) .dc-num::after { opacity: 1; }
+.demon[data-style="hanfu"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"]) { --hf-c: #b8432f;
+  background: radial-gradient(circle at 20% 30%, #e2b84a 0 1px, transparent 1.5px) 0 0 / 23px 29px, radial-gradient(circle at 70% 60%, #d4a63a 0 .8px, transparent 1.3px) 5px 9px / 17px 21px, radial-gradient(circle at 40% 80%, #f0cc6a 0 1.2px, transparent 1.7px) 11px 3px / 31px 37px,
+    var(--pa-fiber) 0 0 / var(--pa-fiber-w) var(--pa-fiber-h), var(--hf-scroll, #f6efde); }
+.demon[data-style="hanfu"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"]) .dc-unit { width: 19px; height: 19px; background: #c9302c; }
+.demon[data-style="hanfu"] .demon-combo:is([data-level="1000"], [data-level="2000"])::before { opacity: 1; }
+.demon[data-style="hanfu"] .demon-combo[data-level="2000"] { --hf-c: #a0202a; }
+
+[data-motion="full"] .demon[data-style="hanfu"] .demon-combo .dc-num { animation: none; }
+[data-motion="full"] .demon[data-style="hanfu"] .demon-combo.bump .dc-num { animation: hf-ink-land .28s ease-out; }
+[data-motion="full"] .demon[data-style="hanfu"] .demon-combo.bump .dc-num::before { animation: hf-ink-spread .5s ease-out; }
+[data-motion="full"] .demon[data-style="hanfu"] .demon-combo:not([data-level="0"]) .dc-num::after { animation: hf-dots .5s steps(3) both; }
+[data-motion="full"] .demon[data-style="hanfu"] .demon-combo[data-level="500"] .dc-unit { animation: hf-seal-press .45s cubic-bezier(.3, 1.6, .5, 1) both; }
+[data-motion="full"] .demon[data-style="hanfu"] .demon-combo:is([data-level="1000"], [data-level="2000"])::before { animation: hf-petal 3.2s linear infinite; }
+[data-motion="full"] .demon[data-style="hanfu"] .demon-combo[data-level="2000"] { animation: hf-sway 1.8s ease-in-out infinite; }
+[data-motion="full"] .demon[data-style="hanfu"] .demon-combo[data-level="2000"]::before { animation-duration: 1.6s; }
+[data-motion="full"] .demon[data-style="hanfu"] .demon-combo[data-level="2000"] .dc-unit { animation: hf-seal-beat 1.8s ease-in-out infinite; }
+/* 连击停了：挂轴从下往上卷起来 */
+[data-motion="full"] .demon[data-style="hanfu"] .demon-combo.end { animation: hf-roll .6s cubic-bezier(.5, 0, .7, .4) both; }
+@keyframes hf-ink-land { 0% { filter: blur(1.4px); scale: 1.18; } 60% { filter: blur(.3px); scale: .97; } 100% { filter: none; scale: 1; } }
+@keyframes hf-ink-spread { 0% { opacity: .9; transform: scale(.4); } 100% { opacity: 0; transform: scale(1.5); } }
+@keyframes hf-dots { from { clip-path: inset(-4px -4px 3px -4px); } to { clip-path: inset(-4px -4px -20px -4px); } }
+@keyframes hf-petal { 0% { translate: 0 -10px; rotate: 0deg; opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { translate: -12px 60px; rotate: 40deg; opacity: 0; } }
+@keyframes hf-sway { 0%, 100% { rotate: -3deg; } 50% { rotate: 3deg; } }
+@keyframes hf-seal-beat { 0%, 80%, 100% { scale: 1; } 86% { scale: 1.25; } 92% { scale: .95; } }
+@keyframes hf-roll { from { clip-path: inset(-20px -30px -20px -30px); } to { clip-path: inset(-20px -30px 100% -30px); opacity: .6; } }
