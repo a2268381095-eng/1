@@ -2,7 +2,7 @@
 // 在 CSS 里用 var(--pa-<名字>)、var(--pa-<名字>-w)、var(--pa-<名字>-h)。
 // 活页本的一页：左边一列打孔（punch 是挖孔的遮罩，rim 是孔边一圈淡影），右上角贴一颗金星贴纸，右下角是小恶魔随手画的尾巴。
 
-// 孔：一格 12×10，孔 5×5 在中间偏左
+// 孔：一格 12×10（CSS 里按 3 倍是 36×30），孔 5×5 在中间偏左
 const HOLE = [".###.", "#####", "#####", "#####", ".###."];
 const tile = (fn) => Array.from({ length: 10 }, (_, y) => Array.from({ length: 12 }, (_, x) => fn(x - 3, y - 2)).join(""));
 const inHole = (x, y) => HOLE[y] && HOLE[y][x] === "#";
@@ -52,7 +52,7 @@ export default {
     rows: sticker(STAR),
     colors: { o: "#d18a12", y: "#ffd23f", h: "#fff0a0", d: "#f2b51c", w: "#ffffff" }, scale: 3,
   },
-  // 小恶魔的尾巴：圆珠笔一笔画过去，尖上是桃心
+  // 小恶魔的尾巴：圆珠笔一笔画过去，尾巴尖是倒过来的心
   tail: {
     rows: [
       "..........#...",

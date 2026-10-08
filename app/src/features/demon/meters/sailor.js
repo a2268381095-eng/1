@@ -28,19 +28,18 @@ function px(g, x, y, col) { g.fillStyle = col; g.fillRect(x, y, 1, 1); }
 /** 一颗星：f 涂了多少（0–1），full 已经是贴纸 */
 function star(g, x0, y0, f, full, c, glint) {
   const n = full ? CELLS.length : Math.round(f * CELLS.length);
-  const on = new Set(CELLS.slice(0, n).map(([x, y]) => x + "," + y));
   // 涂到的最高一行，那一行亮一点（铅笔刚涂过）
   const top = n ? CELLS[n - 1][1] : 99;
-  for (const [x, y] of CELLS) {
-    const lit = on.has(x + "," + y), e = edge(x, y);
+  CELLS.forEach(([x, y], k) => {
+    const lit = k < n, e = edge(x, y);
     let col;
     if (full) col = e ? GOLD_O : x + y < 7 ? GOLD_H : x + y > 10 ? GOLD_D : GOLD;
     else if (lit) col = e ? GOLD_O : y === top ? GOLD_H : GOLD;
     else if (e) col = c.faint;
-    else continue;
+    else return;
     if (full && glint >= 0 && x + y === glint) col = WHITE;
     px(g, x0 + x, y0 + y, col);
-  }
+  });
 }
 
 /** 黄铅笔，笔尖在 (x, y)，朝左下斜着 */
