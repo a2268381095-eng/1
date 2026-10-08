@@ -175,7 +175,8 @@ async function unit(fails) {
 // ---------------- 浏览器流程 ----------------
 async function launch(dist, { width = 1360, height = 860 } = {}) {
   const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
-  const ctx = await browser.newContext({ viewport: { width, height } });
+  // 假时钟下全动效会让假时间走得比真时间慢（背景每帧都在画），自动保存赶不上；和其他测试一样关掉动效
+  const ctx = await browser.newContext({ viewport: { width, height }, reducedMotion: 'reduce' });
   await ctx.clock.install({ time: new Date('2026-10-08T10:00:00') });
   const page = await ctx.newPage();
   const errors = [];
