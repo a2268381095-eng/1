@@ -9,7 +9,9 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const SRC = path.join(ROOT, "src");
-const DIST = path.join(ROOT, "dist");
+// --out <目录>：输出到别的目录（几个人同时测试时互不覆盖）
+const outArg = process.argv.indexOf("--out");
+const DIST = outArg > 0 ? path.resolve(process.argv[outArg + 1]) : path.join(ROOT, "dist");
 const SPRITE_SRC = path.join(ROOT, "..", "assistant_sprite", "styles");
 
 // 和 assistant_sprite/tools/make_wardrobe_page.py 里的一致
@@ -42,7 +44,9 @@ function buildSprites() {
     out.push({ id, name, genres, actions, persona });
   }
   fs.mkdirSync(path.join(SRC, "generated"), { recursive: true });
-  fs.writeFileSync(path.join(SRC, "generated", "sprites.json"), JSON.stringify(out));
+  const gen = path.join(SRC, "generated", "sprites.json");
+  const json = JSON.stringify(out);
+  if (!fs.existsSync(gen) || fs.readFileSync(gen, "utf8") !== json) fs.writeFileSync(gen, json);
   return out.length;
 }
 
@@ -80,7 +84,7 @@ async function build() {
   const html = tpl.replace("/*__CSS__*/", () => css).replace("/*__JS__*/", () => code);
   fs.writeFileSync(path.join(DIST, "index.html"), html);
   const kb = (s) => Math.round(Buffer.byteLength(s) / 1024);
-  console.log(`dist/index.html  js ${kb(code)}KB  css ${kb(css)}KB  sprites ${n} 套`);
+  console.log(`${path.relative(process.cwd(), path.join(DIST, "index.html"))}  js ${kb(code)}KB  css ${kb(css)}KB  sprites ${n} 套`);
 }
 
 build().catch((e) => { console.error(e); process.exit(1); });

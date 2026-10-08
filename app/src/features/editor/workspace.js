@@ -40,6 +40,10 @@ export const ws = {
    */
   applyBatch: (lbl, changes) => applyBatch(lbl, changes),
   selectedIds() { return ws.chapters.filter((c) => ws.selected.has(c.id)).map((c) => c.id); },
+  /** 界面元素：center 正文区（可以往里放覆盖层，比如排版预览），right 右侧栏 */
+  els: () => (els ? { center: els.view.querySelector(".center"), edHost: els.edHost, right: els.right, list: els.list } : null),
+  /** 重新读当前作品信息（设置里改了章节号、自动缩进等以后调用） */
+  async reloadBook() { if (ws.book) { ws.book = await getBook(ws.book.id); renderList(); updateHead(); } },
 };
 
 let els = null;            // 界面元素
@@ -95,7 +99,7 @@ function buildLayout(app) {
     tb("search", "查找", "search.open", "查找替换（Ctrl+F）"), tb("format", "排版", "format.open", "一键排版"),
     tb("history", "历史", "versions.open", "本章历史版本"), tb("focus", "专注", "focus.toggle", "专注模式（F11）"),
     h("span.tb-sep"), pointsBtn,
-    h("button.icon-btn", { type: "button", title: label("设置"), "aria-label": label("设置"), onclick: () => nav.go("/settings") }, icon("gear")));
+    h("button.icon-btn", { type: "button", title: label("设置"), "aria-label": label("设置"), onclick: () => nav.go("/settings/" + ws.book.id) }, icon("gear")));
 
   const list = h("div.ch-list", { role: "listbox", "aria-label": "章节", "aria-multiselectable": "true" });
   const newBtn = h("button.icon-btn", { type: "button", title: "新建章节（Ctrl+Enter）", "aria-label": "新建章节" }, icon("plus"));
