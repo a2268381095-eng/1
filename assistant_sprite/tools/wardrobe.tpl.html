@@ -397,7 +397,7 @@ button { font: inherit; color: inherit; }
   function say(text) {
     clearInterval(typeT); clearTimeout(hideT);
     if (!text) { hush(); return; }
-    const who = cur.persona ? cur.persona.self : "";
+    const who = cur.name.split("·").pop();
     $("b-who").textContent = who;
     $("b-live").textContent = (who ? who + "：" : "") + text;
     $("bubble").dataset.on = "true";
