@@ -3,7 +3,11 @@ import { db } from "./db.js";
 import { bus } from "./bus.js";
 
 export const DEFAULT_SETTINGS = {
-  theme: "auto",              // auto 跟随系统 / light / dark
+  theme: "auto",              // 明暗：auto 跟随系统 / light / dark / time 随时间（晚 8 点到早 6 点深色）
+  palette: "follow",          // 配色：follow 跟随小恶魔 / time 随时间 / season 随季节 / magical / sailor / hanfu / gothic / detective / adventurer
+  pixelBg: true,              // 空白处铺像素底纹
+  motion: "auto",             // 界面动效：auto（系统要求减少动态时关掉）/ full 完整 / simple 简洁 / off 关闭
+  clickFx: "hearts",          // 点击特效：hearts 像素爱心 / ripple 魔法波纹 / ink 墨点 / off
   uiFont: "system",           // 界面字体
   textFont: "serif",          // 正文字体
   textSize: 18,               // 正文字号 px

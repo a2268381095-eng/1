@@ -119,3 +119,15 @@ body:has(.view.st) .toast-act { white-space: nowrap; flex: 0 0 auto; }
   .st-key-acts { grid-column: 1 / -1; justify-content: flex-start; }
   .st-num { width: 96px; }
 }
+
+/* 配色色块 */
+.st-palettes { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 8px; width: 100%; }
+.st-pal { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-rows: auto auto; gap: 0 8px; align-items: center; text-align: left;
+  padding: 8px 10px; border: 1px solid var(--line-strong); border-radius: 8px; background: var(--surface); cursor: pointer; }
+.st-pal[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.st-pal .st-sw { grid-row: 1 / 3; display: grid; grid-template-columns: repeat(3, 8px); width: 24px; height: 24px; border-radius: 4px; overflow: hidden;
+  border: 1px solid var(--line-strong); image-rendering: pixelated; }
+.st-pal .st-sw i { display: block; height: 24px; }
+.st-sw-follow { place-items: center; display: grid !important; grid-template-columns: 1fr !important; color: var(--accent); font-size: 14px; background: var(--accent-soft); }
+.st-pal-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.st-pal-sub { font-size: 11.5px; color: var(--muted); }

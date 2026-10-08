@@ -6,7 +6,10 @@ import { commands, setCustomKeys } from "./core/commands.js";
 import { loadSettings, getSettings } from "./core/settings.js";
 import { purgeOldTrash } from "./core/store.js";
 import { notice, toast } from "./core/ui.js";
-import { mountDemon } from "./features/demon/demon.js";
+import { mountDemon, currentStyleId } from "./features/demon/demon.js";
+import { mountFx } from "./core/fx.js";
+import { patternURL } from "./core/pattern.js";
+import { resolvePalette, resolveDark, lookButton } from "./core/look.js";
 import { registerShelf } from "./features/shelf/shelf.js";
 import { registerWorkspace } from "./features/editor/workspace.js";
 import { registerFeatures } from "./features/index.js";
@@ -17,6 +20,22 @@ export function applyLook() {
   const root = document.documentElement;
   if (s.theme === "auto") root.removeAttribute("data-theme");
   else root.setAttribute("data-theme", s.theme);
+  const dark = resolveDark(s);
+  root.toggleAttribute("data-dark", dark);
+  if (s.theme === "time") root.setAttribute("data-theme", dark ? "dark" : "light");
+  // 配色：手选的，或者跟随小恶魔 / 随时间 / 随季节
+  const palette = resolvePalette(s, currentStyleId());
+  if (!palette || palette === "magical") root.removeAttribute("data-palette");
+  else root.setAttribute("data-palette", palette);
+  // 动效
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  root.dataset.motion = s.motion === "auto" ? (reduce ? "off" : "full") : s.motion;
+  // 像素底纹
+  document.body.classList.toggle("pixel-bg", !!s.pixelBg);
+  if (s.pixelBg) {
+    const color = getComputedStyle(root).getPropertyValue("--pattern").trim() || "#b23f77";
+    root.style.setProperty("--pattern-img", `url(${patternURL(palette || "magical", color, dark ? 0.16 : 0.09)})`);
+  }
   const fonts = {
     system: '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif',
     serif: '"Noto Serif SC", "Songti SC", "SimSun", serif',
@@ -48,7 +67,11 @@ async function start() {
   await loadSettings();
   applyLook();
   bus.on("settings:changed", applyLook);
+  bus.on("demon:style", applyLook);
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyLook);
+  setInterval(() => { const s = getSettings(); if (s.palette === "time" || s.palette === "season" || s.theme === "time") applyLook(); }, 60000);
   mountDemon(document.body);
+  mountFx();
   registerShelf();
   registerWorkspace();
   await registerFeatures();

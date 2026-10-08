@@ -14,6 +14,7 @@ import { createEditor } from "./editor.js";
 import { renderPoints } from "./points.js";
 import { setDemonBook, setDemonVisible, tip } from "../demon/demon.js";
 import { bookForm } from "../shelf/shelf.js";
+import { lookButton, openLookPop } from "../../core/look.js";
 
 // ---------------- 对外接口 ----------------
 export const ws = {
@@ -118,7 +119,7 @@ function buildLayout(app) {
     tb("search", "查找", "search.open", "查找替换（Ctrl+F）"), tb("format", "排版", "format.open", "一键排版"),
     tb("history", "历史", "versions.open", "本章历史版本"), tb("download", "导出", "io.export", "导出 txt / md"),
     tb("focus", "专注", "focus.toggle", "专注模式（F11）"),
-    h("span.tb-sep"), pointsBtn,
+    h("span.tb-sep"), lookButton(), pointsBtn,
     h("button.icon-btn", { type: "button", title: label("设置"), "aria-label": label("设置"), onclick: () => nav.go("/settings/" + ws.book.id) }, icon("gear")));
 
   const list = h("div.ch-list", { role: "listbox", "aria-label": "章节", "aria-multiselectable": "true" });
@@ -324,6 +325,9 @@ async function openChapter(id, restore, { replace = false } = {}) {
   ws.current = ch;
   liveWords = ch.words || countWords(ch.content);
   await ws.editor.open(ch, restore);
+  els.edHost.classList.remove("ch-enter");
+  void els.edHost.offsetWidth;
+  els.edHost.classList.add("ch-enter");
   updateHead();
   renderList();
   showPoints();
@@ -491,7 +495,7 @@ async function saveNow(id, text) {
       unsaved.delete(id);
       const c = ws.chapters.find((x) => x.id === id);
       if (c && ch) { c.content = ch.content; c.words = ch.words; c.updatedAt = ch.updatedAt; }
-      if (els) { els.sSave.textContent = "已自动保存 " + fmtTime(Date.now()).replace("今天 ", ""); els.sSave.className = ""; }
+      if (els) { els.sSave.textContent = "已自动保存 " + fmtTime(Date.now()).replace("今天 ", ""); els.sSave.className = "saved-pop"; }
       updateStatus();
     } catch (e) {
       unsaved.set(id, text);

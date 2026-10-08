@@ -7,6 +7,7 @@ import { commands } from "../../core/commands.js";
 import { bus } from "../../core/bus.js";
 import { fmtTime } from "../../core/text.js";
 import { setDemonBook, tip } from "../demon/demon.js";
+import { lookButton } from "../../core/look.js";
 
 const GENRES = ["奇幻", "玄幻", "仙侠", "武侠", "都市", "校园", "恋爱", "悬疑", "推理", "科幻", "历史", "西幻", "异世界", "穿越", "游戏", "种田", "轻小说", "古言", "日常"];
 
@@ -129,6 +130,7 @@ export async function renderShelf(root, restore) {
       h("span.spacer"),
       h("button.tool-btn", { type: "button", onclick: () => commands.run("io.import") }, icon("upload"), "导入"),
       h("button.tool-btn", { type: "button", onclick: () => nav.go("/trash") }, icon("trash"), label("回收站")),
+      lookButton(),
       h("button.tool-btn", { type: "button", onclick: () => nav.go("/settings") }, icon("gear"), label("设置")),
       h("button.btn.primary", { type: "button", onclick: newBook }, icon("plus"), "新建作品")),
     h("main.shelf-main", {}, grid));

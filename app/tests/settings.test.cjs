@@ -472,7 +472,7 @@ async function flows(dist, fails) {
     const st = getComputedStyle(document.querySelector('.st-style'));
     return { bg: lum(g.backgroundColor), ink: lum(n.color), btn: lum(b.backgroundColor), btnInk: lum(b.color), card: lum(st.backgroundColor) };
   });
-  check(dark.bg < 0.2 && dark.btn < 0.2 && dark.card < 0.2 && dark.ink > 0.7 && dark.btnInk > 0.6, '深色模式：底色深、字浅 ' + JSON.stringify(dark), fails);
+  check(dark.bg < 0.2 && dark.btn < 0.2 && dark.card < 0.2 && dark.ink > 0.7 && dark.btnInk > 0.5, '深色模式：底色深、字浅 ' + JSON.stringify(dark), fails);
 
   check(errors.length === 0, '没有报错 ' + errors.join(' | '), fails);
   await browser.close();

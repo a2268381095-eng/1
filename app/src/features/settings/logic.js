@@ -44,7 +44,7 @@ export function fmtSize(bytes) {
 
 // ---------------- 设置分组 ----------------
 export const GROUPS = {
-  look: ["theme", "uiFont", "textFont", "textSize", "lineHeight", "textWidth"],
+  look: ["theme", "palette", "pixelBg", "motion", "clickFx", "uiFont", "textFont", "textSize", "lineHeight", "textWidth"],
   demon: ["demonOn", "demonScale", "demonPos", "demonStyle", "demonChatty", "idleMinutes"],
   shelf: ["hoverDelay"],
   keys: ["keys"],

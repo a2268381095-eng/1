@@ -40,9 +40,12 @@ export function styleFor(book) {
 }
 export const allStyles = () => SPRITES;
 
+export const currentStyleId = () => (style ? style.id : "magical");
+
 function setStyle(st) {
   if (st === style && images[st.id]) return;
   style = st;
+  bus.emit("demon:style", { id: st.id });
   images[st.id] = images[st.id] || {};
   for (const a of Object.keys(st.actions)) {
     if (!images[st.id][a]) { const im = new Image(); im.src = `sprites/${st.id}/${a}.png`; images[st.id][a] = im; }

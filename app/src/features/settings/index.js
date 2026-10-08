@@ -2,6 +2,7 @@
 // 改了马上生效、马上存好；每一步都能撤销（右上角，或 Ctrl+Z），恢复默认、清空这类批量的算一步。
 // 发出的事件：settings:changed（core 发）、book:updated（store 发）、
 //   settings:reset { group }、settings:font-added { font }、settings:font-removed { font }、settings:errlog-cleared { count }
+import { PALETTES } from "../../core/pattern.js";
 import { getBook, updateBook, listChapters, updateChapter, DEFAULT_BOOK } from "../../core/store.js";
 import { db, uid } from "../../core/db.js";
 import { nav } from "../../core/nav.js";
@@ -294,12 +295,37 @@ function fontPicker(name, key) {
   return box;
 }
 
+/** 配色：每套一个色块按钮 */
+function palettePicker() {
+  const items = [["follow", "跟随小恶魔", null, "按作品换"], ["time", "随时间", null, "早·午·傍晚·夜"], ["season", "随季节", null, "春夏秋冬"], ...PALETTES.map((p) => [p.id, p.name, p])];
+  const box = h("div.st-palettes", { role: "group", "aria-label": "配色" });
+  const btns = items.map(([v, text, p, sub]) => {
+    const sw = p ? h("span.st-sw", {}, ...p.swatch.map((c) => h("i", { style: { background: c } }))) : h("span.st-sw.st-sw-follow", {}, v === "follow" ? "♥" : "↻");
+    const b = h("button.st-pal", { type: "button", "data-v": v, title: p ? `${p.name}（${p.style}）` : text + "：" + sub },
+      sw, h("span.st-pal-name", {}, text), h("span.st-pal-sub", {}, p ? p.style : sub));
+    b.addEventListener("click", () => { if (getSettings().palette !== v) change({ palette: v }, "配色改成" + text); });
+    box.append(b);
+    return [v, b];
+  });
+  S.syncers.push(() => btns.forEach(([v, b]) => b.setAttribute("aria-pressed", String(getSettings().palette === v))));
+  return box;
+}
+
 function renderLook(body) {
   const s = () => getSettings();
   body.append(
     row("主题", "跟随系统：电脑换成深色时，这里也跟着变。",
-      seg("主题", [["auto", "跟随系统"], ["light", "浅色"], ["dark", "深色"]], () => s().theme,
-        (v) => change({ theme: v }, { auto: "主题跟随系统", light: "换成浅色", dark: "换成深色" }[v]))),
+      seg("主题", [["auto", "跟随系统"], ["light", "浅色"], ["dark", "深色"], ["time", "随时间"]], () => s().theme,
+        (v) => change({ theme: v }, { auto: "主题跟随系统", light: "换成浅色", dark: "换成深色", time: "明暗随时间" }[v]))),
+    row("配色", "「跟随小恶魔」：打开哪本书，界面就换成她这本书穿的那套风格的颜色。", palettePicker()),
+    row("像素底纹", "书架这些空白处铺一层很淡的像素图案，写字的纸面不铺。",
+      toggle("铺底纹", () => s().pixelBg, (v) => change({ pixelBg: v }, v ? "铺上像素底纹" : "去掉像素底纹"), "pixelBg")),
+    row("界面动效", "按钮回弹、弹窗弹出、面板滑入这些动作。「简洁」只淡入淡出；系统设置了减少动态效果时「自动」会关掉。",
+      seg("界面动效", [["auto", "自动"], ["full", "完整"], ["simple", "简洁"], ["off", "关闭"]], () => s().motion,
+        (v) => change({ motion: v }, "界面动效改成" + { auto: "自动", full: "完整", simple: "简洁", off: "关闭" }[v]))),
+    row("点击特效", "点按钮、点空白处时冒出来的小特效。在正文里点击、打字不会冒。",
+      seg("点击特效", [["hearts", "像素爱心"], ["ripple", "魔法波纹"], ["ink", "墨点"], ["off", "关闭"]], () => s().clickFx,
+        (v) => change({ clickFx: v }, "点击特效改成" + { hearts: "像素爱心", ripple: "魔法波纹", ink: "墨点", off: "关闭" }[v]))),
     row("界面字体", "按钮、菜单、章节列表用的字体。", fontPicker("界面字体", "uiFont")),
     row("正文字体", "写正文用的字体。下面一行是预览，字号、行高也按现在的设置。",
       fontPicker("正文字体", "textFont"),
