@@ -65,6 +65,8 @@
 .ch-title:hover { border-bottom-color: var(--line-strong); }
 .ch-title:focus { outline: none; border-bottom-color: var(--accent); }
 .ch-title::placeholder { color: var(--faint); font-weight: 400; }
+.ch-name-ai { width: auto; padding: 0 8px; font-size: 12px; font-weight: 700; letter-spacing: .04em; opacity: .55; }
+.ch-head:hover .ch-name-ai, .ch-name-ai:focus-visible { opacity: 1; }
 .ed-host { flex: 1; min-height: 0; }
 .ed-host .cm-editor { height: 100%; background: transparent; color: var(--ink); }
 .ed-host .cm-editor.cm-focused { outline: none; }
@@ -96,6 +98,9 @@
 .pt-empty { font-size: 13px; padding: 4px 2px; }
 .pt-count { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .pt-note { margin: 0; font-size: 12px; line-height: 1.6; }
+.pt-sum-head { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.pt-sum-head h3 { margin: 0; font-size: 13px; font-weight: 600; letter-spacing: .04em; }
+.pt-summary { font-size: 13px; min-height: 90px; }
 
 /* 手机宽度：宽面板（查找、历史等）改成上下分屏，正文在上，面板在下 */
 @media (max-width: 640px) {

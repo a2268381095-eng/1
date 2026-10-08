@@ -372,6 +372,7 @@ async function desktop(dist, fails) {
     check((await page.inputValue('.sr-q')) === '价格', '面板开着时选字按 Ctrl+F：拿选中的字来找', fails);
 
     // ---- Esc、关闭按钮、焦点回到正文 ----
+    if (await page.isVisible('.sr-r')) await page.fill('.sr-r', '');
     await page.focus('.sr-q');
     await press(page, 'Escape');
     await wait(page, 200);

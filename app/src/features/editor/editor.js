@@ -13,6 +13,15 @@ const dmp = new DiffMatchPatch();
 EditorView.EDIT_CONTEXT = false;
 export const External = Annotation.define();   // 不是作者打字产生的改动（批量替换、排版、恢复版本）
 
+// 其他功能往编辑器里加东西（选中工具栏、AI 改过的段落标记等）：addEditorExtension(ext)
+const plugins = new Compartment();
+const pluginList = [];
+const views = new Set();
+export function addEditorExtension(ext) {
+  pluginList.push(ext);
+  for (const v of views) v.dispatch({ effects: plugins.reconfigure([...pluginList]) });
+}
+
 // ---------------- 高亮（查找结果、排版预览用） ----------------
 export const setMarks = StateEffect.define();   // value: [{ from, to, cls }]
 const marksField = StateField.define({
@@ -82,6 +91,7 @@ export function createEditor(opts) {
     placeholder("从这里开始写……"),
     EditorView.contentAttributes.of({ spellcheck: "false", lang: "zh-CN", "aria-label": "正文" }),
     marksField,
+    plugins.of([...pluginList]),
     keymap.of([
       { key: "Enter", run: indentEnter },
       { key: "Mod-z", run: smartUndo, preventDefault: true },
@@ -107,6 +117,7 @@ export function createEditor(opts) {
   ];
 
   const view = new EditorView({ parent: opts.parent, state: EditorState.create({ doc: "", extensions }) });
+  views.add(view);
 
   function themeExt() {
     const s = getSettings();
@@ -164,7 +175,7 @@ export function createEditor(opts) {
       currentId = chapter.id;
       states.set(chapter.id, st);
       view.setState(st);
-      view.dispatch({ effects: theme.reconfigure(themeExt()) });
+      view.dispatch({ effects: [theme.reconfigure(themeExt()), plugins.reconfigure([...pluginList])] });
       if (restore && restore.anchor != null) {
         const len = view.state.doc.length;
         view.dispatch({ selection: { anchor: Math.min(restore.anchor, len), head: Math.min(restore.head ?? restore.anchor, len) } });

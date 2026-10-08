@@ -7,6 +7,7 @@ import { addStash, FEATURES } from "../../core/stash.js";
 import { db } from "../../core/db.js";
 import { bus } from "../../core/bus.js";
 import { h, icon, modal, notice, toast } from "../../core/ui.js";
+import { commands } from "../../core/commands.js";
 import { setupModal, renderSetup } from "./setup.js";
 
 const skipThisSession = new Set();   // "功能|提供商|模型|提示词" 本次会话不再询问
@@ -22,20 +23,29 @@ const skipThisSession = new Set();   // "功能|提供商|模型|提示词" 本�
  *   onDelta(piece, text)   流式回调
  *   signal        AbortSignal
  *   title         暂存盒里这条的标题
- * 返回 { text, usage, stash, choice } ；取消或失败返回 null
+ *   promptId      预先选好的提示词（比如从选中工具栏点的那一条）
+ *   history       之前的对话 [{ role: "user"|"assistant", content }]（继续追问时带上）
+ *   count         一次出几个版本（确认一次，连着发 count 次）
+ *   simple        简单的活（起章名、写摘要）：作者绑定了便宜模型时默认用它
+ *   reuse         上一次的选择（choice），给了就不再弹确认卡（「再出一版」用）
+ * 返回 { text, usage, stash, choice, results }（count > 1 时 results 是每一版）；取消或失败返回 null
  */
 export async function runAI(opts) {
   if (!(await readyProviders()).length) {
     const id = await setupModal();
     if (!id) return null;
   }
-  let choice = await confirmCard(opts);
-  while (choice) {
-    const r = await send(opts, choice);
+  let choice = opts.reuse || await confirmCard(opts);
+  const count = Math.max(1, Math.min(6, opts.count || 1));
+  const results = [];
+  while (choice && results.length < count) {
+    const r = await send({ ...opts, title: count > 1 ? `${opts.title || ""}（第 ${results.length + 1} 版）` : opts.title }, choice);
     if (r && r.retry) { choice = r.retry === "card" ? await confirmCard({ ...opts, ...(r.patch || {}) }, choice) : choice; if (r.patch) opts = { ...opts, ...r.patch }; continue; }
-    return r;
+    if (!r) break;
+    results.push(r);
   }
-  return null;
+  if (!results.length) return null;
+  return { ...results[results.length - 1], results };
 }
 
 function comboKey(feature, c) { return [feature, c.providerId, c.model, c.promptId || "temp"].join("|"); }
@@ -63,8 +73,12 @@ async function confirmCard(opts, prev = null) {
   const ready = await readyProviders();
   const prompts = await listPrompts();
   const recent = (await recentOf(opts.feature)).filter((r) => ready.some((p) => p.id === r.providerId));
-  const start = prev || recent[0] || { providerId: ready[0].id, model: cfg.providers[ready[0].id].testModel, promptId: prompts[0] ? prompts[0].id : null, maxTokens: opts.maxTokens || 1200 };
-  if (!prev && recent[0] && skipThisSession.has(comboKey(opts.feature, recent[0]))) {
+  const cheap = opts.simple && cfg.cheap && ready.some((p) => p.id === cfg.cheap.providerId) ? cfg.cheap : null;
+  let start = prev || recent[0] || { providerId: (cheap || {}).providerId || ready[0].id, model: (cheap || {}).model || cfg.providers[ready[0].id].testModel,
+    promptId: prompts[0] ? prompts[0].id : null, maxTokens: opts.maxTokens || 1200 };
+  if (!prev && opts.promptId) start = { ...start, promptId: opts.promptId };
+  if (!prev && !recent.length && cheap) start = { ...start, providerId: cheap.providerId, model: cheap.model };
+  if (!prev && !opts.promptId && recent[0] && skipThisSession.has(comboKey(opts.feature, recent[0]))) {
     const p = prompts.find((x) => x.id === recent[0].promptId);
     if (p) return { ...recent[0], promptText: p.text };
   }
@@ -89,6 +103,16 @@ async function confirmCard(opts, prev = null) {
     const tempIn = h("textarea.textarea", { rows: "4", placeholder: "写给 AI 的话。可以用 {选中文本}、{本章要点}、{前一章摘要} 这些变量，发送时自动填入。" });
     tempIn.value = (prev && prev.promptText && !prev.promptId) ? prev.promptText : "";
     const saveTemp = h("button.btn.small.ghost", { type: "button" }, "存进提示词库");
+    const manage = h("button.btn.small.ghost", { type: "button" }, "管理提示词库");
+    manage.addEventListener("click", async () => {
+      await commands.run("prompts.manage", { feature: opts.feature });
+      const fresh = await listPrompts();
+      const keep = promptSel.value;
+      promptSel.replaceChildren(...fresh.map((p) => h("option", { value: p.id }, (p.group ? p.group + " / " : "") + p.name)), h("option", { value: "__temp" }, "临时写一个……"));
+      prompts.splice(0, prompts.length, ...fresh);
+      promptSel.value = fresh.some((p) => p.id === keep) ? keep : (fresh[0] ? fresh[0].id : "__temp");
+      refresh();
+    });
     const tempBox = h("div.field", {}, tempIn, h("div.row", {}, saveTemp));
     const preview = h("pre.ai-preview");
     const missingBox = h("div.row.ai-missing");
@@ -122,12 +146,13 @@ async function confirmCard(opts, prev = null) {
       const comp = compose(c.promptText, opts);
       preview.textContent = comp.text.length > 1600 ? comp.text.slice(0, 1600) + `\n……（共 ${comp.text.length} 字）` : comp.text;
       missingBox.replaceChildren(...comp.missing.map((m) => h("span.chip.warn", { title: "这个变量现在没有值，会原样发出去" }, `{${m}} 没有值`)));
-      const inTok = estimateTokens(comp.text);
+      const inTok = estimateTokens(comp.text) + estimateTokens((opts.history || []).map((m) => m.content).join(""));
+      const n = Math.max(1, Math.min(6, opts.count || 1));
       const cfgNow = await getConfig();
       const price = (cfgNow.prices || {})[c.providerId + "/" + c.model];
-      const cost = costOf(price, { input: inTok, output: c.maxTokens });
+      const cost = costOf(price, { input: inTok * n, output: c.maxTokens * n });
       est.replaceChildren(
-        h("span", {}, `发送约 ${inTok.toLocaleString()} token，最多输出 ${c.maxTokens.toLocaleString()} token`),
+        h("span", {}, `发送约 ${inTok.toLocaleString()} token，最多输出 ${c.maxTokens.toLocaleString()} token` + (n > 1 ? `，出 ${n} 版（花费 ×${n}）` : "") + ((opts.history || []).length ? `，带上前面 ${opts.history.length} 条对话` : "")),
         price ? h("span", {}, ` · 最多约 ${cost.toFixed(4)} ${price.cur || "USD"}`) : h("button.btn.small.ghost", { type: "button", onclick: () => { priceBox.hidden = !priceBox.hidden; } }, "没填单价，填一下"));
       renderPrice(c, price);
       sendBtn.disabled = !c.model || !comp.text.trim();
@@ -166,7 +191,7 @@ async function confirmCard(opts, prev = null) {
     const body = h("div.ai-card", {},
       recent.length ? h("div.field", {}, h("span", {}, "最近用过"), recentRow) : null,
       h("label.field", {}, h("span", {}, "模型"), modelSel),
-      h("label.field", {}, h("span", {}, "提示词"), promptSel),
+      h("div.field", {}, h("span", {}, "提示词", manage), promptSel),
       tempBox,
       inputInfo,
       h("details.ai-full", {}, h("summary", {}, "实际发送的内容"), preview),
@@ -201,7 +226,8 @@ async function send(opts, c) {
   const conf = cfg.providers[c.providerId];
   bus.emit("ai:start", { feature: opts.feature });
   try {
-    const r = await chat({ providerId: c.providerId, conf, model: c.model, messages: [{ role: "user", content: comp.text }], maxTokens: c.maxTokens, onDelta: opts.onDelta, signal: opts.signal });
+    const messages = [...(opts.history || []), { role: "user", content: comp.text }];
+    const r = await chat({ providerId: c.providerId, conf, model: c.model, messages, maxTokens: c.maxTokens, onDelta: opts.onDelta, signal: opts.signal });
     await noteRecent(opts.feature, c);
     if (c.promptId) notePromptUse(c.promptId);
     await record({ providerId: c.providerId, model: c.model, feature: opts.feature, bookId: opts.bookId, usage: r.usage });
@@ -211,7 +237,7 @@ async function send(opts, c) {
       input: (opts.input || "").slice(0, 4000),
     });
     bus.emit("ai:done", { feature: opts.feature, text: r.text });
-    return { text: r.text, usage: r.usage, stash, choice: c };
+    return { text: r.text, usage: r.usage, stash, choice: c, sent: comp.text };
   } catch (e) {
     if (e.category === "cancel") { bus.emit("ai:cancel", {}); return null; }
     bus.emit("ai:error", { feature: opts.feature, error: e });

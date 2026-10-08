@@ -2,6 +2,8 @@
 import { h, icon } from "../../core/ui.js";
 import { uid } from "../../core/db.js";
 import { tip } from "../demon/demon.js";
+import { commands } from "../../core/commands.js";
+import { ws } from "./workspace.js";
 
 /** 在 root 里画要点面板；onChange(points) 保存 */
 export function renderPoints(root, chapter, onChange) {
@@ -9,10 +11,17 @@ export function renderPoints(root, chapter, onChange) {
   const list = h("ol.pt-list");
   const input = h("input.input.pt-add", { placeholder: "加一条要点，回车", "aria-label": "新要点" });
   const count = h("span.pt-count");
+  const sum = h("textarea.textarea.pt-summary", { rows: "4", placeholder: "这一章写了什么（自己写，或者让 AI 写）。写下一章时可以用 {前一章摘要} 代替整章发给 AI，省 token。", "aria-label": "本章摘要" });
+  sum.value = chapter.summary || "";
+  let sumTimer = 0;
+  sum.addEventListener("input", () => { clearTimeout(sumTimer); sumTimer = setTimeout(() => ws.patchChapter(chapter.id, { summary: sum.value }), 500); });
+  const sumAI = h("button.btn.small.ghost", { type: "button", title: "用便宜的模型写个摘要，写好后可以反复用" }, "AI 写摘要");
+  sumAI.addEventListener("click", () => commands.run("chapter.summaryAI"));
   root.replaceChildren(
     h("div.panel-head", {}, h("h3", {}, "本章要点"), count),
     h("div.panel-body.pt-body", {}, list, input,
-      h("p.pt-note.muted", {}, "写之前列几条这章要写到的事，写完逐条打勾。")));
+      h("p.pt-note.muted", {}, "写之前列几条这章要写到的事，写完逐条打勾。"),
+      h("div.pt-sum-head", {}, h("h3", {}, "本章摘要"), sumAI), sum));
 
   const save = () => { onChange(points.map((p) => ({ ...p }))); renderAll(); };
   let dragIdx = -1;

@@ -40,6 +40,25 @@ export const ws = {
    */
   applyBatch: (lbl, changes) => applyBatch(lbl, changes),
   selectedIds() { return ws.chapters.filter((c) => ws.selected.has(c.id)).map((c) => c.id); },
+  /** 提示词变量的值：本章正文、本章要点、前一章摘要、章名、书名、简介 */
+  varsFor(id = ws.current && ws.current.id) {
+    const i = ws.chapters.findIndex((c) => c.id === id);
+    const c = ws.chapters[i] || {};
+    const prev = ws.chapters[i - 1];
+    return {
+      本章正文: ws.textOf(id), 本章要点: (c.points || []).map((p) => "- " + p.text).join("\n"),
+      前一章摘要: prev ? prev.summary || "" : "", 章名: c.title || "", 书名: ws.book ? ws.book.title : "", 简介: ws.book ? ws.book.intro || "" : "",
+    };
+  },
+  /** 更新某一章的字段（摘要、要点等），同步到列表 */
+  async patchChapter(id, patch) {
+    const ch = await updateChapter(id, patch);
+    const c = ws.chapters.find((x) => x.id === id);
+    if (c && ch) Object.assign(c, patch);
+    if (ws.current && ws.current.id === id) Object.assign(ws.current, patch);
+    renderList();
+    return ch;
+  },
   /** 界面元素：center 正文区（可以往里放覆盖层，比如排版预览），right 右侧栏 */
   els: () => (els ? { center: els.view.querySelector(".center"), edHost: els.edHost, right: els.right, list: els.list } : null),
   /** 重新读当前作品信息（设置里改了章节号、自动缩进等以后调用） */
@@ -121,7 +140,9 @@ function buildLayout(app) {
   });
   chTitle.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); ws.editor.focus(); } });
   const edHost = h("div.ed-host");
-  const center = h("main.center", {}, h("div.ch-head", {}, chNo, chTitle), edHost);
+  const nameAI = h("button.icon-btn.ch-name-ai", { type: "button", title: "让 AI 根据本章内容出几个章名", "aria-label": "AI 起章名" }, "AI");
+  nameAI.addEventListener("click", () => commands.run("chapter.nameAI"));
+  const center = h("main.center", {}, h("div.ch-head", {}, chNo, chTitle, nameAI), edHost);
 
   const right = h("aside.panel.side-right", { "aria-label": "侧栏" });
 
