@@ -9,7 +9,8 @@ import { notice, toast } from "./core/ui.js";
 import { mountDemon, currentStyleId } from "./features/demon/demon.js";
 import { mountFx } from "./core/fx.js";
 import { mountPulse } from "./core/pulse.js";
-import { patternURL } from "./core/pattern.js";
+import { patternURL, markURL } from "./core/pattern.js";
+import { sceneryURL } from "./core/scenery.js";
 import { resolvePalette, resolveDark, lookButton } from "./core/look.js";
 import { registerShelf } from "./features/shelf/shelf.js";
 import { registerWorkspace } from "./features/editor/workspace.js";
@@ -21,9 +22,11 @@ export function applyLook() {
   const root = document.documentElement;
   if (s.theme === "auto") root.removeAttribute("data-theme");
   else root.setAttribute("data-theme", s.theme);
-  const dark = resolveDark(s);
+  let dark = resolveDark(s);
+  // 哥特这套本来就是暗夜：明暗跟随系统时直接用深色
+  if (s.theme === "auto" && resolvePalette(s, currentStyleId()) === "gothic") dark = true;
   root.toggleAttribute("data-dark", dark);
-  if (s.theme === "time") root.setAttribute("data-theme", dark ? "dark" : "light");
+  if (s.theme === "time" || (s.theme === "auto" && dark)) root.setAttribute("data-theme", dark ? "dark" : "light");
   // 配色：手选的，或者跟随小恶魔 / 随时间 / 随季节
   const palette = resolvePalette(s, currentStyleId());
   if (!palette || palette === "magical") root.removeAttribute("data-palette");
@@ -31,11 +34,15 @@ export function applyLook() {
   // 动效
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   root.dataset.motion = s.motion === "auto" ? (reduce ? "off" : "full") : s.motion;
+  // 每套配色自己的小标记
+  const accent = getComputedStyle(root).getPropertyValue("--accent").trim() || "#b23f77";
+  root.style.setProperty("--mark-img", `url(${markURL(palette || "magical", accent)})`);
   // 像素底纹
   document.body.classList.toggle("pixel-bg", !!s.pixelBg);
   if (s.pixelBg) {
     const color = getComputedStyle(root).getPropertyValue("--pattern").trim() || "#b23f77";
     root.style.setProperty("--pattern-img", `url(${patternURL(palette || "magical", color, dark ? 0.16 : 0.09)})`);
+    root.style.setProperty("--scene-img", `url(${sceneryURL(palette || "magical", color, dark ? 0.22 : 0.13)})`);
   }
   const fonts = {
     system: '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif',

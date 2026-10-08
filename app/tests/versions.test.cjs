@@ -457,7 +457,7 @@ async function flows(dist, fails) {
     return { sw: document.documentElement.scrollWidth, panel: r('.side-right'), center: r('.center'), now: document.querySelector('.ver-tag.now') ? 1 : 0,
       demon: getComputedStyle(document.querySelector('.demon')).display };
   });
-  check(box1.sw <= 390 && box1.panel && box1.panel.width >= 380 && box1.panel.right <= 390 && box1.panel.height > 400, '手机：版本列表占满一屏，不横向溢出 ' + JSON.stringify(box1.panel), fails);
+  check(box1.sw <= 390 && box1.panel && box1.panel.width >= 380 && box1.panel.right <= 390 && box1.panel.height > 400, '手机：版本列表占满一屏，不横向溢出 ' + JSON.stringify(box1), fails);
   check(box1.now === 1, '最新一版和现在一样时标出来', fails);
   if (process.env.SHOT) await m.page.screenshot({ path: path.join(process.env.SHOT, 'versions-mobile-list.png') });
   await m.page.click('.ver-item[data-i="0"]');

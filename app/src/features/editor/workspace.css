@@ -7,6 +7,9 @@
 .ws.no-right .side-right { display: none; }
 .ws.wide-right .ws-body { grid-template-columns: 236px minmax(0, 1fr) 380px; }
 .side-left { border-right: 1px solid var(--line); }
+.ws-body > * { min-width: 0; }
+.side-right { overflow: hidden; }
+.side-right > .panel-body, .side-right > .panel-head { min-width: 0; width: 100%; }
 .side-right { border-left: 1px solid var(--line); }
 .center { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--paper); }
 @media (max-width: 1000px) {

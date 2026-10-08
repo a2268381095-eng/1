@@ -50,6 +50,9 @@ function setStyle(st) {
   if (st === style && images[st.id]) return;
   style = st;
   setFxStyle(st.id);
+  if (el) el.dataset.style = st.id;
+  if (comboEl) comboEl.querySelector(".dc-label").textContent = (WORDS[st.id] || WORDS.magical).combo;
+  drawBadge && bookCtx && drawBadge();
   bus.emit("demon:style", { id: st.id });
   images[st.id] = images[st.id] || {};
   for (const a of Object.keys(st.actions)) {
@@ -240,7 +243,7 @@ export function mountDemon(root) {
   const body = h("div.demon-body", {}, poke, tools, grip, comboEl, badge);
   const showBtn = h("button.demon-show", { type: "button", title: "叫小恶魔出来", "aria-label": "叫小恶魔出来" }, "小恶魔");
   showBtn.addEventListener("click", () => setSettings({ demonOn: true }));
-  el = h("div.demon", {}, bubble, live, body, showBtn);
+  el = h("div.demon", { "data-style": style ? style.id : "magical" }, bubble, live, body, showBtn);
   root.append(el);
 
   poke.addEventListener("click", () => {
@@ -417,6 +420,15 @@ export function setDemonBook(book) {
 }
 
 // ---------------- 码字互动：字数牌子、连击 ----------------
+// 每套风格的叫法不一样
+const WORDS = {
+  magical: { combo: "魔力", badge: "魔力" },
+  sailor: { combo: "连写", badge: "作业" },
+  hanfu: { combo: "墨韵", badge: "墨迹" },
+  gothic: { combo: "咒文", badge: "契约" },
+  detective: { combo: "线索", badge: "卷宗" },
+  adventurer: { combo: "连斩", badge: "赏金" },
+};
 let badge = null, comboEl = null, todayN = 0, typedSinceSave = 0;
 
 async function refreshBadge(n) {
@@ -429,11 +441,11 @@ async function refreshBadge(n) {
 }
 
 function drawBadge() {
-  if (!badge || badge.hidden) return;
+  if (!badge || badge.hidden || !bookCtx) return;
   const goal = bookCtx.dailyGoal;
   const now = Math.max(0, todayN + typedSinceSave);
   const pct = Math.min(1, now / goal);
-  badge.querySelector(".db-label").textContent = `今日 ${now.toLocaleString()}/${goal.toLocaleString()}`;
+  badge.querySelector(".db-label").textContent = `${(WORDS[style.id] || WORDS.magical).badge} ${now.toLocaleString()}/${goal.toLocaleString()}`;
   badge.querySelector(".db-fill").style.width = (pct * 100).toFixed(1) + "%";
   badge.querySelector(".db-heart").style.left = `calc(${(pct * 100).toFixed(1)}% - 5px)`;
   badge.classList.toggle("done", pct >= 1);

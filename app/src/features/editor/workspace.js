@@ -535,8 +535,10 @@ async function updateStatus() {
   els.sWords.textContent = `本章 ${liveWords.toLocaleString()} 字`;
   const total = ws.chapters.reduce((s, c) => s + (c.id === (ws.current && ws.current.id) ? liveWords : c.words || 0), 0);
   els.sTotal.textContent = `全书 ${total.toLocaleString()} 字`;
-  if (Date.now() - todayCache.at > 1500) todayCache = { at: Date.now(), n: await todayWords(ws.book.id) };
-  const goal = ws.book.dailyGoal;
+  const book = ws.book;
+  if (Date.now() - todayCache.at > 1500) todayCache = { at: Date.now(), n: await todayWords(book.id) };
+  if (!els || ws.book !== book) return;   // 等字数的时候已经离开了这本书
+  const goal = book.dailyGoal;
   els.sToday.textContent = goal ? `今天 ${todayCache.n.toLocaleString()} / ${goal.toLocaleString()}` : `今天 ${todayCache.n.toLocaleString()} 字`;
   els.sToday.className = goal && todayCache.n >= goal ? "goal-done" : "";
   els.undoBtn.disabled = false;

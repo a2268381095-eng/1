@@ -58,3 +58,26 @@ export const PALETTES = [
   { id: "detective", name: "旧书房", style: "侦探", swatch: ["#fdfaf4", "#7a6c5e", "#2f6b5a"] },
   { id: "adventurer", name: "冒险者公会", style: "异世界", swatch: ["#fcfbf3", "#4f6b2a", "#a63d2a"] },
 ];
+
+// 每套配色的小标记（当前章节、面板标题前面）：7×7 像素，用主色画
+const MARKS = {
+  magical: [".##.##.", "#######", "#######", ".#####.", "..###..", "...#...", "......."],
+  sailor: ["...#...", "...#...", "#######", ".#####.", "..###..", ".##.##.", ".#...#."],
+  hanfu: ["..##...", ".#..#..", ".#.##.#", "#.....#", ".#####.", ".......", "......."],
+  gothic: ["#.....#", "##.#.##", "#######", ".##.##.", "..#.#..", ".......", "......."],
+  detective: [".###...", "#...#..", "#...#..", "#...#..", ".###...", ".....#.", "......#"],
+  adventurer: ["##.....", "####...", "######.", "####...", "##.....", "#......", "#......"],
+};
+export function markURL(id, color) {
+  const key = "mark:" + id + color;
+  if (cache.has(key)) return cache.get(key);
+  const rows = MARKS[id] || MARKS.magical;
+  const c = document.createElement("canvas");
+  c.width = 7; c.height = 7;
+  const g = c.getContext("2d");
+  g.fillStyle = color;
+  rows.forEach((r, y) => [...r].forEach((ch, x) => { if (ch === "#") g.fillRect(x, y, 1, 1); }));
+  const url = c.toDataURL("image/png");
+  cache.set(key, url);
+  return url;
+}
