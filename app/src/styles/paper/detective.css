@@ -1,1 +1,189 @@
-/* detective 这套的纸（写字页中间那张）。选择器用 :root[data-paper="detective"] body.has-scene ... */
+/* detective 这套的纸（写字页中间那张）。选择器用 :root[data-paper="detective"] body.has-scene ...
+   案卷里的一页打字稿：牛皮纸档案夹垫在底下，右边和下边露出一道硬边，顶上冒出标签耳；左上角夹一枚回形针。
+   纸面有纤维和墨屑，台灯从上方打下来一团暖光，边上旧得发黄；正文外面右上盖一枚歪着的红色「卷宗」章，右下角留一圈咖啡杯印。
+   正文底下一行一道打字机点线。醒来：打字机把这页一行一行打出来，色带跟着字走，打完「叮」一声回车。 */
+:root[data-paper="detective"] {
+  --dt-top: 28px; --dt-tint: rgba(222, 190, 128, .16); --dt-age: rgba(150, 100, 40, .24); --dt-lamp: rgba(255, 238, 196, .42);
+  --dt-shade: rgba(70, 46, 20, .1); --dt-board: #c9a063; --dt-board-e: #8f6a3a; --dt-edge: rgba(120, 88, 50, .28); --dt-lip: rgba(255, 255, 255, .55);
+  --dt-ink: #2e2620; --dt-red: #b3262e; }
+:root[data-paper="detective"][data-dark] {
+  --dt-tint: rgba(120, 90, 50, .1); --dt-age: rgba(0, 0, 0, .4); --dt-lamp: rgba(255, 200, 120, .09);
+  --dt-shade: rgba(0, 0, 0, .26); --dt-board: #4a3824; --dt-board-e: #241a10; --dt-edge: rgba(214, 186, 140, .14); --dt-lip: rgba(255, 230, 190, .06); }
+
+/* 纸：上沿往下让出标签耳的高度，下沿留出档案夹的边 */
+:root[data-paper="detective"] body.has-scene .ws-body > .center::before {
+  top: var(--dt-top); bottom: 12px; image-rendering: pixelated;
+  background-image: var(--pa-stamp), var(--pa-ring), var(--pa-fiber),
+    radial-gradient(ellipse 72% 42% at 42% 0%, var(--dt-lamp), transparent 72%),
+    radial-gradient(ellipse 120% 90% at 34% 18%, transparent 52%, var(--dt-shade) 100%),
+    radial-gradient(ellipse 58% 56% at 50% 48%, transparent 66%, var(--dt-age) 100%),
+    linear-gradient(var(--dt-tint) 0 0);
+  background-size: var(--pa-stamp-w) var(--pa-stamp-h), var(--pa-ring-w) var(--pa-ring-h), var(--pa-fiber-w) var(--pa-fiber-h), 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+  background-position: right 6px top 58px, right calc(var(--pa-ring-w) / -2) bottom 44px, 0 0, center, center, center, center;
+  background-repeat: no-repeat, no-repeat, repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+  /* 档案夹：牛皮纸硬板错开 7px 垫在底下，再往外一道落在桌上的影子；纸边一道细线、上沿一道亮口 */
+  box-shadow: inset 0 0 0 1px var(--dt-edge), inset 0 2px 0 var(--dt-lip),
+    7px 7px 0 0 color-mix(in srgb, var(--dt-board) calc(var(--a-paper) + 20%), transparent), 7px 7px 0 1px var(--dt-board-e),
+    10px 14px 26px rgba(0, 0, 0, .2); }
+:root[data-paper="detective"] body.has-scene .ch-head { padding-top: 54px; }
+@media (max-width: 640px) { :root[data-paper="detective"] body.has-scene .ch-head { padding-top: 46px; } }
+
+/* 回形针和标签耳在 ::after：比纸高出一截，露在纸的上沿外面 */
+:root[data-paper="detective"] body.has-scene .ws-body > .center::after {
+  content: ""; position: absolute; z-index: 0; pointer-events: none; top: 0; bottom: 12px; left: 50%; height: auto;
+  width: min(100%, calc(var(--text-width) + 120px)); transform: translateX(-50%); image-rendering: pixelated;
+  background: var(--pa-clip) left 24px top 6px / var(--pa-clip-w) var(--pa-clip-h) no-repeat,
+    var(--pa-tab) right 34px top calc(var(--dt-top) - var(--pa-tab-h) + 1px) / var(--pa-tab-w) var(--pa-tab-h) no-repeat;
+  filter: drop-shadow(1px 2px 0 rgba(40, 28, 16, .3)); transition: opacity 1.6s ease; }
+:root[data-paper="detective"][data-motion="full"] body.has-scene .ws-body > .center::after { animation: dt-orn-in .5s steps(5) backwards; }
+@keyframes dt-orn-in { 0% { opacity: 0; transform: translateX(-50%) translateY(-8px); } 60% { opacity: 1; transform: translateX(-50%) translateY(2px); } }
+
+/* 打字机格线：只在正文底下，一行一道点线，跟着字一起走；左边那道红色页边线留着 */
+:root[data-paper="detective"] body.has-scene .ed-host .cm-content {
+  background-image: linear-gradient(90deg, transparent 14px, color-mix(in srgb, #c8333f 40%, transparent) 14px 15px, transparent 15px), var(--pa-rule);
+  background-size: 100% 100%, 4px calc(var(--text-size) * var(--text-lh)); background-position: 0 0, 0 28px; background-repeat: no-repeat, repeat;
+  background-origin: border-box; image-rendering: pixelated; }
+
+/* 停笔：纸隐去，只留回形针和标签耳的一点轮廓 */
+:root[data-paper="detective"] body.has-scene.paper-rest .ws-body > .center::before { opacity: 0; }
+:root[data-paper="detective"] body.has-scene.paper-rest .ws-body > .center::after { opacity: .22; }
+:root[data-paper="detective"] body.has-scene.paper-rest .ed-host .cm-content { background-image: none; }
+
+/* ---------- 复写回来：打字机一行一行打出来 ----------
+   纸按行露出来，每行从左往右一格一格跳；::after 变成色带（上黑下红），跟着正在打的那一格走；打完纸往左一顿（回车）。 */
+:root[data-paper="detective"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::before {
+  animation: dt-type .86s linear both, dt-return .86s linear both; transition-duration: .2s; }
+:root[data-paper="detective"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::after {
+  top: var(--dt-top); filter: none; opacity: 1;
+  background: linear-gradient(transparent 0 26%, var(--dt-ink) 26% 54%, var(--dt-red) 54% 80%, transparent 80%) 0 0 / 100% calc(100% / 12) repeat-y;
+  animation: dt-head .86s linear both; }
+@keyframes dt-return {
+  0%, 90% { transform: translateX(-50%); }
+  93% { transform: translateX(calc(-50% - 5px)); }
+  96% { transform: translateX(calc(-50% + 2px)); }
+  100% { transform: translateX(-50%); }
+}
+@keyframes dt-type {
+  0% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 0%, 0% 0%, 0% 8.333%, -40px 8.333%); animation-timing-function: steps(9, end); }
+  6.45% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 0%, 100% 0%, 100% 8.333%, -40px 8.333%); }
+  7.5% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 8.333%, 0% 8.333%, 0% 16.667%, -40px 16.667%); animation-timing-function: steps(9, end); }
+  13.95% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 8.333%, 100% 8.333%, 100% 16.667%, -40px 16.667%); }
+  15% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 16.667%, 0% 16.667%, 0% 25%, -40px 25%); animation-timing-function: steps(9, end); }
+  21.45% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 16.667%, 100% 16.667%, 100% 25%, -40px 25%); }
+  22.5% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 25%, 0% 25%, 0% 33.333%, -40px 33.333%); animation-timing-function: steps(9, end); }
+  28.95% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 25%, 100% 25%, 100% 33.333%, -40px 33.333%); }
+  30% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 33.333%, 0% 33.333%, 0% 41.667%, -40px 41.667%); animation-timing-function: steps(9, end); }
+  36.45% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 33.333%, 100% 33.333%, 100% 41.667%, -40px 41.667%); }
+  37.5% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 41.667%, 0% 41.667%, 0% 50%, -40px 50%); animation-timing-function: steps(9, end); }
+  43.95% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 41.667%, 100% 41.667%, 100% 50%, -40px 50%); }
+  45% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 50%, 0% 50%, 0% 58.333%, -40px 58.333%); animation-timing-function: steps(9, end); }
+  51.45% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 50%, 100% 50%, 100% 58.333%, -40px 58.333%); }
+  52.5% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 58.333%, 0% 58.333%, 0% 66.667%, -40px 66.667%); animation-timing-function: steps(9, end); }
+  58.95% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 58.333%, 100% 58.333%, 100% 66.667%, -40px 66.667%); }
+  60% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 66.667%, 0% 66.667%, 0% 75%, -40px 75%); animation-timing-function: steps(9, end); }
+  66.45% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 66.667%, 100% 66.667%, 100% 75%, -40px 75%); }
+  67.5% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 75%, 0% 75%, 0% 83.333%, -40px 83.333%); animation-timing-function: steps(9, end); }
+  73.95% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 75%, 100% 75%, 100% 83.333%, -40px 83.333%); }
+  75% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 83.333%, 0% 83.333%, 0% 91.667%, -40px 91.667%); animation-timing-function: steps(9, end); }
+  81.45% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 83.333%, 100% 83.333%, 100% 91.667%, -40px 91.667%); }
+  82.5% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 91.667%, 0% 91.667%, 0% 100%, -40px 100%); animation-timing-function: steps(9, end); }
+  88.95% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) 91.667%, 100% 91.667%, 100% 100%, -40px 100%); }
+  90%, 100% { clip-path: polygon(-40px -40px, calc(100% + 40px) -40px, calc(100% + 40px) calc(100% + 40px), 100% calc(100% + 40px), 100% calc(100% + 40px), -40px calc(100% + 40px)); }
+}
+@keyframes dt-head {
+  0% { clip-path: inset(0% calc(100% - 0%) calc(100% - 8.333%) calc(0% - 12px)); animation-timing-function: steps(9, end); }
+  6.45% { clip-path: inset(0% calc(100% - 100%) calc(100% - 8.333%) calc(100% - 12px)); }
+  7.5% { clip-path: inset(8.333% calc(100% - 0%) calc(100% - 16.667%) calc(0% - 12px)); animation-timing-function: steps(9, end); }
+  13.95% { clip-path: inset(8.333% calc(100% - 100%) calc(100% - 16.667%) calc(100% - 12px)); }
+  15% { clip-path: inset(16.667% calc(100% - 0%) calc(100% - 25%) calc(0% - 12px)); animation-timing-function: steps(9, end); }
+  21.45% { clip-path: inset(16.667% calc(100% - 100%) calc(100% - 25%) calc(100% - 12px)); }
+  22.5% { clip-path: inset(25% calc(100% - 0%) calc(100% - 33.333%) calc(0% - 12px)); animation-timing-function: steps(9, end); }
+  28.95% { clip-path: inset(25% calc(100% - 100%) calc(100% - 33.333%) calc(100% - 12px)); }
+  30% { clip-path: inset(33.333% calc(100% - 0%) calc(100% - 41.667%) calc(0% - 12px)); animation-timing-function: steps(9, end); }
+  36.45% { clip-path: inset(33.333% calc(100% - 100%) calc(100% - 41.667%) calc(100% - 12px)); }
+  37.5% { clip-path: inset(41.667% calc(100% - 0%) calc(100% - 50%) calc(0% - 12px)); animation-timing-function: steps(9, end); }
+  43.95% { clip-path: inset(41.667% calc(100% - 100%) calc(100% - 50%) calc(100% - 12px)); }
+  45% { clip-path: inset(50% calc(100% - 0%) calc(100% - 58.333%) calc(0% - 12px)); animation-timing-function: steps(9, end); }
+  51.45% { clip-path: inset(50% calc(100% - 100%) calc(100% - 58.333%) calc(100% - 12px)); }
+  52.5% { clip-path: inset(58.333% calc(100% - 0%) calc(100% - 66.667%) calc(0% - 12px)); animation-timing-function: steps(9, end); }
+  58.95% { clip-path: inset(58.333% calc(100% - 100%) calc(100% - 66.667%) calc(100% - 12px)); }
+  60% { clip-path: inset(66.667% calc(100% - 0%) calc(100% - 75%) calc(0% - 12px)); animation-timing-function: steps(9, end); }
+  66.45% { clip-path: inset(66.667% calc(100% - 100%) calc(100% - 75%) calc(100% - 12px)); }
+  67.5% { clip-path: inset(75% calc(100% - 0%) calc(100% - 83.333%) calc(0% - 12px)); animation-timing-function: steps(9, end); }
+  73.95% { clip-path: inset(75% calc(100% - 100%) calc(100% - 83.333%) calc(100% - 12px)); }
+  75% { clip-path: inset(83.333% calc(100% - 0%) calc(100% - 91.667%) calc(0% - 12px)); animation-timing-function: steps(9, end); }
+  81.45% { clip-path: inset(83.333% calc(100% - 100%) calc(100% - 91.667%) calc(100% - 12px)); }
+  82.5% { clip-path: inset(91.667% calc(100% - 0%) calc(100% - 100%) calc(0% - 12px)); animation-timing-function: steps(9, end); }
+  88.95% { clip-path: inset(91.667% calc(100% - 100%) calc(100% - 100%) calc(100% - 12px)); }
+  90%, 100% { clip-path: inset(91.667% 0 0 calc(100% - 12px)); opacity: 0; }
+}
+
+/* ---------- 字数牌子：案卷卡片，顶上按一枚红图钉；写满了右上角盖「结案」 ---------- */
+.demon[data-style="detective"] .demon-badge { border-radius: 1px; rotate: -1.2deg; padding-top: 6px;
+  background: linear-gradient(transparent 13px, color-mix(in srgb, #c8333f 30%, transparent) 13px 14px, transparent 14px), #fdf5d8;
+  box-shadow: 2px 3px 0 rgba(46, 38, 32, .2); }
+.demon[data-style="detective"] .demon-badge::before { content: ""; position: absolute; left: 50%; top: -5px; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ff9a9a 0 18%, #d0303a 22% 70%, #8e1a22 74%); box-shadow: 1px 2px 0 rgba(0, 0, 0, .25); }
+.demon[data-style="detective"] .demon-badge.done { border-color: #b3262e; }
+.demon[data-style="detective"] .demon-badge.done::after { content: "结案"; position: absolute; right: -10px; top: -12px; padding: 1px 3px; font: bold 11px/1 "Noto Serif SC", serif;
+  letter-spacing: .1em; color: #c0262e; border: 2px solid #c0262e; outline: 1px solid #c0262e; outline-offset: 1px; rotate: 14deg; opacity: .88; background: rgba(253, 245, 216, .6); }
+[data-motion="full"] .demon[data-style="detective"] .demon-badge.done { animation: none; }
+[data-motion="full"] .demon[data-style="detective"] .demon-badge.done::after { animation: dt-slam .45s cubic-bezier(.3, 1.5, .5, 1) both; }
+@keyframes dt-slam { 0% { scale: 2.6; opacity: 0; } 55% { scale: .92; opacity: .95; } 100% { scale: 1; } }
+
+/* ---------- 连击：一台小打字机。卷筒里夹一张纸条（写着标签），中间是计数轮（每一位一格轮子），底下一颗圆键（字）。
+   每敲一下：数字轮往上滚一格，键按下去；200 换红色色带；500 放大镜在计数轮上来回照；1000 卷筒左右走；2000 整台抖、键冒光。
+   停了：纸条从卷筒里抽走，数字轮滚走。 ---------- */
+@property --dt-roll { syntax: "<length>"; inherits: false; initial-value: 0px; }
+.demon[data-style="detective"] .demon-combo { --dt-c: #2e2620; left: -104px; top: 12%; gap: 0; filter: drop-shadow(2px 3px 0 rgba(30, 22, 14, .3)); }
+.demon.near-left[data-style="detective"] .demon-combo { left: auto; right: -104px; }
+/* 纸条：从卷筒里冒出来，下半截压在卷筒后面 */
+.demon[data-style="detective"] .demon-combo .dc-label { position: relative; z-index: 0; margin-bottom: -5px; padding: 3px 9px 7px; font: 11px/1 "Courier New", "Noto Serif SC", monospace;
+  letter-spacing: .18em; text-indent: .18em; color: #2e2620; text-shadow: none; background: linear-gradient(transparent 0 0), #fbf6e6;
+  box-shadow: inset 0 0 0 1px #d8c9a4; }
+/* 卷筒 + 计数轮：深绿漆的铁壳，里面每一位一格米色轮子，上下压暗成圆柱 */
+.demon[data-style="detective"] .demon-combo .dc-num { position: relative; z-index: 1; overflow: hidden; padding: 4px 6px; border-radius: 3px;
+  font: bold 22px/1.1 "Courier New", "Courier", monospace; letter-spacing: 0; color: transparent; -webkit-text-stroke: 0;
+  text-shadow: 0 var(--dt-roll) 0 var(--dt-c), 0 calc(var(--dt-roll) - 1.2em) 0 var(--dt-c);
+  background: linear-gradient(rgba(0, 0, 0, .34), rgba(0, 0, 0, 0) 30%, rgba(255, 255, 255, .28) 46%, rgba(0, 0, 0, 0) 62%, rgba(0, 0, 0, .38)) content-box,
+    repeating-linear-gradient(90deg, #f6eed6 0 calc(1ch - 2px), #7c6a50 calc(1ch - 2px) 1ch) content-box, #213a32;
+  box-shadow: inset 0 0 0 1px #10201a, inset 0 2px 0 rgba(255, 255, 255, .18), 0 0 0 2px #10201a; transition: box-shadow .3s; }
+/* 圆键：米色键面，黑圈，底下一截键杆 */
+.demon[data-style="detective"] .demon-combo .dc-unit { position: relative; z-index: 1; display: grid; place-items: center; width: 20px; height: 20px; margin-top: 6px; box-sizing: border-box;
+  border-radius: 50%; border: 2px solid #1b2a24; background: radial-gradient(circle at 40% 35%, #fffaf0, #e9dfc4 70%); color: #2e2620; font: bold 11px/1 "Noto Serif SC", serif;
+  text-shadow: none; box-shadow: 0 3px 0 #1b2a24, 0 4px 0 rgba(0, 0, 0, .2); }
+[data-motion="full"] .demon[data-style="detective"] .demon-combo .dc-num { animation: none; }
+[data-motion="full"] .demon[data-style="detective"] .demon-combo.bump .dc-num { animation: dt-roll .16s steps(3) both; }
+[data-motion="full"] .demon[data-style="detective"] .demon-combo.bump .dc-unit { animation: dt-key .16s steps(2); }
+@keyframes dt-roll { from { --dt-roll: 1.2em; } to { --dt-roll: 0px; } }
+@keyframes dt-key { 0% { translate: 0 3px; box-shadow: 0 0 0 #1b2a24; } 100% { translate: 0 0; } }
+
+/* 200：换红色色带 */
+.demon[data-style="detective"] .demon-combo:not([data-level="0"]) { --dt-c: #b3262e; }
+.demon[data-style="detective"] .demon-combo:not([data-level="0"]) .dc-label { background: linear-gradient(#b3262e 0 0) 9px calc(100% - 5px) / calc(100% - 18px) 1px no-repeat, #fbf6e6; }
+/* 500：铁壳换黄铜边，放大镜在计数轮上来回照 */
+.demon[data-style="detective"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"]) .dc-num { box-shadow: inset 0 0 0 1px #10201a, inset 0 2px 0 rgba(255, 255, 255, .18), 0 0 0 2px #c9a24a, 0 0 0 3px #6b4f1c; }
+.demon[data-style="detective"] .demon-combo::before, .demon[data-style="detective"] .demon-combo::after { content: ""; position: absolute; z-index: 3; pointer-events: none; opacity: 0; transition: opacity .3s; }
+/* 镜片 */
+.demon[data-style="detective"] .demon-combo::before { left: 6px; top: calc(50% - 15px); width: 22px; height: 22px; box-sizing: border-box; border-radius: 50%; border: 3px solid #c9a24a;
+  background: radial-gradient(circle at 34% 30%, rgba(255, 255, 255, .7) 0 14%, rgba(220, 240, 255, .18) 18% 100%); box-shadow: 0 0 0 1px #6b4f1c, inset 0 0 0 1px #6b4f1c; }
+/* 镜柄 */
+.demon[data-style="detective"] .demon-combo::after { left: 23px; top: calc(50% + 4px); width: 4px; height: 13px; border-radius: 1px; background: #5a3a1e; box-shadow: 0 0 0 1px #2a1a0c; rotate: -40deg; transform-origin: 50% 0; }
+.demon[data-style="detective"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"])::before,
+.demon[data-style="detective"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"])::after { opacity: 1; }
+[data-motion="full"] .demon[data-style="detective"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"])::before,
+[data-motion="full"] .demon[data-style="detective"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"])::after { animation: dt-lens 2.6s ease-in-out infinite; }
+@keyframes dt-lens { 0%, 100% { translate: 0 0; } 45%, 55% { translate: 46px -2px; } }
+/* 1000：卷筒左右走（一格一格），纸条跟着走 */
+[data-motion="full"] .demon[data-style="detective"] .demon-combo:is([data-level="1000"], [data-level="2000"]) .dc-label { animation: dt-carriage 1.2s steps(6) infinite; }
+@keyframes dt-carriage { 0% { translate: 8px 0; } 83% { translate: -8px 0; } 100% { translate: 8px 0; } }
+[data-motion="full"] .demon[data-style="detective"] .demon-combo:is([data-level="1000"], [data-level="2000"])::before,
+[data-motion="full"] .demon[data-style="detective"] .demon-combo:is([data-level="1000"], [data-level="2000"])::after { animation-duration: 1.6s; }
+/* 2000：整台抖，圆键冒红光 */
+[data-motion="full"] .demon[data-style="detective"] .demon-combo[data-level="2000"] { animation: dc-shake .22s steps(2) infinite; }
+.demon[data-style="detective"] .demon-combo[data-level="2000"] .dc-unit { color: #fff; background: radial-gradient(circle at 40% 35%, #ff9a9a, #c0262e 70%); box-shadow: 0 3px 0 #1b2a24, 0 0 8px 2px rgba(255, 80, 80, .55); }
+/* 停了：纸条从卷筒里抽走，数字滚走 */
+[data-motion="full"] .demon[data-style="detective"] .demon-combo.end .dc-label { animation: dt-pull .5s cubic-bezier(.5, 0, .8, .4) both; }
+[data-motion="full"] .demon[data-style="detective"] .demon-combo.end .dc-num { animation: dt-roll-out .6s steps(4) both; }
+@keyframes dt-pull { to { translate: 0 -22px; opacity: 0; } }
+@keyframes dt-roll-out { from { --dt-roll: 0px; } to { --dt-roll: -1.2em; } }
