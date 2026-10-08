@@ -59,7 +59,7 @@ export function prettyKey(key) {
 
 let custom = {}; // { commandId: key }，设置里可改
 export function setCustomKeys(map) { custom = map || {}; }
-export function keyOf(cmd) { return custom[cmd.id] || cmd.key || ""; }
+export function keyOf(cmd) { return cmd.id in custom ? custom[cmd.id] || "" : cmd.key || ""; }
 
 window.addEventListener("keydown", (e) => {
   if (e.isComposing) return;

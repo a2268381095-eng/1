@@ -1,5 +1,5 @@
 // 小恶魔：拖动换位置、拖角和按钮变大变小、刷新后还记得、点一下还是戳她
-const { launch, check } = require('./helpers.cjs');
+const { launch, newBook, check } = require('./helpers.cjs');
 (async () => {
   const dist = process.argv[2] || __dirname + '/../dist';
   const { browser, page, errors } = await launch(dist);
@@ -52,6 +52,16 @@ const { launch, check } = require('./helpers.cjs');
   await page.fill('.help-search', '复位'); await page.keyboard.press('Enter'); await page.waitForTimeout(400);
   const b6 = await box();
   check(Math.abs(b6.x - b0.x) < 2 && Math.abs(b6.h - b0.h) < 2, '「小恶魔回到右下角」能复位', fails);
+  // 打开右侧面板时她让到面板左边，关掉后回来
+  await newBook(page, '让路测试', [{ title: '', text: '　　测试。' }]);
+  const d0 = await box();
+  await page.click('.cm-content'); await page.keyboard.press('Control+f'); await page.waitForTimeout(600);
+  const panel = await page.$eval('.side-right', (e) => e.getBoundingClientRect().left);
+  const d1 = await box();
+  check(d1.x + d1.w <= panel + 1, `面板打开时她在面板左边（她右边 ${Math.round(d1.x + d1.w)}，面板左边 ${Math.round(panel)}）`, fails);
+  await page.keyboard.press('Escape'); await page.waitForTimeout(500);
+  const d2 = await box();
+  check(Math.abs(d2.x - d0.x) < 2, '面板关掉后回到原来的位置', fails);
   check(errors.length === 0, '没有报错 ' + errors.join(' | '), fails);
   await browser.close();
   console.log(fails.length ? `失败 ${fails.length} 项` : '全部通过');

@@ -50,38 +50,49 @@ export function atBoundary(text, from, to) {
   return true;
 }
 
-const step = (text, i) => i + (text.codePointAt(i) > 0xffff ? 2 : 1);
-
-/** 在一段文字里找出所有命中。返回 [{ from, to, m: [整段, 分组…], named }]，互不重叠，跳过空匹配 */
-export function findAll(text, re, { wholeWord = false, limit = MAX_HITS } = {}) {
-  const out = [];
-  if (!re || !text || limit <= 0) return out;
-  re.lastIndex = 0;
-  let m;
-  while ((m = re.exec(text))) {
-    const from = m.index, s = m[0];
-    if (!s) { re.lastIndex = step(text, from); if (re.lastIndex > text.length) break; continue; }
-    const to = from + s.length;
-    if (wholeWord && !atBoundary(text, from, to)) { re.lastIndex = step(text, from); continue; }
-    out.push({ from, to, m: [...m], named: m.groups ? { ...m.groups } : null });
-    if (out.length >= limit) break;
-  }
-  re.lastIndex = 0;
-  return out;
-}
-
-/** 在几章里找。list: [{ id, text }]。返回 { groups: [{ id, hits }], total, truncated } */
-export function searchChapters(list, re, { wholeWord = false, limit = MAX_HITS } = {}) {
+/**
+ * 在几章里找。list: [{ id, text }]，re 带 g 标志。返回 { groups: [{ id, hits }], total, truncated }。
+ * hits: [{ from, to, m: [整段, 分组…], named }]，互不重叠，跳过空匹配；超过 limit 处时 truncated 为 true。
+ * 这个函数不引用外面的任何变量：正则模式下把它的源码放进单独的线程里跑（回溯太多时能停下来）。
+ */
+export function scan(list, re, wholeWord, limit) {
+  // 全字匹配只管英文字母和数字，中文没有词的边界
+  const isWord = (ch) => !!ch && /[A-Za-z0-9_]/.test(ch);
   const groups = [];
   let total = 0, truncated = false;
   for (const c of list) {
-    const left = limit - total;
-    if (left <= 0) { truncated = true; break; }
-    const hits = findAll(c.text, re, { wholeWord, limit: left });
+    const text = c.text || "";
+    const hits = [];
+    re.lastIndex = 0;
+    let m;
+    while (text && (m = re.exec(text))) {
+      const from = m.index, s = m[0], to = from + s.length;
+      if (!s || (wholeWord && ((isWord(text[from]) && isWord(text[from - 1])) || (isWord(text[to - 1]) && isWord(text[to]))))) {
+        re.lastIndex = from + (text.codePointAt(from) > 0xffff ? 2 : 1);
+        if (re.lastIndex > text.length) break;
+        continue;
+      }
+      if (total + hits.length >= limit) { truncated = true; break; }
+      hits.push({ from, to, m: [...m], named: m.groups ? { ...m.groups } : null });
+    }
+    re.lastIndex = 0;
     if (hits.length) { groups.push({ id: c.id, hits }); total += hits.length; }
-    if (total >= limit) truncated = true;
+    if (truncated) break;
   }
   return { groups, total, truncated };
+}
+
+/** 在一段文字里找出所有命中 */
+export function findAll(text, re, { wholeWord = false, limit = MAX_HITS } = {}) {
+  if (!re || !text || limit <= 0) return [];
+  const g = scan([{ id: "", text }], re, wholeWord, limit).groups[0];
+  return g ? g.hits : [];
+}
+
+/** 在几章里找。list: [{ id, text }] */
+export function searchChapters(list, re, { wholeWord = false, limit = MAX_HITS } = {}) {
+  if (!re) return { groups: [], total: 0, truncated: false };
+  return scan(list, re, wholeWord, limit);
 }
 
 /**
@@ -105,28 +116,38 @@ export function expandReplacement(tpl, hit, { regex = false } = {}) {
   });
 }
 
-/** 把选中的几处换掉，返回新文字。hits 不要求排好序，重叠的后一处跳过 */
-export function replaceHits(text, hits, tpl, opts = {}) {
+/**
+ * 把选中的几处换掉，返回新文字。hits 不要求排好序，重叠的后一处跳过。
+ * 传了 edits 数组时，把每一处改动记进去 { from, to, len }（旧位置，len 是新文字的长度），换算位置用。
+ */
+export function replaceHits(text, hits, tpl, opts = {}, edits = null) {
   let out = "", pos = 0;
   for (const hit of [...hits].sort((a, b) => a.from - b.from)) {
     if (hit.from < pos) continue;
-    out += text.slice(pos, hit.from) + expandReplacement(tpl, hit, opts);
+    const rep = expandReplacement(tpl, hit, opts);
+    out += text.slice(pos, hit.from) + rep;
+    if (edits) edits.push({ from: hit.from, to: hit.to, len: rep.length });
     pos = hit.to;
   }
   return out + text.slice(pos);
 }
 
-/** 上下文：同一段里前后各 n 个字，段首缩进去掉，截断处加省略号 */
+/** 上下文：同一段里前后各 n 个字，段首缩进去掉，截断处加省略号。只看命中附近，超长的一段也不用整段扫 */
 export function contextOf(text, from, to, n = 14) {
-  const ls = text.lastIndexOf("\n", from - 1) + 1;
-  let le = text.indexOf("\n", to);
-  if (le < 0) le = text.length;
-  let a = Math.max(ls, from - n), b = Math.min(le, to + n);
-  if (a > ls && /[\uDC00-\uDFFF]/.test(text[a] || "")) a++;
-  if (b < le && /[\uD800-\uDBFF]/.test(text[b - 1] || "")) b++;
+  const lo = Math.max(0, from - n), hi = Math.min(text.length, to + n);
+  const w0 = Math.max(0, lo - 1);
+  const i = text.slice(w0, from).lastIndexOf("\n");
+  const ls = i >= 0 ? w0 + i + 1 : lo === 0 ? 0 : -1;        // -1：段首在更前面
+  const j = text.slice(to, hi + 1).indexOf("\n");
+  const le = j >= 0 ? to + j : hi === text.length ? hi : -1;  // -1：段尾在更后面
+  let a = ls >= 0 ? Math.max(ls, lo) : lo;
+  let b = le >= 0 ? Math.min(le, hi) : hi;
+  const cutA = a > ls, cutB = le < 0 || b < le;
+  if (cutA && /[\uDC00-\uDFFF]/.test(text[a] || "")) a++;
+  if (cutB && /[\uD800-\uDBFF]/.test(text[b - 1] || "")) b++;
   let before = text.slice(a, from);
-  before = a > ls ? "…" + before : before.replace(/^[\s　]+/, "");
-  const after = text.slice(to, b) + (b < le ? "…" : "");
+  before = cutA ? "…" + before : before.replace(/^[\s　]+/, "");
+  const after = text.slice(to, b) + (cutB ? "…" : "");
   return { before, match: text.slice(from, to), after };
 }
 
@@ -147,10 +168,15 @@ export function chapterPasses(ch, f, words) {
  * 查找范围里有哪些章（保持全书顺序）。
  * scope: "cur" 当前章 | "sel" 选中的几章 | "book" 全书 | "vol:<卷id>"（"vol:" 是未分卷）
  */
-export function chaptersInScope(chapters, scope, { currentId = null, selectedIds = [] } = {}) {
+export function chaptersInScope(chapters, scope, { currentId = null, selectedIds = [], volumeIds = null } = {}) {
   if (scope === "cur") return chapters.filter((c) => c.id === currentId);
   if (scope === "sel") { const s = new Set(selectedIds); return chapters.filter((c) => s.has(c.id)); }
-  if (scope && scope.startsWith("vol:")) { const v = scope.slice(4) || null; return chapters.filter((c) => (c.volumeId || null) === v); }
+  if (scope && scope.startsWith("vol:")) {
+    const v = scope.slice(4) || null;
+    // 未分卷：没有卷的章，加上卷已经不在了的章（章节列表里也放在「未分卷」下面）
+    const known = volumeIds ? new Set(volumeIds) : null;
+    return chapters.filter((c) => { const cv = c.volumeId || null; return v ? cv === v : cv === null || (!!known && !known.has(cv)); });
+  }
   return chapters.slice();
 }
 
@@ -165,10 +191,42 @@ export function describe(cond) {
 
 // ---------------- 改动后位置换算 ----------------
 let dmp = null;
-/** 正文改了以后，旧位置对应到新位置（勾选状态、当前条跟着走） */
+/**
+ * 正文改了以后，旧位置对应到新位置（勾选状态、当前条跟着走）。
+ * 改动很多的长章比对起来慢，最多比 0.15 秒，超时的那一段位置是估的。
+ */
 export function makeMapper(oldText, newText) {
   if (oldText === newText) return (p) => p;
-  dmp = dmp || new DiffMatchPatch();
+  if (!dmp) { dmp = new DiffMatchPatch(); dmp.Diff_Timeout = 0.15; }
   const diffs = dmp.diff_main(oldText, newText);
   return (p) => dmp.diff_xIndex(diffs, p);
+}
+
+/**
+ * 已经知道改了哪几段时的位置换算（替换、撤销替换用，准确又快）。
+ * edits: [{ from, to, len }]，旧位置，互不重叠；落在被换掉那段里的位置对到新文字的开头。
+ */
+export function editMapper(edits) {
+  const list = [...edits].sort((a, b) => a.from - b.from);
+  const shift = [];
+  let d = 0;
+  for (const e of list) { shift.push(d); d += e.len - (e.to - e.from); }
+  return (p) => {
+    let lo = 0, hi = list.length - 1, k = -1;
+    while (lo <= hi) { const mid = (lo + hi) >> 1; if (list[mid].from <= p) { k = mid; lo = mid + 1; } else hi = mid - 1; }
+    if (k < 0) return p;
+    const e = list[k];
+    if (p < e.to) return e.from + shift[k];
+    return p + shift[k] + e.len - (e.to - e.from);
+  };
+}
+
+/** 反过来的改动（撤销替换时用）：新位置上的新文字换回原来的长度 */
+export function invertEdits(edits) {
+  let d = 0;
+  return [...edits].sort((a, b) => a.from - b.from).map((e) => {
+    const x = { from: e.from + d, to: e.from + d + e.len, len: e.to - e.from };
+    d += e.len - (e.to - e.from);
+    return x;
+  });
 }

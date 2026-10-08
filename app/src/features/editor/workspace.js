@@ -97,7 +97,8 @@ function buildLayout(app) {
 
   const topbar = h("header.topbar", {}, back, bookTitle, h("span.spacer"), undoBtn, redoBtn, h("span.tb-sep"),
     tb("search", "查找", "search.open", "查找替换（Ctrl+F）"), tb("format", "排版", "format.open", "一键排版"),
-    tb("history", "历史", "versions.open", "本章历史版本"), tb("focus", "专注", "focus.toggle", "专注模式（F11）"),
+    tb("history", "历史", "versions.open", "本章历史版本"), tb("download", "导出", "io.export", "导出 txt / md"),
+    tb("focus", "专注", "focus.toggle", "专注模式（F11）"),
     h("span.tb-sep"), pointsBtn,
     h("button.icon-btn", { type: "button", title: label("设置"), "aria-label": label("设置"), onclick: () => nav.go("/settings/" + ws.book.id) }, icon("gear")));
 
@@ -266,12 +267,16 @@ function rangeSel(id) {
   ws.chapters.slice(Math.min(a, b), Math.max(a, b) + 1).forEach((c) => ws.selected.add(c.id));
   renderList();
 }
+let lastSel = "";
 function renderSelBar() {
   const n = ws.selected.size;
+  const key = [...ws.selected].join(",");
+  if (key !== lastSel) { lastSel = key; bus.emit("selection:changed", { ids: ws.selectedIds() }); }
   els.selBar.hidden = n < 2;
   if (n < 2) return;
   els.selBar.replaceChildren(h("span", {}, `已选 ${n} 章`), h("span.spacer"),
     h("button.btn.small", { type: "button", onclick: () => commands.run("format.open") }, "排版这几章"),
+    h("button.btn.small", { type: "button", onclick: () => commands.run("io.export") }, "导出这几章"),
     h("button.btn.small.ghost", { type: "button", onclick: () => { ws.selected.clear(); renderList(); } }, "取消选择"));
 }
 
@@ -528,20 +533,35 @@ function showPoints() {
   });
 }
 
-function openPanel({ title, render, onClose, isDirty, wide }) {
+/**
+ * 右侧栏放一个面板。onClose(force)：force 为 true 表示被强制关掉（离开作品、换了别的面板），false 是作者自己关的。
+ * isDirty / onKeepDraft：有改了一半的内容时，关闭前问「保留草稿 / 丢弃」。
+ */
+function openPanel({ title, render, onClose, isDirty, onKeepDraft, wide }) {
   if (panelLayer) panelLayer.close(true);
   if (rightHidden) toggleRight(true);
   const body = h("div.panel-body");
   const x = h("button.icon-btn", { type: "button", "aria-label": "关闭", title: "关闭（Esc）" }, icon("close"));
   els.right.replaceChildren(h("div.panel-head", {}, h("h3", {}, title), x), body);
   els.view.classList.toggle("wide-right", !!wide);
+  let forced = false;
   const layer = pushLayer({
     isDirty,
-    onClose: () => { panelLayer = null; els.view.classList.remove("wide-right"); onClose && onClose(); showPoints(); },
+    onKeepDraft,
+    onClose: () => {
+      panelLayer = null;
+      if (els) els.view.classList.remove("wide-right");
+      bus.emit("panel:closed", {});
+      onClose && onClose(forced);
+      if (els) showPoints();
+    },
   });
+  const close = layer.close;
+  layer.close = (force = false) => { forced = force; return close(force); };
   x.addEventListener("click", () => layer.close());
   panelLayer = layer;
   render && render(body);
+  bus.emit("panel:opened", { el: els.right, wide: !!wide });
   return { body, close: (force) => layer.close(force), layer };
 }
 function closePanel() { if (panelLayer) panelLayer.close(); }
@@ -620,7 +640,12 @@ function toggleFocus() {
 // ---------------- 注册 ----------------
 export function registerWorkspace() {
   nav.route("book", "/book/:bookId/:chapterId?", (params, restore) => renderBook(params, restore));
-  bus.on("route", ({ name }) => { if (name !== "book") { ws.book = null; ws.current = null; els = null; if (panelLayer) panelLayer.close(true); } });
+  bus.on("route", ({ name }) => {
+    if (name === "book") return;
+    if (panelLayer) panelLayer.close(true);    // 先关面板（面板的 onClose 还要用到界面元素），再清空
+    if (focusLayer) focusLayer.close(true);
+    ws.book = null; ws.current = null; els = null;
+  });
   bus.on("settings:changed", () => { if (ws.editor && ws.book) ws.editor.refreshTheme(); });
   const inBook = () => !!ws.book;
   commands.register({ id: "chapter.new", title: "新建章节", keywords: "加一章 下一章 插入章节", hint: "插在当前章后面", key: "Mod-Enter", when: inBook, run: () => newChapter() });

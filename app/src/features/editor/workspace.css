@@ -8,7 +8,7 @@
 .ws.wide-right .ws-body { grid-template-columns: 236px minmax(0, 1fr) 380px; }
 .side-left { border-right: 1px solid var(--line); }
 .side-right { border-left: 1px solid var(--line); }
-.center { min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--paper); }
+.center { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--paper); }
 @media (max-width: 1000px) {
   .ws-body, .ws.no-right .ws-body { grid-template-columns: 200px minmax(0, 1fr) 0; }
   .side-right { display: none; }
@@ -96,3 +96,9 @@
 .pt-empty { font-size: 13px; padding: 4px 2px; }
 .pt-count { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .pt-note { margin: 0; font-size: 12px; line-height: 1.6; }
+
+/* 手机宽度：宽面板（查找、历史等）改成上下分屏，正文在上，面板在下 */
+@media (max-width: 640px) {
+  .ws.wide-right .ws-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 45%) minmax(0, 55%); grid-template-areas: "center" "right"; }
+  .ws.wide-right .side-right { display: flex; border-left: 0; border-top: 1px solid var(--line); }
+}

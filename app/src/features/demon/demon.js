@@ -15,6 +15,7 @@ const EVENT_ACT = {
   open: "wave", start: "point", idle: "doze", goal: "cheer", chapter: "cheer", delete: "shock",
   ai_wait: "think", ai_error: "shock", lost: "point", late: "doze", foreshadow: "think",
   format: "cheer", save: "idle", back: "wave", poke: "shock", poke_many: "shock",
+  replace: "cheer", search_none: "think", restore: "wave", import: "cheer", export: "wave",
 };
 // 不管多安静都要说的（你主动找她、或者要提醒你的）
 const IMPORTANT = new Set(["delete", "ai_error", "lost", "poke", "poke_many", "goal", "tip"]);
@@ -249,6 +250,8 @@ export function mountDemon(root) {
     else if (e.key === "-") { e.preventDefault(); stepSize(-1); }
   });
   window.addEventListener("resize", () => setPos(pos.right, pos.bottom));
+  bus.on("panel:opened", ({ el: panel }) => avoid(panel));
+  bus.on("panel:closed", unavoid);
   applySettings();
   bus.on("settings:changed", applySettings);
   setStyle(styleFor(null));
@@ -262,13 +265,13 @@ export function mountDemon(root) {
 function wireDrag(handle) {
   handle.addEventListener("pointerdown", (e) => {
     if (e.button !== 0) return;
-    const start = { x: e.clientX, y: e.clientY, right: pos.right, bottom: pos.bottom };
+    const start = { x: e.clientX, y: e.clientY, right: shown.right, bottom: shown.bottom };
     let moved = false;
     handle.setPointerCapture(e.pointerId);
     const move = (ev) => {
       const dx = ev.clientX - start.x, dy = ev.clientY - start.y;
       if (!moved && Math.hypot(dx, dy) < 5) return;
-      if (!moved) { moved = true; el.classList.add("dragging"); hush(); play("shock", 0, { hold: true }); }
+      if (!moved) { moved = true; avoiding = null; el.classList.add("dragging"); hush(); play("shock", 0, { hold: true }); }
       setPos(start.right - dx, start.bottom - dy);
     };
     const up = () => {
@@ -332,15 +335,46 @@ function setPos(right, bottom) {
   const w = W * scale, hgt = H * scale;
   pos.right = Math.round(Math.max(0, Math.min(innerWidth - w, right)));
   pos.bottom = Math.round(Math.max(0, Math.min(innerHeight - hgt, bottom)));
-  el.style.right = pos.right + "px";
-  el.style.bottom = pos.bottom + "px";
+  showAt(pos.right, pos.bottom);
+}
+
+/** 实际显示的位置（让路时和保存的位置不一样） */
+let shown = { right: 14, bottom: 34 };
+let avoiding = null;   // 正在躲开的面板元素
+function showAt(right, bottom) {
+  shown = { right, bottom };
+  if (avoiding && avoiding.isConnected) {
+    const r = avoiding.getBoundingClientRect();
+    const w = W * scale, hgt = H * scale;
+    const left = innerWidth - right - w, top = innerHeight - bottom - hgt;
+    const overlapX = left < r.right && left + w > r.left;
+    const overlapY = top < r.bottom && top + hgt > r.top;
+    if (overlapX && overlapY) shown = { right: Math.min(innerWidth - w, innerWidth - r.left + 8), bottom };
+  }
+  el.style.right = shown.right + "px";
+  el.style.bottom = shown.bottom + "px";
   placeBubble();
+}
+
+function avoid(panel) {
+  if (innerWidth <= 640) { el.classList.add("panel-hidden"); return; }
+  avoiding = panel;
+  el.classList.add("moving");
+  showAt(pos.right, pos.bottom);
+  setTimeout(() => el.classList.remove("moving"), 300);
+}
+function unavoid() {
+  avoiding = null;
+  el.classList.remove("panel-hidden");
+  el.classList.add("moving");
+  showAt(pos.right, pos.bottom);
+  setTimeout(() => el.classList.remove("moving"), 300);
 }
 
 /** 气泡和找功能面板：她在屏幕上半部分时放到身体下面，靠左时往右展开 */
 function placeBubble() {
-  const top = innerHeight - pos.bottom - H * scale;
-  const left = innerWidth - pos.right - W * scale;
+  const top = innerHeight - shown.bottom - H * scale;
+  const left = innerWidth - shown.right - W * scale;
   el.classList.toggle("near-top", top < 150);
   el.classList.toggle("near-left", left < 200);
 }
@@ -389,6 +423,13 @@ function wireEvents() {
   bus.on("points:all-done", () => react("chapter", { force: true }));
   bus.on("chapter:delete-ask", () => react("delete"));
   bus.on("format:done", () => react("format", { force: true }));
+  bus.on("replace:done", (d) => { if (d && d.count) react("replace", { force: true }); });
+  bus.on("search:done", (d) => { if (d && d.count === 0 && d.q) react("search_none"); });
+  bus.on("version:restored", () => react("restore", { force: true }));
+  bus.on("trash:restored", () => react("restore", { force: true }));
+  bus.on("io:imported", () => react("import", { force: true }));
+  bus.on("io:exported", () => react("export"));
+  bus.on("io:backup", () => react("export", { force: true }));
   bus.on("save:failed", () => react("ai_error", { text: "保存出错了！别关窗口，正文还在，我帮你看着。", act: "shock" }));
   bus.on("demon:say", (d) => react(d.event || "tip", { text: d.text, act: d.act, force: true }));
   bus.on("book:created", (d) => { if (!d.restored) setTimeout(() => react("start", { force: true, act: "cheer" }), 300); });

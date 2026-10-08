@@ -20,6 +20,16 @@
 //   replace:done         { count }
 //   undo / redo          { label }
 //   help:open            作者点了「找不到功能」
+//   selection:changed    { ids }       章节列表多选变了
+//   panel:opened / panel:closed  { el, wide }  右侧栏放了 / 关了一个面板
+//   version:restored     { chapter, ts }  恢复了历史版本
+//   trash:restored       { entries, into? }   从回收站恢复
+//   trash:purged         { count, all }   彻底删除 / 清空
+//   io:imported          { book, chapters }   导入完成
+//   io:exported          { format, count }    导出完成
+//   io:backup / io:restored              整本备份 / 从备份恢复
+//   ai:start / ai:done / ai:error / ai:cancel  { feature }  AI 调用开始、完成、出错、取消
+//   stash:changed        暂存盒有变化
 //   demon:say            { event, text? }  直接让小恶魔说话
 
 const handlers = new Map();

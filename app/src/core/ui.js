@@ -161,29 +161,29 @@ export function prompt(title, value = "", placeholder = "") {
       title, body: input, onClose: () => resolve(result),
       actions: [{ label: "确定", primary: true, onClick: () => { result = input.value; m.close(true); } }, { label: "取消", onClick: () => m.close(true) }],
     });
-    input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.isComposing) { result = input.value; m.close(true); } });
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); result = input.value; m.close(true); } });
     setTimeout(() => input.select(), 0);
   });
 }
 
 // ---------------- 提示条 ----------------
 let toastBox = null;
-/** toast("已删除", { action: { label: "撤销", run }, timeout }) */
+/** toast("已删除", { action: { label: "撤销", run }, actions: [{ label, run }, ...], timeout }) */
 export function toast(msg, opts = {}) {
   if (!toastBox) { toastBox = h("div.toasts", { role: "status", "aria-live": "polite" }); document.body.append(toastBox); }
   const t = h("div.toast", {}, h("span.toast-msg", {}, msg));
   let timer;
   const close = () => { clearTimeout(timer); t.classList.add("out"); setTimeout(() => t.remove(), 200); };
-  if (opts.action) {
-    const b = h("button.toast-act", { type: "button" }, opts.action.label);
-    b.addEventListener("click", async () => { close(); await opts.action.run(); });
+  for (const a of [...(opts.actions || []), ...(opts.action ? [opts.action] : [])]) {
+    const b = h("button.toast-act", { type: "button" }, a.label);
+    b.addEventListener("click", async () => { close(); await a.run(); });
     t.append(b);
   }
   const x = h("button.icon-btn.toast-x", { type: "button", "aria-label": "关闭提示" }, icon("close"));
   x.addEventListener("click", close);
   t.append(x);
   toastBox.append(t);
-  timer = setTimeout(close, opts.timeout || (opts.action ? 8000 : 3500));
+  timer = setTimeout(close, opts.timeout || (opts.action || opts.actions ? 8000 : 3500));
   return { close };
 }
 

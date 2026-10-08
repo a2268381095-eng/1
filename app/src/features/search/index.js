@@ -30,6 +30,7 @@ let snap = new Map();      // 查找时每章的正文（判断结果是不是�
 let lastSig = "";          // 上次的查找条件（条件变了勾选状态清空）
 let lastDone = "";         // 上次发 search:done 的条件
 let timer = 0, busy = false;
+let seq = 0;               // 第几次查找（正则在单独的线程里找，回来时条件可能已经变了）
 let keepDraft = false, forced = false;
 let presets = [];
 const marked = new Set();  // 标过高亮的章
@@ -37,6 +38,9 @@ const marked = new Set();  // 标过高亮的章
 const key = (cid, from) => cid + ":" + from;
 const sigOf = () => JSON.stringify([S.query, S.regex, S.caseSensitive, S.wholeWord]);
 const chapterById = (id) => ws.chapters.find((c) => c.id === id);
+const cidOf = (k) => k.slice(0, k.lastIndexOf(":"));
+const posOf = (k) => +k.slice(k.lastIndexOf(":") + 1);
+const scopeOpts = () => ({ currentId: ws.current && ws.current.id, selectedIds: ws.selectedIds(), volumeIds: ((ws.book && ws.book.volumes) || []).map((v) => v.id) });
 const wsView = () => { const e = ws.els(); return e && e.center ? e.center.closest(".ws") : null; };
 const vis = (s) => String(s).replace(/\n/g, "↵");
 const short = (s) => (s.length > 12 ? s.slice(0, 12) + "…" : s);
@@ -51,18 +55,25 @@ function arrow(dir) {
 const draftKey = (bookId) => "search:draft:" + bookId;
 const presetKey = (bookId) => "search:presets:" + bookId;
 
+// 草稿在面板正常关掉（没有要留的）或选「丢弃」时才删；打开时不删，开着面板刷新也不丢
 async function loadDraft(bookId) {
   try {
     const d = await db.getKV(draftKey(bookId), null);
-    if (!d) return;
-    Object.assign(S, d, { filter: { ...E.EMPTY_FILTER, ...(d.filter || {}) }, unchecked: new Set(d.unchecked || []), bookId });
-    await db.setKV(draftKey(bookId), null);
+    if (!d || S.bookId !== bookId) return;
+    const { sig, snaps, ...rest } = d;
+    Object.assign(S, rest, { filter: { ...E.EMPTY_FILTER, ...(d.filter || {}) }, unchecked: new Set(d.unchecked || []), bookId });
+    // 取消勾选的位置是按当时的正文记的：把当时的正文也放回来，正文改过的话按改动换算
+    lastSig = sig || "";
+    snap = new Map(Object.entries(snaps || {}));
   } catch (_) { /* 草稿读不出来就从头开始 */ }
 }
 
 async function saveDraft() {
+  const snaps = {};
+  for (const k of S.unchecked) { const cid = cidOf(k); if (snap.has(cid)) snaps[cid] = snap.get(cid); }
   const d = { query: S.query, replace: S.replace, regex: S.regex, caseSensitive: S.caseSensitive, wholeWord: S.wholeWord, advanced: S.advanced,
-    showReplace: S.showReplace, showFilter: S.showFilter, scope: S.scope === "sel" ? "cur" : S.scope, filter: { ...S.filter }, unchecked: [...S.unchecked] };
+    showReplace: S.showReplace, showFilter: S.showFilter, scope: S.scope === "sel" ? "cur" : S.scope, filter: { ...S.filter },
+    unchecked: [...S.unchecked], sig: sigOf(), snaps };
   try { await db.setKV(draftKey(S.bookId), d); } catch (_) { /* 存不进去时草稿还在内存里，这次打开软件期间都在 */ }
 }
 
@@ -82,9 +93,10 @@ async function openSearch(opts = {}) {
   const view = wsView();
   if (view && view.classList.contains("focus")) commands.run("focus.toggle");
   const fresh = !P;
+  const fromEditor = ws.editor.hasFocus();
   if (S.bookId !== ws.book.id) {
     S = freshState(ws.book.id);
-    lastSig = ""; lastDone = "";
+    lastSig = ""; lastDone = ""; flat = []; cur = -1; snap = new Map(); R = { mode: "idle" };
     await loadDraft(ws.book.id);
     presets = await loadPresets(ws.book.id);
   }
@@ -92,10 +104,12 @@ async function openSearch(opts = {}) {
   if (opts.replace) S.showReplace = true;
   if (opts.filter) S.showFilter = true;
   if (!ws.isOpen() || ws.book.id !== S.bookId) return;   // 读草稿的工夫里离开了作品
-  // 正文里选着一段字：直接拿来找（正则模式下不覆盖写好的表达式）
-  if (fresh && !opts.filter && !S.regex) {
+  // 正文里选着一段字：直接拿来找（正则模式下不覆盖写好的表达式）。面板开着时从正文里按也算，选中的是当前这一处就不换
+  if ((fresh || fromEditor) && !opts.filter && !S.regex) {
     const sel = selectionText();
-    if (sel) S.query = sel;
+    const h0 = flat[cur];
+    const isCur = sel && h0 && ws.current && h0.chapterId === ws.current.id && h0.from === sel.from && h0.to === sel.to;
+    if (sel && !isCur && sel.text !== S.query) { S.query = sel.text; S.pristine = false; }
   }
   if (!P) buildPanel();
   sync();
@@ -108,17 +122,22 @@ async function openSearch(opts = {}) {
 
 function selectionText() {
   const v = ws.editor && ws.editor.view;
-  if (!v) return "";
+  if (!v) return null;
   const r = v.state.selection.main;
-  if (r.empty) return "";
+  if (r.empty) return null;
   const t = v.state.sliceDoc(r.from, r.to);
-  return t.length <= 60 && !t.includes("\n") ? t : "";
+  return t.length <= 60 && !t.includes("\n") ? { text: t, from: r.from, to: r.to } : null;
 }
 
-function isDirty() { return !!P && S.showReplace && S.replace !== "" && flat.length > 0 && !S.pristine; }
+/** 替换框里填了字还没用过（没找到也算） */
+function isDirty() { return !!P && S.showReplace && S.replace !== "" && !S.pristine; }
 
 function onPanelClose() {
   const dirty = isDirty();
+  // 焦点在面板里（或者已经丢了）：关掉后放回正文，接着写
+  const right = ws.els() && ws.els().right;
+  const a = document.activeElement;
+  const refocus = !a || a === document.body || (!!right && right.contains(a));
   // 选了「保留草稿」，或者没来得及问（离开作品、换了别的面板）就留着；选了「丢弃」才清掉
   if (keepDraft || (forced && dirty)) saveDraft();
   else {
@@ -127,11 +146,19 @@ function onPanelClose() {
   }
   keepDraft = forced = false;
   clearTimeout(timer);
+  timer = 0;
+  seq++;
+  stopWorker();
+  if (P && P.unwatch) P.unwatch();
   const view = wsView();
   if (view) view.classList.remove("has-search");
   document.body.classList.remove("search-open");
   clearMarks();
   P = null;
+  if (refocus) setTimeout(() => {
+    const f = document.activeElement;
+    if (ws.isOpen() && ws.editor && (!f || f === document.body)) ws.editor.focus();
+  }, 0);
 }
 
 function closeSearch(force) { if (P) return P.layer.close(force); }
@@ -204,11 +231,10 @@ function buildPanel() {
   const done = h("div.sr-done", { hidden: true });
   const root = h("div.sr-panel", {}, top, done, sum, list);
   p.body.append(root);
-  root.addEventListener("pointerenter", () => syncScope());
   root.addEventListener("focusin", () => syncScope());
 
   P = { ...p, q, count, scope, caseBtn, wordBtn, regexBtn, advBtn, repBtn, filBtn, advRow, err, r, oneBtn, skipBtn, allBtn, repRow,
-    fPoints, fWordsOn, fWordsN, filRow, presetRow, sum, list, done, scopeSig: "" };
+    fPoints, fWordsOn, fWordsN, filRow, presetRow, sum, list, done, scopeSig: "", titleSig: "", unwatch: watchChapterList() };
 
   // 输入时实时找（防抖）；中文输入法拼完再找
   q.addEventListener("input", (e) => { if (e.isComposing) return; S.query = q.value; S.pristine = false; changed(); });
@@ -216,19 +242,21 @@ function buildPanel() {
   q.addEventListener("keydown", (e) => {
     if (e.key !== "Enter" || e.isComposing) return;
     e.preventDefault();
-    flushPending();
     e.shiftKey ? prev() : next();
   });
-  r.addEventListener("input", () => { S.replace = r.value; S.pristine = false; hideDone(); renderResults(); });
+  // 替换框：输入法拼完再更新预览
+  const onRep = () => { S.replace = r.value; S.pristine = false; hideDone(); renderResults(); };
+  r.addEventListener("input", (e) => { if (!e.isComposing) onRep(); });
+  r.addEventListener("compositionend", onRep);
   r.addEventListener("keydown", (e) => {
     if (e.key !== "Enter" || e.isComposing || e.ctrlKey || e.metaKey) return;
     e.preventDefault();
     replaceOne();
   });
-  prevBtn.addEventListener("click", () => { flushPending(); prev(); });
-  nextBtn.addEventListener("click", () => { flushPending(); next(); });
+  prevBtn.addEventListener("click", () => prev());
+  nextBtn.addEventListener("click", () => next());
   oneBtn.addEventListener("click", () => replaceOne());
-  skipBtn.addEventListener("click", () => { flushPending(); next(); });
+  skipBtn.addEventListener("click", () => next());
   allBtn.addEventListener("click", () => replaceAll());
   fPoints.addEventListener("change", () => { S.filter.pointsOpen = fPoints.checked; sync(); changed(0); });
   fWordsOn.addEventListener("change", () => { S.filter.wordsOn = fWordsOn.checked; sync(); changed(0); });
@@ -282,14 +310,33 @@ function volumeOptions(book = ws.book) {
 }
 
 function scopeIds() {
-  return E.chaptersInScope(ws.chapters, S.scope, { currentId: ws.current && ws.current.id, selectedIds: ws.selectedIds() }).map((c) => c.id).join(",");
+  return E.chaptersInScope(ws.chapters, S.scope, scopeOpts()).map((c) => c.id).join(",");
 }
 
-/** 选中的章、分卷变了以后更新范围按钮；范围里的章变了就重新找 */
+/** 结果里那几章的章名（改了章名要重画） */
+function titleSig() {
+  return (R.groups || []).map((g) => { const c = chapterById(g.id); return c ? ws.fullTitle(c) : ""; }).join("\n");
+}
+
+/** 选中的章、分卷、章名、章节顺序变了以后更新范围按钮；范围里的章变了就重新找 */
 function syncScope() {
-  if (!P) return;
+  if (!P || !ws.isOpen()) return;
   renderScope(false);
   if (R.scopeIds != null && R.scopeIds !== scopeIds()) schedule(0);
+  else if (R.mode === "hits" && P.titleSig !== titleSig()) renderResults();
+}
+
+/**
+ * 章节列表每次重画（删章、移动、多选、改章名、分卷）都会换掉里面的元素，盯着它就知道范围变没变。
+ * 这些事发生时 ws.chapters 往往还没更新完，等列表画好再看才准。
+ */
+function watchChapterList() {
+  const e = ws.els();
+  if (!e || !e.list || typeof MutationObserver === "undefined") return null;
+  let t = 0;
+  const mo = new MutationObserver(() => { clearTimeout(t); t = setTimeout(syncScope, 30); });
+  mo.observe(e.list, { childList: true });
+  return () => { clearTimeout(t); mo.disconnect(); };
 }
 
 function renderScope(forceRender) {
@@ -336,7 +383,14 @@ function schedule(delay) {
   clearTimeout(timer);
   timer = setTimeout(runSearch, delay);
 }
-function flushPending() { if (timer) { clearTimeout(timer); timer = 0; runSearch(); } else if (stale()) runSearch(); }
+/** 有没找完的、正文改过的：先找完再往下走 */
+async function flushPending() {
+  for (let i = 0; i < 3; i++) {
+    if (timer || stale()) await runSearch();
+    else if (running) await running;
+    else return;
+  }
+}
 
 function wordsOf(c) { return ws.current && c.id === ws.current.id ? countWords(ws.editor.getText()) : c.words || 0; }
 
@@ -346,35 +400,64 @@ function stale() {
   return snap.get(ws.current.id) !== ws.editor.getText();
 }
 
+let running = null;        // 正在进行的这一次查找
 function runSearch() {
+  clearTimeout(timer);
   timer = 0;
+  const p = doSearch();
+  running = p;
+  const done = () => { if (running === p) running = null; };
+  p.then(done, done);
+  return p;
+}
+
+async function doSearch() {
   if (!P || !ws.isOpen() || !ws.editor) return;
+  const my = ++seq;
   const sig = sigOf();
-  const sameQuery = sig === lastSig;
-  const oldSnap = snap, oldCur = flat[cur] || null;
-  const scopeList = E.chaptersInScope(ws.chapters, S.scope, { currentId: ws.current && ws.current.id, selectedIds: ws.selectedIds() });
+  const scopeList = E.chaptersInScope(ws.chapters, S.scope, scopeOpts());
   const chapters = E.filterActive(S.filter) ? scopeList.filter((c) => E.chapterPasses(c, S.filter, wordsOf(c))) : scopeList;
   const m = E.buildMatcher(S.query, S);
   const scopeIdStr = scopeList.map((c) => c.id).join(",");
-  lastSig = sig;
 
-  if (m.error) {
-    R = { mode: "error", error: m.error, detail: m.detail, scopeIds: scopeIdStr };
+  if (m.error || !m.re) {
+    stopWorker();
+    lastSig = sig;
     flat = []; cur = -1; snap = new Map();
-    renderResults(); applyMarks();
-    return;
-  }
-  if (!m.re) {
     const filtering = E.filterActive(S.filter);
-    R = filtering ? { mode: "chapters", chapters: chapters.map((c) => c.id), total: chapters.length, scopeIds: scopeIdStr, of: scopeList.length } : { mode: "idle", scopeIds: scopeIdStr };
-    flat = []; cur = -1; snap = new Map();
+    if (m.error) R = { mode: "error", error: m.error, detail: m.detail, scopeIds: scopeIdStr };
+    else R = filtering ? { mode: "chapters", chapters: chapters.map((c) => c.id), total: chapters.length, scopeIds: scopeIdStr, of: scopeList.length } : { mode: "idle", scopeIds: scopeIdStr };
     renderResults(); applyMarks();
-    if (filtering) emitDone(R.total);
+    if (!m.error && filtering) emitDone(R.total);
     return;
   }
 
   const texts = chapters.map((c) => ({ id: c.id, text: ws.textOf(c.id) }));
-  const res = E.searchChapters(texts, m.re, { wholeWord: S.wholeWord });
+  let res = null;
+  if (S.regex) {
+    // 正则放进单独的线程里找：写出回溯很多的正则时页面不卡死，找太久就停下来说明
+    const pending = scanInWorker(texts, m.re, S.wholeWord);
+    if (pending) {
+      const note = setTimeout(() => { if (P && my === seq) P.sum.replaceChildren(h("span", {}, "正在找…")); }, 150);
+      res = await pending;
+      clearTimeout(note);
+      if (my !== seq || !P || !ws.isOpen()) return;
+      if (res.cancelled) return;
+      if (res.timeout) {
+        lastSig = sig;
+        flat = []; cur = -1; snap = new Map();
+        R = { mode: "error", slow: true, error: `找了 ${REGEX_TIMEOUT / 1000} 秒还没找完，已经停下。正则里少用嵌套的 + 和 *，写得具体一点，或者缩小范围再找。`, scopeIds: scopeIdStr };
+        renderResults(); applyMarks();
+        return;
+      }
+      if (!res.groups) res = null;   // 线程出了问题，就在这里找
+    }
+  } else stopWorker();
+  if (!res) res = E.searchChapters(texts, m.re, { wholeWord: S.wholeWord });
+
+  const sameQuery = sig === lastSig;
+  const oldSnap = snap, oldCur = flat[cur] || null;
+  lastSig = sig;
   snap = new Map(texts.map((t) => [t.id, t.text]));
   flat = [];
   for (const g of res.groups) for (const hit of g.hits) flat.push({ chapterId: g.id, ...hit });
@@ -389,11 +472,7 @@ function runSearch() {
   };
   if (sameQuery) {
     const keep = new Set();
-    for (const k of S.unchecked) {
-      const i = k.lastIndexOf(":");
-      const cid = k.slice(0, i);
-      keep.add(key(cid, mapPos(cid, +k.slice(i + 1))));
-    }
+    for (const k of S.unchecked) { const cid = cidOf(k); keep.add(key(cid, mapPos(cid, posOf(k)))); }
     S.unchecked = keep;
   } else S.unchecked = new Set();
   cur = -1;
@@ -405,6 +484,58 @@ function runSearch() {
   renderResults();
   applyMarks();
   emitDone(res.total);
+}
+
+// ---------------- 正则查找线程 ----------------
+const REGEX_TIMEOUT = 3000;
+let worker = null, workerUrl = "", workerOff = false, job = null, jobSeq = 0;
+
+function startWorker() {
+  if (!workerUrl) {
+    const src = `const scan = ${E.scan.toString()};
+onmessage = (e) => {
+  const d = e.data;
+  let res;
+  try { res = scan(d.list, new RegExp(d.source, d.flags), d.wholeWord, d.limit); } catch (err) { res = { fail: String((err && err.message) || err) }; }
+  postMessage({ id: d.id, res });
+};`;
+    workerUrl = URL.createObjectURL(new Blob([src], { type: "text/javascript" }));
+  }
+  const w = new Worker(workerUrl);
+  w.onmessage = (e) => {
+    if (!job || !e.data || e.data.id !== job.id) return;
+    finishJob(e.data.res);
+  };
+  // 线程起不来（比如被安全设置挡住）：以后都在页面里找
+  w.onerror = (e) => { if (e && e.preventDefault) e.preventDefault(); workerOff = true; stopWorker({ fallback: true }); };
+  return w;
+}
+
+function finishJob(res) {
+  const j = job;
+  job = null;
+  if (!j) return;
+  clearTimeout(j.timer);
+  j.resolve(res);
+}
+
+/** 停掉正在找的线程（条件变了、关了面板、找太久） */
+function stopWorker(res = { cancelled: true }) {
+  if (!job) return;
+  if (worker) { worker.terminate(); worker = null; }
+  finishJob(res);
+}
+
+/** 在线程里找。线程用不了时返回 null，由调用的地方直接找 */
+function scanInWorker(list, re, wholeWord) {
+  if (workerOff || typeof Worker === "undefined") return null;
+  stopWorker();
+  try { if (!worker) worker = startWorker(); } catch (_) { workerOff = true; return null; }
+  return new Promise((resolve) => {
+    const id = ++jobSeq;
+    job = { id, resolve, timer: setTimeout(() => stopWorker({ timeout: true }), REGEX_TIMEOUT) };
+    worker.postMessage({ id, list, source: re.source, flags: re.flags, wholeWord, limit: E.MAX_HITS });
+  });
 }
 
 function emitDone(count) {
@@ -439,7 +570,7 @@ function draw() {
   P.q.classList.toggle("bad", R.mode === "error");
   P.q.setAttribute("aria-invalid", String(R.mode === "error"));
   if (R.mode === "error") {
-    err.replaceChildren(h("b", {}, "正则写错了："), R.error, h("span.muted", {}, " 关掉「正则表达式」就按普通文字找。"));
+    err.replaceChildren(h("b", {}, R.slow ? "正则太复杂：" : "正则写错了："), R.error, h("span.muted", {}, " 关掉「正则表达式」就按普通文字找。"));
     err.title = R.detail || "";
   }
   updateCount();
@@ -497,7 +628,8 @@ function draw() {
     list.append(sec);
   }
   if (R.total > n) list.append(h("p.sr-more.muted", {}, `还有 ${R.total - n} 处没列出来，按「下一处」逐个看。` + (S.showReplace ? "「全部替换」会连它们一起换。" : "")));
-  if (R.truncated) list.append(h("p.sr-more.muted", {}, `命中太多，只找了前 ${E.MAX_HITS} 处。缩小范围或者多打几个字再找。`));
+  if (R.truncated) list.append(h("p.sr-more.muted", {}, `命中太多，只找了前 ${E.MAX_HITS} 处。缩小范围或者多打几个字再找。` + (S.showReplace ? "「全部替换」只换找到的这些。" : "")));
+  P.titleSig = titleSig();
 }
 
 function hitRow(cid, hit, idx, text) {
@@ -554,7 +686,7 @@ function renderChapterList() {
     const meta = [`${wordsOf(c).toLocaleString()} 字`, open ? `${open} 条要点没打勾` : (c.points || []).length ? "要点都打勾了" : ""].filter(Boolean).join(" · ");
     const b = h("button.sr-ch" + (ws.current && ws.current.id === id ? ".cur" : ""), { type: "button" }, h("span.sr-ch-t", {}, ws.fullTitle(c)), h("span.sr-ch-m", {}, meta));
     b.addEventListener("click", async () => {
-      if (!ws.current || ws.current.id !== id) await ws.openChapter(id, { anchor: 0 });
+      if (!ws.current || ws.current.id !== id) await ws.openChapter(id, { anchor: 0, scroll: 0 });
       if (P) P.list.querySelectorAll(".sr-ch").forEach((x) => x.classList.toggle("cur", x === b));
     });
     list.append(h("div", { role: "listitem" }, b));
@@ -594,7 +726,8 @@ async function goTo(i) {
     // 当前章打过字：先重新找，再把要去的那一处换算到新位置
     const old = flat[i];
     const pos = old ? E.makeMapper(snap.get(old.chapterId) || "", ws.textOf(old.chapterId))(old.from) : 0;
-    runSearch();
+    await runSearch();
+    if (!P) return;
     if (old) {
       i = flat.findIndex((x) => x.chapterId === old.chapterId && x.from === pos);
       if (i < 0) i = nearestIn(old.chapterId, pos);
@@ -634,11 +767,13 @@ function indexFromCursor(back) {
 }
 
 async function next() {
+  await flushPending();
   if (!flat.length) return;
   const i = cur < 0 ? indexFromCursor(false) : (cur + 1) % flat.length;
   await goTo(i);
 }
 async function prev() {
+  await flushPending();
   if (!flat.length) return;
   const i = cur < 0 ? indexFromCursor(true) : (cur - 1 + flat.length) % flat.length;
   await goTo(i);
@@ -672,6 +807,7 @@ function showDone(text, entry) {
   b.addEventListener("click", async () => { hideDone(); await appUndo.undoEntry(entry); });
   P.done.replaceChildren(h("span", {}, text), b);
   P.done.hidden = false;
+  P.doneEntry = entry;
 }
 
 async function applyChanges(label, changes, retry) {
@@ -679,8 +815,8 @@ async function applyChanges(label, changes, retry) {
     return await ws.applyBatch(label, changes);
   } catch (e) {
     notice({
-      what: "替换没有完成。",
-      why: "本地存储写不进去，可能磁盘空间不够，或者浏览器限制了网站存储。已经换掉的部分可以按撤销还原。",
+      what: "替换没有全部完成。",
+      why: "本地存储写不进去，可能磁盘空间不够，或者浏览器限制了网站存储。有几章可能已经换了，正文都在编辑器里，没有丢。",
       detail: e && (e.stack || e.message || e),
       actions: [{ label: "再试一次", primary: true, run: retry }],
     });
@@ -688,58 +824,134 @@ async function applyChanges(label, changes, retry) {
   }
 }
 
+/** 一章换前、换后的正文和改动（撤销、重做时按改动换算位置） */
+function changeInfo(before, after, edits) { return { before, after, fwd: edits, inv: E.invertEdits(edits) }; }
+
+/**
+ * 换过的章：上次查找时的正文、勾选、当前条都按改动直接换算到新位置，
+ * 接着重新找时不用整篇比对（长章换了几千处也不卡）。dir: "redo" 换上，"undo" 换回。
+ */
+function shiftSnap(per, dir) {
+  const mappers = new Map();
+  for (const [cid, x] of per) {
+    const from = dir === "undo" ? x.after : x.before;
+    if (snap.get(cid) !== from) continue;   // 结果不是按这段正文找的，交给比对
+    mappers.set(cid, E.editMapper(dir === "undo" ? x.inv : x.fwd));
+    snap.set(cid, dir === "undo" ? x.before : x.after);
+  }
+  if (!mappers.size) return;
+  const mp = (cid, p) => (mappers.has(cid) ? mappers.get(cid)(p) : p);
+  S.unchecked = new Set([...S.unchecked].map((k) => key(cidOf(k), mp(cidOf(k), posOf(k)))));
+  flat = flat.map((x) => (mappers.has(x.chapterId) ? { ...x, from: mp(x.chapterId, x.from), to: mp(x.chapterId, x.to) } : x));
+}
+
+/**
+ * 替换的撤销条目：
+ * 1. 撤销、重做时按改动换算查找结果的位置；
+ * 2. 顶栏撤销、正文里 Ctrl+Z 是看「这一章的撤销深度对不对得上」来决定要不要整体撤销的。
+ *    替换时打开着的章不在替换范围里、或者连着撤销两次替换时，深度会对不上，这里补上。
+ */
+function track(entry, per) {
+  const at = new Map([...per].map(([cid, x]) => [cid, x.after]));
+  if (ws.current && !at.has(ws.current.id)) at.set(ws.current.id, ws.editor.getText());
+  entry.searchAfter = at;
+  syncDepths(entry);
+  const undo = entry.undo, redo = entry.redo;
+  entry.undo = async () => {
+    await undo();
+    shiftSnap(per, "undo");
+    const prev = appUndo.peek();
+    if (prev && prev.searchAfter) syncDepths(prev);
+  };
+  entry.redo = async () => {
+    await redo();
+    shiftSnap(per, "redo");
+    syncDepths(entry);
+  };
+}
+
+/** 正文还是这条操作刚做完的样子的章：记下现在的撤销深度 */
+function syncDepths(entry) {
+  if (!ws.editor || !entry.chapters) return;
+  for (const [cid, text] of entry.searchAfter) {
+    if (ws.textOf(cid) !== text) continue;
+    const d = ws.editor.depthOf(cid);
+    if (d >= 0) entry.chapters[cid] = d;
+  }
+}
+
 async function replaceOne() {
   if (busy || !P) return;
-  flushPending();
-  if (R.mode !== "hits" || !flat.length) return;
-  // 还没选中哪一处：先跳过去让作者看一眼，再按一次才换
-  if (cur < 0) { await next(); return; }
-  const hit = flat[cur];
-  const text = ws.textOf(hit.chapterId);
-  if (text.slice(hit.from, hit.to) !== hit.m[0]) { runSearch(); return; }
-  const rep = E.expandReplacement(S.replace, hit, S);
   busy = true; updateReplaceButtons();
-  const entry = await applyChanges("替换 1 处", [{ chapterId: hit.chapterId, after: text.slice(0, hit.from) + rep + text.slice(hit.to) }], replaceOne);
-  busy = false;
-  if (!entry || !P) { updateReplaceButtons(); return; }
-  runSearch();
-  // 接着从换完的地方往后找
-  const order = ws.chapters.map((c) => c.id);
-  const at = order.indexOf(hit.chapterId), pos = hit.from + rep.length;
-  let i = flat.findIndex((x) => (x.chapterId === hit.chapterId && x.from >= pos) || order.indexOf(x.chapterId) > at);
-  if (i < 0 && flat.length) i = 0;
-  if (i >= 0) await goTo(i); else setCur(-1);
-  showDone("已替换 1 处", entry);
-  bus.emit("replace:done", { count: 1 });
+  try {
+    await flushPending();
+    if (!P || R.mode !== "hits" || !flat.length) return;
+    // 还没选中哪一处：先跳过去让作者看一眼，再按一次才换
+    if (cur < 0) { await next(); return; }
+    const hit = flat[cur];
+    const text = ws.textOf(hit.chapterId);
+    if (text.slice(hit.from, hit.to) !== hit.m[0]) { await runSearch(); return; }
+    const rep = E.expandReplacement(S.replace, hit, S);
+    // 换前换后一样：不动正文，直接看下一处
+    if (rep === hit.m[0]) { await goTo((cur + 1) % flat.length); return; }
+    const after = text.slice(0, hit.from) + rep + text.slice(hit.to);
+    const entry = await applyChanges("替换 1 处", [{ chapterId: hit.chapterId, after }], replaceOne);
+    if (!entry) return;
+    const per = new Map([[hit.chapterId, changeInfo(text, after, [{ from: hit.from, to: hit.to, len: rep.length }])]]);
+    track(entry, per);
+    shiftSnap(per, "redo");
+    bus.emit("replace:done", { count: 1 });
+    if (!P) return;
+    await runSearch();
+    if (!P) return;
+    // 接着从换完的地方往后找
+    const order = ws.chapters.map((c) => c.id);
+    const at = order.indexOf(hit.chapterId), pos = hit.from + rep.length;
+    let i = flat.findIndex((x) => (x.chapterId === hit.chapterId && x.from >= pos) || order.indexOf(x.chapterId) > at);
+    if (i < 0 && flat.length) i = 0;
+    if (i >= 0) await goTo(i); else setCur(-1);
+    if (!flat.length) S.pristine = true;
+    showDone("已替换 1 处", entry);
+  } finally {
+    busy = false;
+    updateReplaceButtons();
+  }
 }
 
 async function replaceAll() {
   if (busy || !P) return;
-  flushPending();
-  if (R.mode !== "hits") return;
-  const pick = checkedHits();
-  if (!pick.length) { toast("没有勾选要替换的地方"); return; }
-  const by = new Map();
-  for (const x of pick) { if (!by.has(x.chapterId)) by.set(x.chapterId, []); by.get(x.chapterId).push(x); }
-  const changes = [];
-  let count = 0;
-  for (const [cid, hits] of by) {
-    const before = ws.textOf(cid);
-    if (hits.some((x) => before.slice(x.from, x.to) !== x.m[0])) { runSearch(); toast("正文刚改过，结果已经更新，请再确认一次"); return; }
-    const after = E.replaceHits(before, hits, S.replace, S);
-    if (after !== before) { changes.push({ chapterId: cid, after }); count += hits.length; }
-  }
-  if (!changes.length) { toast("替换前后一样，没有要改的"); return; }
   busy = true; updateReplaceButtons();
-  const label = `替换「${short(S.query)}」→「${short(S.replace)}」`;
-  const entry = await applyChanges(label, changes, replaceAll);
-  busy = false;
-  if (!entry) { updateReplaceButtons(); return; }
-  S.unchecked.clear();
-  S.pristine = true;
-  if (P) { runSearch(); showDone(`已替换 ${count} 处（${changes.length} 章）`, entry); }
-  bus.emit("replace:done", { count });
-  toast(`已替换 ${count} 处`, { action: { label: "撤销", run: () => appUndo.undoEntry(entry) } });
+  try {
+    await flushPending();
+    if (!P || R.mode !== "hits") return;
+    const pick = checkedHits();
+    if (!pick.length) { toast("没有勾选要替换的地方"); return; }
+    const by = new Map();
+    for (const x of pick) { if (!by.has(x.chapterId)) by.set(x.chapterId, []); by.get(x.chapterId).push(x); }
+    const changes = [], per = new Map();
+    let count = 0;
+    for (const [cid, hits] of by) {
+      const before = ws.textOf(cid);
+      if (hits.some((x) => before.slice(x.from, x.to) !== x.m[0])) { await runSearch(); toast("正文刚改过，结果已经更新，请再确认一次"); return; }
+      const edits = [];
+      const after = E.replaceHits(before, hits, S.replace, S, edits);
+      if (after !== before) { changes.push({ chapterId: cid, after }); per.set(cid, changeInfo(before, after, edits)); count += hits.length; }
+    }
+    if (!changes.length) { toast("替换前后一样，没有要改的"); return; }
+    const label = `替换「${short(S.query)}」→「${short(S.replace)}」`;
+    const entry = await applyChanges(label, changes, replaceAll);
+    if (!entry) return;
+    track(entry, per);
+    shiftSnap(per, "redo");
+    S.unchecked.clear();
+    S.pristine = true;
+    if (P) { await runSearch(); showDone(`已替换 ${count} 处（${changes.length} 章）`, entry); }
+    bus.emit("replace:done", { count });
+    toast(`已替换 ${count} 处`, { action: { label: "撤销", run: () => appUndo.undoEntry(entry) } });
+  } finally {
+    busy = false;
+    updateReplaceButtons();
+  }
 }
 
 // ---------------- 常用筛选 ----------------
@@ -785,7 +997,7 @@ async function savePreset() {
   if (name == null) return;
   const item = { id: uid("f"), name: name.trim() || E.describe(cond), cond };
   const before = presets.slice();
-  try { await setPresets(bookId, [...before, item]); } catch (e) { return presetError(e); }
+  try { await setPresets(bookId, [...before, item]); } catch (e) { return presetError(e, "常用筛选没存上。", savePreset); }
   const entry = appUndo.push({
     label: "存常用筛选",
     undo: () => setPresets(bookId, before),
@@ -797,7 +1009,7 @@ async function savePreset() {
 async function deletePreset(p) {
   const bookId = S.bookId;
   const before = presets.slice();
-  try { await setPresets(bookId, before.filter((x) => x.id !== p.id)); } catch (e) { return presetError(e); }
+  try { await setPresets(bookId, before.filter((x) => x.id !== p.id)); } catch (e) { return presetError(e, `常用筛选「${p.name}」没删掉。`, () => deletePreset(p)); }
   const entry = appUndo.push({
     label: "删除常用筛选",
     undo: () => setPresets(bookId, before),
@@ -806,12 +1018,12 @@ async function deletePreset(p) {
   toast(`已删除「${p.name}」`, { action: { label: "撤销", run: () => appUndo.undoEntry(entry) } });
 }
 
-function presetError(e) {
+function presetError(e, what, retry) {
   notice({
-    what: "常用筛选没存上。",
+    what,
     why: "本地存储写不进去，可能磁盘空间不够，或者浏览器限制了网站存储。",
     detail: e && (e.stack || e.message || e),
-    actions: [{ label: "再试一次", primary: true, run: savePreset }],
+    actions: [{ label: "再试一次", primary: true, run: retry }],
   });
 }
 
@@ -823,8 +1035,8 @@ export async function register() {
   commands.register({ id: "search.book", title: "在全书里查找", keywords: "全书 所有章节 搜索 找字 查找", hint: "按章节列出全书里每一处", key: "Mod-Shift-f", when: inBook, run: () => openSearch({ scope: "book" }) });
   commands.register({ id: "search.replace", title: "替换", keywords: "替换 改字 批量替换 全书替换 改名 换成", hint: "先列出每一处，可以挑着换，能整体撤销", key: "Mod-h", when: inBook, run: () => openSearch({ replace: true }) });
   commands.register({ id: "search.filter", title: "筛选章节", keywords: "筛选 过滤 要点没打完 没写完 字数少 短的章", hint: "按要点、字数挑出章节，条件能存起来", when: inBook, run: () => openSearch({ filter: true, scope: P ? undefined : "book" }) });
-  commands.register({ id: "search.next", title: "下一处", keywords: "查找 下一个", key: "F3", when: open, run: () => { flushPending(); next(); } });
-  commands.register({ id: "search.prev", title: "上一处", keywords: "查找 上一个", key: "Shift-F3", when: open, run: () => { flushPending(); prev(); } });
+  commands.register({ id: "search.next", title: "下一处", keywords: "查找 下一个 找下一个", hint: "查找面板开着时，跳到下一处", key: "F3", when: open, run: () => next() });
+  commands.register({ id: "search.prev", title: "上一处", keywords: "查找 上一个 找上一个", hint: "查找面板开着时，跳到上一处", key: "Shift-F3", when: open, run: () => prev() });
 
   // 离开作品前先关掉面板（草稿留着）
   nav.onLeave(() => { if (P) closeSearch(true); return {}; });
@@ -833,8 +1045,14 @@ export async function register() {
     if (!P || !chapter) return;
     if (snap.has(chapter.id) || (R.scopeIds || "").split(",").includes(chapter.id)) schedule(300);
   });
-  bus.on("undo", () => { if (P) schedule(50); });
-  bus.on("redo", () => { if (P) schedule(50); });
+  // 撤销、重做以后重新找；面板里的「已替换 · 撤销」对应的那一步已经撤掉了，就收起来
+  const afterUndo = () => {
+    if (!P) return;
+    schedule(50);
+    if (P.doneEntry && appUndo.peek() !== P.doneEntry) hideDone();
+  };
+  bus.on("undo", afterUndo);
+  bus.on("redo", afterUndo);
   // 章节增删、移动、分卷：范围按钮和范围里的章变了才重画、重新找（打开某章也会改作品信息，不用每次都画）
   const later = () => { if (P) setTimeout(syncScope, 0); };
   for (const t of ["chapter:created", "chapter:deleted", "chapter:moved", "book:updated"]) bus.on(t, later);

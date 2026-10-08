@@ -88,7 +88,7 @@ export function createEditor(opts) {
       { key: "Mod-y", run: cmRedo, preventDefault: true },
       { key: "Mod-Shift-z", run: cmRedo, preventDefault: true },
       ...historyKeymap.filter((k) => !["Mod-z", "Mod-y", "Mod-Shift-z"].includes(k.key)),
-      ...defaultKeymap.filter((k) => k.key !== "Enter"),
+      ...defaultKeymap.filter((k) => k.key !== "Enter" && k.key !== "Mod-Enter"),   // Ctrl+Enter 是「新建章节」
     ]),
     theme.of(themeExt()),
     EditorView.updateListener.of((u) => {

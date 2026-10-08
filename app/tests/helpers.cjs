@@ -3,7 +3,7 @@
 const { chromium } = require('/opt/node22/lib/node_modules/playwright');
 
 async function launch(distDir, { width = 1360, height = 860 } = {}) {
-  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
+  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium', env: { ...process.env, LANG: 'C.UTF-8', LC_ALL: 'C.UTF-8' } });
   const ctx = await browser.newContext({ viewport: { width, height }, acceptDownloads: true });
   const page = await ctx.newPage();
   const errors = [];

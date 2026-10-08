@@ -5,6 +5,16 @@ import { countWords, todayKey } from "./text.js";
 
 const now = () => Date.now();
 
+// 同一条记录的「读出来、改、写回」排队进行，两次修改同时发生时后一次不会盖掉前一次
+const locks = new Map();
+function serial(key, fn) {
+  const prev = locks.get(key) || Promise.resolve();
+  const next = prev.catch(() => {}).then(fn);
+  locks.set(key, next);
+  next.finally(() => { if (locks.get(key) === next) locks.delete(key); }).catch(() => {});
+  return next;
+}
+
 // ---------------- 作品 ----------------
 export const DEFAULT_BOOK = {
   title: "未命名作品",
@@ -36,18 +46,21 @@ export async function createBook(data) {
   return book;
 }
 
-export async function updateBook(id, patch) {
-  const book = await getBook(id);
-  if (!book) return null;
-  Object.assign(book, patch, { updatedAt: now() });
-  await db.put("books", book);
-  bus.emit("book:updated", { book });
-  return book;
+export function updateBook(id, patch) {
+  return serial("b:" + id, async () => {
+    const book = await getBook(id);
+    if (!book) return null;
+    Object.assign(book, patch, { updatedAt: now() });
+    await db.put("books", book);
+    bus.emit("book:updated", { book });
+    return book;
+  });
 }
 
 /** 整本书删进回收站（连同章节），返回回收站条目 id，可以 restoreFromTrash 恢复。 */
 export async function trashBook(id) {
   const book = await getBook(id);
+  if (!book) return null;
   const chapters = await db.byIndex("chapters", "bookId", id);
   const entry = { id: uid("t"), kind: "book", bookId: id, title: book.title, data: { book, chapters }, deletedAt: now() };
   await db.tx(["books", "chapters", "trash"], (s) => {
@@ -98,19 +111,43 @@ export async function createChapter(bookId, opts = {}) {
 async function normalizeOrder(bookId) {
   const list = await listChapters(bookId);
   if (list.every((c, i) => c.order === i + 1)) return;
-  await db.tx(["chapters"], (s) => list.forEach((c, i) => { c.order = i + 1; s.chapters.put(c); }));
+  await writeOrder(list.map((c) => c.id));
 }
 
-export async function updateChapter(id, patch) {
-  const ch = await getChapter(id);
-  if (!ch) return null;
-  Object.assign(ch, patch, { updatedAt: now() });
-  await db.put("chapters", ch);
-  return ch;
+/**
+ * 按 ids 的顺序写 order（和可选的卷）。在同一个事务里先读再写，只改 order / volumeId，
+ * 这样和同时进行的自动保存不会互相覆盖正文。
+ */
+function writeOrder(ids, volumes = {}) {
+  return db.tx(["chapters"], (s) => {
+    ids.forEach((cid, i) => {
+      const req = s.chapters.get(cid);
+      req.onsuccess = () => {
+        const c = req.result;
+        if (!c) return;
+        c.order = i + 1;
+        if (cid in volumes) c.volumeId = volumes[cid];
+        s.chapters.put(c);
+      };
+    });
+  });
+}
+
+export function updateChapter(id, patch) {
+  return serial("c:" + id, async () => {
+    const ch = await getChapter(id);
+    if (!ch) return null;
+    Object.assign(ch, patch, { updatedAt: now() });
+    await db.put("chapters", ch);
+    return ch;
+  });
 }
 
 /** 自动保存正文：同时更新字数、今天的码字记录。 */
-export async function saveContent(id, text) {
+export function saveContent(id, text) {
+  return serial("c:" + id, () => saveContentNow(id, text));
+}
+async function saveContentNow(id, text) {
   const ch = await getChapter(id);
   if (!ch) return null;
   if (ch.content === text) return ch;
@@ -130,23 +167,15 @@ export async function moveChapter(id, newIndex, volumeId) {
   const list = (await listChapters(ch.bookId)).filter((c) => c.id !== id);
   newIndex = Math.max(0, Math.min(newIndex, list.length));
   list.splice(newIndex, 0, ch);
+  await writeOrder(list.map((c) => c.id), volumeId !== undefined ? { [id]: volumeId } : {});
   if (volumeId !== undefined) ch.volumeId = volumeId;
-  await db.tx(["chapters"], (s) => list.forEach((c, i) => { c.order = i + 1; s.chapters.put(c); }));
   bus.emit("chapter:moved", { chapter: ch });
   return ch;
 }
 
 /** 把整本书的章节顺序设成 ids 的顺序（撤销移动时用） */
 export async function setOrder(bookId, ids, volumes = {}) {
-  const list = await listChapters(bookId);
-  const byId = new Map(list.map((c) => [c.id, c]));
-  await db.tx(["chapters"], (s) => ids.forEach((cid, i) => {
-    const c = byId.get(cid);
-    if (!c) return;
-    c.order = i + 1;
-    if (cid in volumes) c.volumeId = volumes[cid];
-    s.chapters.put(c);
-  }));
+  await writeOrder(ids, volumes);
 }
 
 /** 章节删进回收站，返回回收站条目 id。 */
@@ -191,6 +220,19 @@ export async function restoreFromTrash(trashId) {
 }
 
 export async function purgeTrash(trashId) { await db.del("trash", trashId); }
+
+/** 把回收站条目原样放回去（撤销「恢复」「彻底删除」时用）：条目里的章节 / 作品会从书架上拿走 */
+export async function putTrashEntry(entry) {
+  const stores = ["trash", "chapters", "books"];
+  await db.tx(stores, (s) => {
+    s.trash.put(entry);
+    if (entry.kind === "chapter" && entry.data && entry.data.chapter) s.chapters.delete(entry.data.chapter.id);
+    if (entry.kind === "book" && entry.data) {
+      s.books.delete(entry.data.book.id);
+      (entry.data.chapters || []).forEach((c) => s.chapters.delete(c.id));
+    }
+  });
+}
 
 /** 回收站里超过 30 天的自动清掉 */
 export async function purgeOldTrash(days = 30) {

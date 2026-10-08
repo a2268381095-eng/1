@@ -106,8 +106,8 @@ canvas { image-rendering: crisp-edges; image-rendering: pixelated; display: bloc
 /* 帮助小问号 */
 .help-tip { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%;
   border: 1px solid var(--faint); color: var(--muted); font-size: 10.5px; cursor: help; font-weight: 600; }
-.help-tip:hover::after, .help-tip:focus::after { content: attr(data-tip); position: absolute; left: 50%; bottom: calc(100% + 6px); transform: translateX(-50%);
-  width: max-content; max-width: 240px; padding: 6px 9px; border-radius: 6px; background: var(--ink); color: var(--paper); font-size: 12px; font-weight: 400;
+.help-tip:hover::after, .help-tip:focus::after { content: attr(data-tip); position: absolute; left: -8px; bottom: calc(100% + 6px);
+  width: max-content; max-width: min(240px, 70vw); padding: 6px 9px; border-radius: 6px; background: var(--ink); color: var(--paper); font-size: 12px; font-weight: 400;
   line-height: 1.5; z-index: 50; white-space: normal; }
 
 /* 弹窗 */
@@ -122,11 +122,13 @@ canvas { image-rendering: crisp-edges; image-rendering: pixelated; display: bloc
 .modal-foot { display: flex; gap: 8px; justify-content: flex-end; padding: 10px 18px 14px; border-top: 1px solid var(--line); flex-wrap: wrap; }
 
 /* 提示条 */
-.toasts { position: fixed; left: 50%; bottom: 44px; transform: translateX(-50%); display: grid; gap: 8px; z-index: 120; justify-items: center; pointer-events: none; }
+.toasts { position: fixed; left: 50%; bottom: 44px; transform: translateX(-50%); display: grid; gap: 8px; z-index: 120; justify-items: center; pointer-events: none;
+  width: max-content; max-width: calc(100vw - 32px); }
 .toast { pointer-events: auto; display: flex; align-items: center; gap: 10px; padding: 7px 8px 7px 14px; border-radius: 8px; background: var(--ink); color: var(--paper);
   box-shadow: var(--shadow); font-size: 13.5px; animation: toast-in .18s ease; }
 .toast.out { opacity: 0; transition: opacity .2s; }
-.toast-act { border: 0; background: transparent; color: var(--accent-soft); font-weight: 600; cursor: pointer; padding: 2px 6px; border-radius: 4px; }
+.toast-msg { min-width: 0; overflow-wrap: anywhere; }
+.toast-act { border: 0; background: transparent; color: var(--accent-soft); font-weight: 600; cursor: pointer; padding: 2px 6px; border-radius: 4px; white-space: nowrap; flex: 0 0 auto; }
 .toast-act:hover { background: rgba(255, 255, 255, 0.12); }
 .toast-x { width: 24px; height: 24px; color: inherit; opacity: .7; }
 .toast-x:hover { background: rgba(255, 255, 255, 0.12); color: inherit; }

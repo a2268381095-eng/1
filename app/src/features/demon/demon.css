@@ -2,7 +2,8 @@
 .demon { position: fixed; right: 14px; bottom: 34px; z-index: 60; --demon-scale: 1; touch-action: none; }
 .demon.off .demon-body, .demon.off .demon-bubble { display: none; }
 .demon:not(.off) .demon-show { display: none; }
-.demon.focus-hidden { display: none; }
+.demon.focus-hidden, .demon.panel-hidden { display: none; }
+.demon.moving { transition: right .25s ease, bottom .25s ease; }
 .demon-body { position: relative; width: calc(128px * var(--demon-scale)); height: calc(224px * var(--demon-scale)); }
 .demon-poke { border: 0; padding: 0; background: transparent; cursor: grab; line-height: 0; display: block; touch-action: none; }
 .demon.dragging .demon-poke { cursor: grabbing; }
