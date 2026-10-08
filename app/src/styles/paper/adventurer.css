@@ -109,6 +109,10 @@
   background-image: radial-gradient(circle at 3px 3px, #ffe2a0 1px, #b8862e 1.6px 2.6px, transparent 3px), radial-gradient(circle at calc(100% - 3px) 3px, #ffe2a0 1px, #b8862e 1.6px 2.6px, transparent 3px),
     radial-gradient(circle at 3px calc(100% - 3px), #ffe2a0 1px, #b8862e 1.6px 2.6px, transparent 3px), radial-gradient(circle at calc(100% - 3px) calc(100% - 3px), #ffe2a0 1px, #b8862e 1.6px 2.6px, transparent 3px); }
 .demon[data-style="adventurer"] .db-label { color: #3a2a18; letter-spacing: .05em; }
+/* 深色：牌子换成深色皮革，进度画在深底上 */
+:root[data-dark] .demon[data-style="adventurer"] .demon-badge { background: radial-gradient(ellipse at 30% 20%, rgba(255, 200, 130, .12), transparent 70%), #2a1e12; color: #f0deb4; border-color: #120a04; }
+:root[data-dark] .demon[data-style="adventurer"] .db-label { color: #f0deb4; }
+:root[data-dark] .demon[data-style="adventurer"] .demon-badge.done .db-label { color: #ffd24a; }
 .demon[data-style="adventurer"] .demon-badge.done { border-color: #6b4410; box-shadow: 0 0 0 3px #f2b51c, 0 0 0 4px #6b4410, 3px 5px 0 4px rgba(40, 20, 6, .3); }
 .demon[data-style="adventurer"] .demon-badge.done .db-label { color: #8a4a0a; }
 [data-motion="full"] .demon[data-style="adventurer"] .demon-badge.done { animation: av-lvup 1.4s ease-out 2; }

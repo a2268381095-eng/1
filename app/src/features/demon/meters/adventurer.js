@@ -27,7 +27,7 @@ const textW = (str, gap = 1) => [...str].reduce((n, ch) => n + (FONT[ch] ? FONT[
 const SHIELD = [
   "ooooooooooo",
   "orrrrwrrrRo",
-  "orcrrsrrcRo",
+  "orrrrsrrrRo",
   "orrrrsrrRRo",
   "orrrrsrrRRo",
   "orrrrsrrRRo",
@@ -108,8 +108,9 @@ export default {
       let x = x0;
       [...s2].forEach((ch, i) => {
         const hop = Math.floor(t * 6 + i) % 6 === 0 ? -1 : 0;
-        const col = Math.floor(t * 3) % 2 ? "#fff2bf" : gold;
-        x = text(g, ch, x, 1 + hop, col, "#5a2e08");
+        const blink = Math.floor(t * 3) % 2;
+        // 深色底：亮金字描边；浅色底：深一点的金字不描边
+        x = dark ? text(g, ch, x, 1 + hop, blink ? "#fff2bf" : gold, "#5a2e08") : text(g, ch, x, 1 + hop, blink ? "#b8650a" : "#e0900e") + 1;
       });
       // 盾边两颗闪星
       const tw = Math.floor(t * 3) % 3;
@@ -123,7 +124,7 @@ export default {
         const str = "+XP", w = textW(str, 2);
         const x0 = Math.max(BX + 14, Math.min(BX + BW - w, BX + n - 2));
         g.globalAlpha = 1 - p * p;
-        text(g, str, x0, y, "#fff2bf", "#2e5a14");
+        if (dark) text(g, str, x0, y, "#fff2bf", "#2e5a14"); else text(g, str, x0, y, "#3b8a1e");
         g.globalAlpha = 1;
       }
     }
