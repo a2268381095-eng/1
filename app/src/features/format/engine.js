@@ -43,6 +43,7 @@ const HAN_RE = new RegExp(`[${CJK}]`, "u");
 const WS_RE = /\s/u;
 const FW = new Set(Array.from("，。、；：？！…⋯—―“”‘’（）《》〈〉【】「」『』〔〕．"));
 const HALF = { ",": "，", "!": "！", "?": "？", ";": "；", ":": "：" };
+const SENT = new Set(Array.from("，。、；：？！"));   // 句中、句末的点号：和英文、数字之间也不留空格
 const DQ = new Set(Array.from("\"＂“”「」"));
 const SQ = new Set(Array.from("'＇‘’『』"));
 // 合并断行：上一行以这些结尾就算一句说完了；下一行以这些开头就算新的一段（引号、括号、破折号、省略号开头）
@@ -145,21 +146,23 @@ function fixPunct(body, r) {
     }
   }
 
-  // 全角标点前后夹着中文的半角空格去掉；collapse：两段省略号、破折号挨在一起时合成一个
+  // 全角标点和中文之间的半角空格去掉；，。、；：？！ 和英文、数字之间的也去掉（「中文 , English」→「中文，English」）。
+  // collapse：两段省略号、破折号挨在一起时合成一个
+  const glued = (s, x) => isCN(x) || (SENT.has(s) && isAlnum(x));
   const put = (s, fw, collapse = false) => {
     if (fw && r.punct) {
       let k = out.length;
       while (k > 0 && (out[k - 1] === " " || out[k - 1] === "\t")) k--;
-      if (k < out.length && k > 0 && isCN(out[k - 1])) out.length = k;
+      if (k < out.length && k > 0 && glued(s, out[k - 1])) out.length = k;
     }
     if (collapse && endsWith(out, s)) return;
     for (const ch of s) { out.push(ch); if (!isWs(ch)) lastNW = ch; }
   };
-  const skipAfter = (j, fw) => {
+  const skipAfter = (j, fw, s = "") => {
     if (!fw || !r.punct) return j;
     let k = j;
     while (k < n && (cs[k] === " " || cs[k] === "\t")) k++;
-    return k > j && k < n && isCN(cs[k]) ? k : j;
+    return k > j && k < n && glued(s, cs[k]) ? k : j;
   };
 
   let dq = 0, sq = 0, i = 0;
@@ -256,12 +259,12 @@ function fixPunct(body, r) {
         const conv = pairConv.has(i) ? pairConv.get(i) : c === "(" ? isHan(nextFrom(i + 1)) : isCN(L);
         if (conv) to = c === "(" ? "（" : "）";
       }
-      if (to) { put(to, true); i = skipAfter(i + 1, true); continue; }
+      if (to) { put(to, true); i = skipAfter(i + 1, true, to); continue; }
     }
 
     const fw = FW.has(c);
     put(c, fw);
-    i = skipAfter(i + 1, fw);
+    i = skipAfter(i + 1, fw, c);
   }
   return out.join("");
 }
