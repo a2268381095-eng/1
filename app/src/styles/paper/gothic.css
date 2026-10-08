@@ -4,10 +4,10 @@
    醒来：书页从左下角的烛光里一圈圈亮出来（光会晃一下），暗处的蝙蝠被光惊得飞走。 */
 :root[data-paper="gothic"] {
   --gt-tint: #ead6b0; --gt-tint-a: .5; --gt-burn: rgba(96, 52, 20, .3); --gt-line: #7d1f3c; --gt-line2: rgba(142, 42, 79, .55);
-  --gt-glow: 255, 168, 84; --gt-glow-a: .30; --gt-rubric: #8e1f3c; }
+  --gt-glow: 255, 160, 70; --gt-glow-a: .42; --gt-rubric: #8e1f3c; }
 :root[data-paper="gothic"][data-dark] {
   --gt-tint: #1c1120; --gt-tint-a: .35; --gt-burn: rgba(0, 0, 0, .55); --gt-line: #9e2a4a; --gt-line2: rgba(200, 192, 214, .42);
-  --gt-glow: 255, 150, 70; --gt-glow-a: .18; --gt-rubric: #ff7a9a; }
+  --gt-glow: 255, 150, 70; --gt-glow-a: .26; --gt-rubric: #ff7a9a; }
 :root[data-paper="gothic"] body.has-scene .ws-body > .center { --gt-w: min(100%, calc(var(--text-width) + 120px)); }
 
 /* ---------- 纸：毛边遮罩（整张减掉四条边上剪掉的小口）+ 皮纹、霉斑、焦边 + 一层犊皮纸的暖色（跟着「背景透出」走） ---------- */
@@ -55,7 +55,7 @@
     1px calc(100% - 2 * var(--i)), 1px calc(100% - 2 * var(--i)),
     100% 100%;
   background-position:
-    left 6px top 6px, right 6px top 6px, left 6px bottom 6px, right 6px bottom 6px, center top 10px, center bottom 8px, left 70px bottom 54px,
+    left 4px top 4px, right 4px top 4px, left 4px bottom 4px, right 4px bottom 4px, center top 10px, center bottom 8px, left 70px bottom 54px,
     left var(--o) top var(--o), right var(--o) top var(--o), left var(--o) bottom var(--o), right var(--o) bottom var(--o),
     left var(--o) top var(--o), right var(--o) top var(--o),
     left var(--i) top var(--i), right var(--i) top var(--i), left var(--i) bottom var(--i), right var(--i) bottom var(--i),
@@ -97,7 +97,7 @@
 
 /* 章名：「第几章」用朱红写（手抄本里的红字标题），下面一道酒红细线，中间一颗小菱形 */
 :root[data-paper="gothic"] body.has-scene .ch-no { color: var(--gt-rubric); letter-spacing: .08em; }
-:root[data-paper="gothic"] body.has-scene .ch-head { padding-bottom: 12px;
+:root[data-paper="gothic"] body.has-scene .ch-head { padding-top: 50px; padding-bottom: 12px;
   background: linear-gradient(45deg, transparent 35%, var(--gt-line) 36% 64%, transparent 65%) center bottom 1px / 8px 8px no-repeat,
     linear-gradient(90deg, transparent, var(--gt-line2) 15% 45%, transparent 47% 53%, var(--gt-line2) 55% 85%, transparent) center bottom 4px / calc(100% - 64px) 1px no-repeat; }
 

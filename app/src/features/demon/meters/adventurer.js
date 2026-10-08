@@ -119,11 +119,11 @@ export default {
       text(g, "EXP", BX, 0, dark ? "#c9e89a" : "#3b7a22", dark ? "#14100a" : "rgba(255,255,255,.55)");
       if (s.bump < 1.2) {
         // 「+EXP」从槽头往上飘，越往上越淡
-        const p = Math.min(1, s.bump / 1.2), y = Math.round(BY - 5 - p * 4);
+        const p = Math.min(1, s.bump / 1.2), y = Math.round(3 - p * 6);
         const str = "+XP", w = textW(str);
         const x0 = Math.max(BX + 14, Math.min(BX + BW - w, BX + n - 2));
         g.globalAlpha = 1 - p * p;
-        text(g, str, x0, Math.max(-4, y), "#fff2bf", "#3b7a22");
+        text(g, str, x0, y, "#fff2bf", "#3b7a22");
         g.globalAlpha = 1;
       }
     }

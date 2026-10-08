@@ -398,11 +398,11 @@ export default {
   biteL: bite("L"), biteR: bite("R"), biteT: bite("T"), biteB: bite("B"),
   edgeL: edge("L"), edgeR: edge("R"), edgeT: edge("T"), edgeB: edge("B"),
   // 四角铁艺
-  cornerTL: sprite(CORNER, IRON_L, IRON_D, 2),
-  cornerTR: sprite(shade(mFlipX(CMASK)), IRON_L, IRON_D, 2),
-  cornerBL: sprite(shade(mFlipY(CMASK)), IRON_L, IRON_D, 2),
-  cornerBR: sprite(shade(mFlipY(mFlipX(CMASK))), IRON_L, IRON_D, 2),
-  bat: sprite(BAT, { k: "#2a1a30", e: "#d23a5a" }, { k: "#0c070e", e: "#ff5a7a" }, 2),
+  cornerTL: sprite(CORNER, IRON_L, IRON_D, 3),
+  cornerTR: sprite(shade(mFlipX(CMASK)), IRON_L, IRON_D, 3),
+  cornerBL: sprite(shade(mFlipY(CMASK)), IRON_L, IRON_D, 3),
+  cornerBR: sprite(shade(mFlipY(mFlipX(CMASK))), IRON_L, IRON_D, 3),
+  bat: sprite(BAT, { k: "#2a1a30", e: "#d23a5a" }, { k: "#8a7f9c", e: "#ff5a7a" }, 2),
   seal: sprite(SEAL, { w: "#6a0f22", R: "#a3182f", l: "#c8384c", p: "#7c1023", P: "#5e0a1a", g: "#3f7a46" },
     { w: "#5a0b1c", R: "#93162c", l: "#c43a50", p: "#6e0e20", P: "#4e0816", g: "#4f8a56" }, 2),
 };
