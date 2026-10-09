@@ -1,5 +1,6 @@
 // 书架：书封 + 书名 + 简介摘要；悬停一会儿显示大封面和完整详情；新建作品填完书名就能开写。
-import { listBooks, createBook, updateBook, trashBook, restoreFromTrash, listChapters } from "../../core/store.js";
+// 作品信息表单里有作者名和「制作封面」（绘画模块的 paint.cover，书名、作者名在那边改了这边跟着变）。
+import { listBooks, getBook, createBook, updateBook, trashBook, restoreFromTrash, listChapters } from "../../core/store.js";
 import { nav } from "../../core/nav.js";
 import { h, icon, modal, toast, confirm } from "../../core/ui.js";
 import { getSettings, label } from "../../core/settings.js";
@@ -40,8 +41,9 @@ export function coverFromFile(file) {
 // ---------------- 新建 / 编辑作品 ----------------
 export function bookForm(book = null) {
   return new Promise((resolve) => {
-    const data = { title: book ? book.title : "", intro: book ? book.intro : "", tags: book ? [...book.tags] : [], cover: book ? book.cover : "" };
+    const data = { title: book ? book.title : "", author: book ? book.author || "" : "", intro: book ? book.intro : "", tags: book ? [...book.tags] : [], cover: book ? book.cover : "" };
     const titleIn = h("input.input", { value: data.title, placeholder: "书名", maxlength: "60", autofocus: true });
+    const authorIn = h("input.input.book-author-in", { value: data.author, placeholder: "作者名（可空）", maxlength: "40", "aria-label": "作者" });
     const introIn = h("textarea.textarea", { placeholder: "简介（可以以后再写）", rows: "4" });
     introIn.value = data.intro;
     const tagBox = h("div.row.tag-pick");
@@ -71,13 +73,23 @@ export function bookForm(book = null) {
       try { data.cover = await coverFromFile(file.files[0]); showCover(); }
       catch (e) { toast(e.message); }
     });
-    const coverCol = h("div.cover-col", {}, coverImg,
+    // 制作封面：就地打开绘画界面，书名、作者名带过去；那边改了书名、作者名、换了封面，这边跟着变
+    const paintBtn = h("button.btn.small.book-paint-btn", { type: "button", title: "用 AI 画封面：先出草稿，挑中的出高清，裁成 600×800" }, icon("brush"), "制作封面");
+    paintBtn.addEventListener("click", () => {
+      if (!commands.get("paint.cover")) { toast("封面制作还在做，下一版就有。"); return; }
+      commands.run("paint.cover", {
+        bookId: book ? book.id : null, title: titleIn.value, author: authorIn.value, intro: introIn.value, cover: data.cover,
+        onMeta: ({ title, author }) => { titleIn.value = title; authorIn.value = author; if (!data.cover) showCover(); },
+        onCover: (url) => { data.cover = url || ""; showCover(); },
+      });
+    });
+    const coverCol = h("div.cover-col", {}, coverImg, paintBtn,
       h("button.btn.small", { type: "button", onclick: () => file.click() }, icon("upload"), "上传书封"),
       h("button.btn.small.ghost", { type: "button", onclick: () => { data.cover = ""; showCover(); } }, "用默认封面"),
       h("p.muted.small-note", {}, "会裁成 600×800"), file);
     const body = h("div.book-form", {}, coverCol,
       h("div.book-fields", {},
-        h("label.field", {}, h("span", {}, "书名"), titleIn),
+        h("div.book-names", {}, h("label.field", {}, h("span", {}, "书名"), titleIn), h("label.field", {}, h("span", {}, "作者"), authorIn)),
         h("label.field", {}, h("span", {}, "简介"), introIn),
         h("div.field", {}, h("span", {}, "类型标签（小恶魔会按类型换装）"), tagBox)));
     let result = null;
@@ -89,7 +101,7 @@ export function bookForm(book = null) {
       onClose: () => resolve(result),
       actions: [
         { label: book ? "保存" : "开始写", primary: true, onClick: () => {
-          result = { title: titleIn.value.trim() || "未命名作品", intro: introIn.value.trim(), tags: data.tags, cover: data.cover };
+          result = { title: titleIn.value.trim() || "未命名作品", author: authorIn.value.trim(), intro: introIn.value.trim(), tags: data.tags, cover: data.cover };
           m.close(true);
         } },
         { label: "取消", onClick: () => m.close() },
@@ -132,7 +144,7 @@ export async function renderShelf(root, restore) {
 }
 
 function bookCard(b) {
-  const card = h("article.book-card", { tabindex: "0", "aria-label": b.title },
+  const card = h("article.book-card", { tabindex: "0", "aria-label": b.title, "data-id": b.id },
     h("img.book-cover", { src: b.cover || defaultCover(b.title), alt: "", "data-default-title": b.cover ? null : b.title || "" }),
     h("div.book-meta", {},
       h("h3.book-title", {}, b.title),
@@ -190,12 +202,14 @@ function bookMenu(b, anchor) {
 function hoverCard(card, b) {
   let timer = 0, pop = null;
   const show = async () => {
+    b = (await getBook(b.id)) || b;
     const chapters = await listChapters(b.id);
     const words = chapters.reduce((s, c) => s + (c.words || 0), 0);
     pop = h("div.book-pop", { role: "tooltip" },
       h("img.book-pop-cover", { src: b.cover || defaultCover(b.title), alt: "" }),
       h("div.book-pop-meta", {},
         h("h3", {}, b.title),
+        b.author ? h("p.book-pop-author", {}, "作者：" + b.author) : null,
         h("div.row", {}, ...(b.tags || []).map((t) => h("span.chip", {}, t))),
         h("p.muted", {}, `${chapters.length} 章 · ${words.toLocaleString()} 字`),
         h("p.book-pop-intro", {}, b.intro || "还没有简介")));
@@ -227,4 +241,21 @@ export function registerShelf() {
   }, 0);
   bus.on("settings:changed", recover);
   bus.on("demon:style", recover);
+  // 作品信息变了（换了封面、改了书名，或者撤销）：书架上那张卡跟着换
+  bus.on("book:updated", ({ book }) => {
+    if (!book) return;
+    const card = [...document.querySelectorAll(".book-card[data-id]")].find((c) => c.dataset.id === book.id);
+    if (!card) return;
+    card.setAttribute("aria-label", book.title);
+    const im = card.querySelector("img.book-cover");
+    if (im) {
+      const src = book.cover || defaultCover(book.title);
+      if (im.getAttribute("src") !== src) im.src = src;
+      if (book.cover) im.removeAttribute("data-default-title"); else im.dataset.defaultTitle = book.title || "";
+    }
+    const t = card.querySelector(".book-title");
+    if (t) t.textContent = book.title;
+    const intro = card.querySelector(".book-intro");
+    if (intro) intro.textContent = book.intro || "还没有简介";
+  });
 }

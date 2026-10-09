@@ -97,6 +97,11 @@ export async function getMeta(bookId) {
     return fresh;
   });
 }
+/** 只读：没建过时给一份默认的（不存），给别的模块查询用，不会替不存在的书建数据 */
+export async function readMeta(bookId) {
+  const m = await db.get("lore", metaId(bookId));
+  return m ? fixMeta(m) : defaultMeta(bookId);
+}
 function fixMeta(m) {
   m.cats = m.cats || []; m.ladders = m.ladders || []; m.roots = m.roots || [];
   return m;
@@ -136,6 +141,14 @@ export async function sweepImages() {
 // ---------------- 改：一次 change 算一步撤销 ----------------
 const mine = new WeakSet();   // 设定库推进撤销栈的条目
 export const isLoreEntry = (e) => !!e && mine.has(e);
+// 撤销栈「可重做」那一头最上面连着的几条设定库条目（整页的「重做」按钮只重做设定库自己的）
+const undone = [];
+let undoing = null, redoing = null;
+bus.on("undo", () => { if (undoing) undone.push(undoing); else undone.length = 0; undoing = null; });
+bus.on("redo", () => { if (redoing && undone[undone.length - 1] === redoing) undone.pop(); else undone.length = 0; redoing = null; });
+bus.on("undo:changed", () => { if (!appUndo.canRedo()) undone.length = 0; });
+export const canLoreUndo = () => isLoreEntry(appUndo.peek());
+export const canLoreRedo = () => appUndo.canRedo() && undone.length > 0;
 
 class Tx {
   constructor(bookId) { this.bookId = bookId; this.recs = new Map(); this.trashAdd = []; this.trashDel = []; }
@@ -191,8 +204,8 @@ export function change(bookId, label, fn, opts = {}) {
     if (!opts.silent) {
       entry = {
         label, bookId, lore: true,
-        undo: async () => { await serial(bookId, () => write("before")); bus.emit("lore:changed", { bookId, ids, undo: true }); },
-        redo: async () => { await serial(bookId, () => write("after")); bus.emit("lore:changed", { bookId, ids, redo: true }); },
+        undo: async () => { undoing = entry; await serial(bookId, () => write("before")); bus.emit("lore:changed", { bookId, ids, undo: true }); },
+        redo: async () => { redoing = entry; await serial(bookId, () => write("after")); bus.emit("lore:changed", { bookId, ids, redo: true }); },
       };
       mine.add(entry);
       appUndo.push(entry);
