@@ -22,7 +22,7 @@
 :root[data-paper="adventurer"] .ed-host .nm-t { text-decoration-style: dotted; text-decoration-thickness: 2.5px; text-underline-offset: 5px; }
 
 /* ---------- 小卡片 ---------- */
-.nm-pop { position: fixed; z-index: 70; width: min(320px, calc(100vw - 16px)); padding: 12px 14px 10px; border-radius: 16px; background: var(--surface); color: var(--ink);
+.nm-pop { position: fixed; z-index: 70; width: min(372px, calc(100vw - 16px)); padding: 12px 14px 10px; border-radius: 16px; background: var(--surface); color: var(--ink);
   border: 1px solid color-mix(in srgb, var(--nm, var(--accent)) 30%, var(--line)); box-shadow: var(--shadow), 0 0 0 4px color-mix(in srgb, var(--nm, var(--accent)) 7%, transparent);
   font-size: 13.5px; line-height: 1.6; }
 .nm-pop-head { display: flex; gap: 10px; align-items: flex-start; }
@@ -111,8 +111,10 @@
 .nm-item-c { font-size: 12px; color: var(--muted); }
 .nm-item-x { margin-left: auto; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .nm-cli { display: grid; grid-template-columns: 1fr auto auto; grid-template-areas: "n x s" "k go no"; gap: 4px 6px; align-items: center; padding: 8px 10px; border-radius: 12px; background: var(--tint); }
-.nm-cli .nm-cand-n { grid-area: n; justify-self: start; border: 0; background: transparent; padding: 0; cursor: pointer; font-weight: 600; color: var(--ink);
-  text-decoration: underline dashed color-mix(in srgb, var(--muted) 70%, transparent); text-underline-offset: 4px; }
+.nm-cli .nm-cand-in { grid-area: n; min-width: 0; width: 100%; border: 0; border-bottom: 1px dashed color-mix(in srgb, var(--muted) 70%, transparent); background: transparent;
+  padding: 2px 2px; font: 600 14px var(--f-ui); color: var(--ink); outline: none; }
+.nm-cli .nm-cand-in:focus { border-bottom-color: var(--accent); border-bottom-style: solid; }
+.nm-cli .nm-go-text { grid-area: s; width: 26px; height: 26px; }
 .nm-cli .nm-item-x { grid-area: x; }
 .nm-src { grid-area: s; font-size: 11px; padding: 0 6px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); }
 .nm-cli .nm-kind { grid-area: k; height: 30px; padding: 2px 8px; font-size: 13px; }
@@ -151,3 +153,45 @@
   .nm-cli { grid-template-columns: 1fr auto; grid-template-areas: "n x" "k k" "go no"; }
   .nm-src { display: none; }
 }
+
+/* ---------- 卡片里能改的东西：形象、名字、分类、别名、特征 ---------- */
+.nm-pop-head { align-items: stretch; }
+.nm-pic-col { display: grid; gap: 6px; justify-items: center; flex: 0 0 auto; }
+.nm-pic { position: relative; width: 92px; height: 116px; padding: 0; border: 1px solid color-mix(in srgb, var(--nm) 35%, var(--line)); border-radius: 12px; overflow: hidden; cursor: pointer;
+  background: color-mix(in srgb, var(--nm) 10%, var(--surface)); transition: transform .25s cubic-bezier(.3, 1.6, .5, 1), box-shadow .2s; }
+.nm-pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.nm-pic.none { border-style: dashed; display: grid; place-items: center; }
+.nm-pic.none .lr-ph { transform: scale(.82); }
+.nm-pic.drop { box-shadow: 0 0 0 3px color-mix(in srgb, var(--nm) 45%, transparent); }
+[data-motion="full"] .nm-pic:hover { transform: translateY(-2px) rotate(-1deg); box-shadow: 0 8px 16px -8px var(--nm); }
+.nm-pic-btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; max-width: 100px; }
+.nm-mini { border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 1px 8px; font-size: 12px; cursor: pointer; }
+.nm-mini:hover { border-color: var(--nm); color: color-mix(in srgb, var(--nm) 60%, var(--ink)); }
+.nm-mini.ghost { border-color: transparent; color: var(--muted); }
+.nm-pop-t { flex: 1 1 auto; align-content: start; gap: 6px; }
+.nm-name-b { justify-self: start; border: 0; background: transparent; padding: 0 4px; margin: 0 -4px; border-radius: 6px; font: 700 17px/1.4 var(--f-ui); color: var(--ink); cursor: text; text-align: left; }
+.nm-name-b:hover { background: var(--hover); }
+.nm-name-edit { height: 32px; font-weight: 700; font-size: 15px; }
+.nm-catsel { justify-self: start; max-width: 100%; height: 26px; padding: 0 22px 0 10px; border-radius: 999px; font-size: 12.5px; cursor: pointer;
+  border: 1px solid color-mix(in srgb, var(--nm) 40%, var(--line)); background-color: color-mix(in srgb, var(--nm) 10%, var(--surface)); color: color-mix(in srgb, var(--nm) 55%, var(--ink)); }
+.nm-line { display: grid; grid-template-columns: 2.6em 1fr; gap: 6px; align-items: start; }
+.nm-line .nm-k { padding-top: 2px; }
+.nm-chips { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; min-width: 0; }
+.nm-chips .nm-tag { display: inline-flex; align-items: center; gap: 2px; padding: 0 2px 0 8px; }
+.nm-chip-x { border: 0; background: transparent; color: inherit; opacity: .75; cursor: pointer; padding: 0 4px; font-size: 13px; line-height: 1.4; border-radius: 50%; }
+.nm-chip-x:hover { opacity: 1; background: color-mix(in srgb, var(--nm) 18%, transparent); }
+.nm-chip-in { width: 6.5em; min-width: 0; border: 0; border-bottom: 1px dashed var(--line-strong); background: transparent; font-size: 12.5px; color: var(--ink); padding: 1px 2px; outline: none; }
+.nm-chip-in:focus { border-bottom: 1px solid var(--nm); width: 9em; }
+.nm-rows { max-height: min(40vh, 300px); overflow: auto; padding-right: 2px; }
+.nm-note-line { margin: 0 0 6px; min-height: 0; font-size: 12px; color: color-mix(in srgb, var(--ok) 80%, var(--ink)); display: flex; gap: 8px; align-items: center; }
+.nm-note-line:empty { display: none; }
+.nm-undo { border: 0; background: transparent; padding: 0; color: var(--accent-text); text-decoration: underline; cursor: pointer; font-size: 12px; }
+.nm-del { color: var(--danger); }
+.nm-del:hover { background: var(--danger-soft); }
+.nm-pop:not(.pinned) .nm-pop-foot { opacity: .9; }
+.nm-pop.pinned { box-shadow: var(--shadow), 0 0 0 4px color-mix(in srgb, var(--nm, var(--accent)) 12%, transparent); }
+:root[data-paper="hanfu"] .nm-pic, :root[data-paper="detective"] .nm-pic { border-radius: 2px; }
+:root[data-paper="gothic"] .nm-pic { border-radius: 46px 46px 4px 4px; }
+:root[data-paper="sailor"] .nm-pic { border-radius: 3px; box-shadow: 2px 3px 0 color-mix(in srgb, var(--ink) 15%, transparent); }
+:root[data-paper="adventurer"] .nm-pic { border: 3px solid color-mix(in srgb, var(--wood, #8a5a32) 70%, transparent); border-radius: 4px; }
+:root[data-paper="magical"] .nm-pic { border-radius: 46px 46px 14px 14px; }

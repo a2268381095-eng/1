@@ -11,7 +11,9 @@ import { commands } from "../../core/commands.js";
 import { h, icon, toast, pushLayer } from "../../core/ui.js";
 import { undo as appUndo } from "../../core/undo.js";
 import { FEATURES } from "../../core/stash.js";
-import { readMeta, getMeta, listCards, getCard, catOf, findCat, newCard, change, fieldByKey, valueOf, levelAt, levelIndex } from "../../core/lore.js";
+import { readMeta, getMeta, listCards, getCard, catOf, findCat, newCard, change, valueOf, levelAt, levelIndex, trashCard, KINDS } from "../../core/lore.js";
+import { placeholder, imageFrom } from "../lore/image.js";
+import { setCardImage, lookText } from "../lore/card.js";
 import { runAI } from "../ai/runner.js";
 import { addEditorExtension } from "../editor/editor.js";
 import { ws } from "../editor/workspace.js";
@@ -40,6 +42,7 @@ async function load(bookId) {
   decos.clear();
   redraw();
   updateStatus();
+  if (pop && pop.render && !busy()) pop.render();
 }
 /** 设定库里已经有（名字或别名） */
 function known(name) { return st.terms.some((t) => t.name === name || (t.aliases || []).includes(name)); }
@@ -117,80 +120,219 @@ const plugin = ViewPlugin.fromClass(class {
 }, { decorations: (p) => p.decorations });
 function redraw() { const v = ws.editor && ws.editor.view; if (v) v.dispatch({ effects: refresh.of(null) }); }
 
-const clicks = EditorView.domEventHandlers({
+// 鼠标停在名字上一会儿就弹出这张卡（看一眼）；点一下名字、或者在卡里点了 / 打了字，卡就留住，Esc 或点别处才关
+let hoverTimer = 0, leaveTimer = 0, lastKey = 0;
+const events = EditorView.domEventHandlers({
   click(e, view) {
     if (e.button !== 0 || e.shiftKey || e.altKey || e.ctrlKey || e.metaKey) return false;
     const el = e.target.closest && e.target.closest(".nm-t, .nm-c");
     if (!el || !view.state.selection.main.empty) return false;
-    setTimeout(() => (el.classList.contains("nm-c") ? candPop(el, el.dataset.nmc) : termPop(el, el.dataset.nm)), 0);
+    clearTimeout(hoverTimer);
+    setTimeout(() => {
+      if (el.classList.contains("nm-c")) candPop(el, el.dataset.nmc);
+      else if (pop && pop.cardId === el.dataset.nm) pin();
+      else termPop(el, el.dataset.nm, { pinned: true });
+    }, 0);
+    return false;
+  },
+  mouseover(e) {
+    const el = e.target.closest && e.target.closest(".nm-t");
+    if (!el) return false;
+    clearTimeout(leaveTimer);
+    if ((pop && (pop.pinned || pop.cardId === el.dataset.nm)) || Date.now() - lastKey < 1200) return false;
+    clearTimeout(hoverTimer);
+    hoverTimer = setTimeout(() => { if (el.isConnected && el.matches(":hover")) termPop(el, el.dataset.nm, { pinned: false }); }, 450);
+    return false;
+  },
+  mouseout(e) {
+    if (!(e.target.closest && e.target.closest(".nm-t"))) return false;
+    clearTimeout(hoverTimer);
+    leaveSoon();
     return false;
   },
 });
+function leaveSoon() {
+  clearTimeout(leaveTimer);
+  if (!pop || pop.pinned) return;
+  leaveTimer = setTimeout(() => { if (pop && !pop.pinned && !pop.el.matches(":hover")) closePop(); }, 380);
+}
+function pin() { if (pop && !pop.pinned) { pop.pinned = true; pop.el.classList.add("pinned"); } }
 
 // ---------------- 小卡片（浮在名字旁边） ----------------
 let pop = null;
 function closePop() { if (pop) pop.layer.close(true); }
-function openPop(anchor, cls, content) {
+function openPop(anchor, cls, content, { pinned = true, cardId = null } = {}) {
   closePop();
-  const el = h("div.nm-pop" + cls, { role: "dialog" }, ...content);
+  const el = h("div.nm-pop" + cls + (pinned ? ".pinned" : ""), { role: "dialog" }, ...content);
   document.body.append(el);
   const r = anchor.getBoundingClientRect ? anchor.getBoundingClientRect() : anchor;
+  const rect = { left: r.left, right: r.right, top: r.top, bottom: r.bottom };
+  const onDown = (ev) => { if (!el.contains(ev.target)) layer.close(true); else pin(); };
+  const offType = bus.on("typing:input", () => layer.close(true));
+  setTimeout(() => document.addEventListener("pointerdown", onDown, true), 0);
+  el.addEventListener("mouseenter", () => clearTimeout(leaveTimer));
+  el.addEventListener("mouseleave", leaveSoon);
+  el.addEventListener("focusin", pin);
+  const layer = pushLayer({ onClose: () => { el.remove(); document.removeEventListener("pointerdown", onDown, true); if (typeof offType === "function") offType(); if (pop && pop.el === el) pop = null; } });
+  pop = { el, layer, pinned, cardId, rect, render: null };
+  placePop();
+  return el;
+}
+/** 按名字的位置摆：下面放不下就放上面，不出屏幕 */
+function placePop() {
+  if (!pop) return;
+  const { el, rect: r } = pop;
   const w = el.offsetWidth, hgt = el.offsetHeight;
   let top = r.bottom + 8, side = "down";
   if (top + hgt > innerHeight - 8 && r.top - hgt - 8 > 8) { top = r.top - hgt - 8; side = "up"; }
   el.style.left = Math.round(Math.max(8, Math.min(r.left - 16, innerWidth - w - 8))) + "px";
   el.style.top = Math.round(Math.max(8, Math.min(top, innerHeight - hgt - 8))) + "px";
   el.dataset.side = side;
-  const onDown = (ev) => { if (!el.contains(ev.target)) layer.close(true); };
-  const offType = bus.on("typing:input", () => layer.close(true));
-  setTimeout(() => document.addEventListener("pointerdown", onDown, true), 0);
-  const layer = pushLayer({ onClose: () => { el.remove(); document.removeEventListener("pointerdown", onDown, true); if (typeof offType === "function") offType(); if (pop && pop.el === el) pop = null; } });
-  pop = { el, layer };
-  return el;
 }
 
 const chapterNo = () => (ws.current ? ws.chapters.findIndex((c) => c.id === ws.current.id) + 1 : 0);
+const busy = () => pop && pop.el.contains(document.activeElement) && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName);
+const composingKey = (e) => e.isComposing || e.keyCode === 229;
 
-async function termPop(anchor, id) {
-  const card = await getCard(id);
-  if (!card || !st.bookId) return;
-  const meta = await readMeta(st.bookId);
-  const cat = catOf(meta, card);
-  const cards = await listCards(st.bookId);
-  const idxOf = (cid) => ws.chapters.findIndex((c) => c.id === cid) + 1;
-  const at = chapterNo() || null;
-  const thumb = card.img && card.img.thumb ? h("img.nm-pop-pic", { src: card.img.thumb, alt: "" }) : h("span.nm-pop-glyph", { "aria-hidden": "true" }, cat.glyph || "设");
-  const rows = [];
-  const fieldRow = (f) => {
-    const v = valueOf(card, f);
-    const val = h("button.nm-val" + (v ? "" : ".empty"), { type: "button", title: "点一下改" }, v || "点击填写");
-    val.addEventListener("click", () => editField(val, card, f));
-    return h("div.nm-row", {}, h("span.nm-k", {}, f.name), val);
-  };
-  const fields = cat.kind === "person" ? ["identity", "look", "personality"].map((k) => fieldByKey(cat, k)).filter(Boolean) : (cat.fields || []).filter((f) => f.key !== "notes").slice(0, 3);
-  fields.forEach((f) => rows.push(fieldRow(f)));
-  if (cat.kind === "person") {
-    for (const lad of meta.ladders || []) {
-      const s = levelAt(card, lad.id, idxOf, at);
-      if (!s) continue;
-      const lv = lad.levels[levelIndex(lad, s.levelId)];
-      if (lv) rows.push(h("div.nm-row", {}, h("span.nm-k", {}, lad.name), h("span.nm-v", {}, lv.name + (s.no ? `（第 ${s.no} 章起）` : ""))));
+/** 改一处，卡片底下记一句「已改好 · 撤销」 */
+function noteSaved(msg, entry) {
+  if (!pop || !entry) return;
+  const note = pop.el.querySelector(".nm-note-line");
+  if (!note) return;
+  const u = h("button.nm-undo", { type: "button" }, "撤销");
+  u.addEventListener("click", async () => { await appUndo.undoEntry(entry); if (pop && pop.render) pop.render(); });
+  note.replaceChildren(h("span", {}, msg), u);
+}
+async function save(card, label, fn, msg) {
+  const { entry } = await change(card.bookId, label, async (t) => { const c = await t.card(card.id); if (c) fn(c); });
+  if (pop && pop.render) await pop.render();
+  noteSaved(msg || "已改好", entry);
+  return entry;
+}
+
+async function termPop(anchor, id, { pinned = true } = {}) {
+  if (!st.bookId || !(await getCard(id))) return;
+  const el = openPop(anchor, ".nm-term", [h("p.nm-pop-sub", {}, "……")], { pinned, cardId: id });
+  const render = async ({ focus = null } = {}) => {
+    const card = await getCard(id);
+    if (!card) { closePop(); return; }
+    if (!pop || pop.el !== el) return;
+    const meta = await readMeta(st.bookId);
+    const cat = catOf(meta, card);
+    const cards = await listCards(st.bookId);
+    const idxOf = (cid) => ws.chapters.findIndex((c) => c.id === cid) + 1;
+    const person = cat.kind === "person";
+    const outfit = card.outfit && (card.outfits || []).find((o) => o.id === card.outfit);
+    const img = (outfit && outfit.img) || card.img;
+
+    // 形象：大一点；没有就是分类占位图，下面直接「上传」「AI 画」，也能拖进来、粘贴
+    const file = h("input", { type: "file", accept: "image/*", hidden: true, tabindex: "-1", "aria-hidden": "true" });
+    const setImg = async (src) => {
+      const e = await setCardImage(card.bookId, id, outfit ? outfit.id : null, src);
+      if (e) { await render(); noteSaved("换好图了", e); }
+    };
+    file.addEventListener("change", () => { if (file.files[0]) setImg(file.files[0]); file.value = ""; });
+    const pic = h("button.nm-pic" + (img ? "" : ".none"), { type: "button", title: img ? "打开卡片看大图" : "点「上传」，或者把图拖到这里、复制后按 Ctrl+V", "aria-label": img ? "打开卡片" : "还没有形象" },
+      img ? h("img", { src: img.thumb, alt: "" }) : placeholder(cat));
+    pic.addEventListener("click", () => { if (img) { closePop(); commands.run("cards.open", { bookId: st.bookId, id }); } else file.click(); });
+    pic.addEventListener("dragover", (e) => { e.preventDefault(); pic.classList.add("drop"); });
+    pic.addEventListener("dragleave", () => pic.classList.remove("drop"));
+    pic.addEventListener("drop", (e) => { e.preventDefault(); pic.classList.remove("drop"); const f = imageFrom(e.dataTransfer); if (f) setImg(f); });
+    const upB = h("button.nm-mini", { type: "button" }, img ? "换图" : "上传");
+    upB.addEventListener("click", () => file.click());
+    const aiB = h("button.nm-mini", { type: "button", title: "按外貌和辨识特征画（会先让你确认）" }, "AI 画");
+    aiB.addEventListener("click", () => {
+      if (!commands.get("paint.open")) { toast("绘画功能还没装好"); return; }
+      closePop();
+      commands.run("paint.open", { bookId: card.bookId, cardId: id, outfitId: outfit ? outfit.id : null, name: card.name, purpose: (KINDS[cat.kind] || KINDS.other).purpose,
+        prompt: lookText(card, cat, outfit), onDone: async (dataUrl) => { const e = await setCardImage(card.bookId, id, outfit ? outfit.id : null, dataUrl); if (e) toast(`「${card.name}」的形象画好了`, { action: { label: "撤销", run: () => appUndo.undoEntry(e) } }); } });
+    });
+    const clrB = img ? h("button.nm-mini.ghost", { type: "button" }, "去掉") : null;
+    if (clrB) clrB.addEventListener("click", () => save(card, `去掉「${card.name}」的形象`, (c) => { const o = c.outfit && (c.outfits || []).find((x) => x.id === c.outfit); if (o && o.img) o.img = null; else c.img = null; }, "去掉了"));
+
+    // 名字：点一下改
+    const nameB = h("button.nm-name-b", { type: "button", title: "点一下改名字" }, card.name);
+    nameB.addEventListener("click", () => {
+      const inp = h("input.input.nm-name-edit", { value: card.name, "aria-label": "名字", maxlength: 40 });
+      nameB.replaceWith(inp);
+      inp.focus(); inp.select();
+      let done = false;
+      const go = async (keep) => {
+        if (done) return; done = true;
+        const v = inp.value.trim();
+        if (!keep || !v || v === card.name) { render(); return; }
+        if (st.terms.some((t) => t.id !== id && (t.name === v || (t.aliases || []).includes(v)))) { toast(`设定库里已经有「${v}」了`); render(); return; }
+        await save(card, `把「${card.name}」改名叫「${v}」`, (c) => { c.name = v; }, "改好名字了");
+      };
+      inp.addEventListener("keydown", (e) => { if (composingKey(e)) return; if (e.key === "Enter") { e.preventDefault(); go(true); } if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); go(false); } });
+      inp.addEventListener("blur", () => go(true));
+    });
+    // 分类：换一个
+    const catSel = h("select.nm-catsel", { "aria-label": "分类", style: "--nm:" + cat.color }, ...meta.cats.map((c) => h("option", { value: c.id, selected: c.id === cat.id }, c.name)));
+    catSel.addEventListener("change", () => { const to = meta.cats.find((c) => c.id === catSel.value); if (to) save(card, `把「${card.name}」换到「${to.name}」`, (c) => { c.cat = to.id; }, "换好分类了"); });
+
+    const rows = [];
+    for (const f of cat.fields || []) {
+      const v = valueOf(card, f);
+      const val = h("button.nm-val" + (v ? "" : ".empty"), { type: "button", title: "点一下改" }, v || "点击填写");
+      val.addEventListener("click", () => editField(val, card, f));
+      rows.push(h("div.nm-row", {}, h("span.nm-k", { title: f.hint || null }, f.name), val));
     }
-    const place = card.placeId && cards.find((c) => c.id === card.placeId);
-    if (place) rows.push(h("div.nm-row", {}, h("span.nm-k", {}, "所在地"), h("span.nm-v", {}, place.name)));
-    if ((card.traits || []).length) rows.push(h("div.nm-tags", {}, ...card.traits.slice(0, 6).map((t) => h("span.nm-tag", {}, t))));
-  }
-  const n = ws.editor ? countTerms(st.matcher, ws.editor.getText()).get(card.id) : null;
-  const openB = h("button.btn.small.primary", { type: "button" }, icon("lore"), "打开卡片");
-  openB.addEventListener("click", () => { closePop(); commands.run("cards.open", { bookId: st.bookId, id: card.id }); });
-  const el = openPop(anchor, ".nm-term", [
-    h("div.nm-pop-head", { style: "--nm:" + cat.color }, thumb,
-      h("div.nm-pop-t", {}, h("b.nm-pop-name", {}, card.name), h("span.nm-chip", {}, h("i", { "aria-hidden": "true" }), cat.name + (card.role ? " · " + card.role : "")),
-        (card.aliases || []).length ? h("span.nm-alias", {}, "又叫 " + card.aliases.join("、")) : null)),
-    h("div.nm-rows", {}, ...rows),
-    h("div.nm-pop-foot", {}, h("span.nm-count", {}, n ? `这一章出现 ${n.n} 次` : ""), openB),
-  ]);
-  el.style.setProperty("--nm", cat.color);
+    if (person) {
+      for (const lad of meta.ladders || []) {
+        const s = levelAt(card, lad.id, idxOf, chapterNo() || null);
+        const lv = s && lad.levels[levelIndex(lad, s.levelId)];
+        if (lv) rows.push(h("div.nm-row", {}, h("span.nm-k", {}, lad.name), h("span.nm-v", {}, lv.name + (s.no ? `（第 ${s.no} 章起）` : ""))));
+      }
+      const place = card.placeId && cards.find((c) => c.id === card.placeId);
+      if (place) rows.push(h("div.nm-row", {}, h("span.nm-k", {}, "所在地"), h("span.nm-v", {}, place.name)));
+    }
+    const n = ws.editor ? countTerms(st.matcher, ws.editor.getText()).get(card.id) : null;
+    const delB = h("button.btn.small.ghost.nm-del", { type: "button", title: "删到回收站，能撤销" }, icon("trash"), "删除");
+    delB.addEventListener("click", async () => {
+      closePop();
+      const r = await trashCard(id);
+      if (r && r.entry) toast(`已删除「${card.name}」，在回收站里`, { action: { label: "撤销", run: () => appUndo.undoEntry(r.entry) } });
+    });
+    const openB = h("button.btn.small.primary", { type: "button" }, icon("lore"), "打开卡片");
+    openB.addEventListener("click", () => { closePop(); commands.run("cards.open", { bookId: st.bookId, id }); });
+
+    el.style.setProperty("--nm", cat.color);
+    el.replaceChildren(
+      h("div.nm-pop-head", {},
+        h("div.nm-pic-col", {}, pic, h("div.nm-pic-btns", {}, upB, aiB, clrB), file),
+        h("div.nm-pop-t", {}, nameB, catSel,
+          h("div.nm-line", {}, h("span.nm-k", {}, "别名"), chipsEdit(card.aliases || [], "别名", "alias", (list) => save(card, `改「${card.name}」的别名`, (c) => { c.aliases = list; }, "别名改好了").then(() => render({ focus: "alias" })))),
+          person ? h("div.nm-line", {}, h("span.nm-k", {}, "特征"), chipsEdit(card.traits || [], "辨识特征", "trait", (list) => save(card, `改「${card.name}」的辨识特征`, (c) => { c.traits = list; }, "特征改好了").then(() => render({ focus: "trait" })))) : null)),
+      h("div.nm-rows", {}, ...rows),
+      h("p.nm-note-line", { "aria-live": "polite" }),
+      h("div.nm-pop-foot", {}, h("span.nm-count", {}, n ? `这一章出现 ${n.n} 次` : "这一章没出现"), delB, openB),
+    );
+    if (focus) { const f = el.querySelector(`[data-focus="${focus}"]`); if (f) f.focus(); }
+    placePop();
+  };
+  pop.render = render;
+  await render();
+}
+
+/** 一排可以删、可以加的小签（别名、辨识特征） */
+function chipsEdit(items, label, key, onSave) {
+  const box = h("div.nm-chips");
+  items.forEach((t, i) => {
+    const x = h("button.nm-chip-x", { type: "button", "aria-label": `去掉${label}「${t}」`, title: "去掉" }, "×");
+    x.addEventListener("click", () => onSave(items.filter((_, j) => j !== i)));
+    box.append(h("span.nm-tag", {}, t, x));
+  });
+  const add = h("input.nm-chip-in", { placeholder: "+ " + label, "aria-label": "加" + label, "data-focus": key, maxlength: 20 });
+  add.addEventListener("keydown", (e) => {
+    if (composingKey(e) || e.key !== "Enter") return;
+    e.preventDefault();
+    const v = add.value.trim();
+    add.value = "";
+    if (v && !items.includes(v)) onSave([...items, v]);
+  });
+  box.append(add);
+  return box;
 }
 
 function editField(val, card, f) {
@@ -199,28 +341,19 @@ function editField(val, card, f) {
   ta.focus();
   ta.select();
   let done = false;
-  const save = async () => {
+  const go = async (keep) => {
     if (done) return;
     done = true;
     const v = ta.value.trim();
-    const shown = h("button.nm-val" + (v ? "" : ".empty"), { type: "button", title: "点一下改" }, v || "点击填写");
-    shown.addEventListener("click", () => editField(shown, { ...card, fields: { ...card.fields, [f.id]: v } }, f));
-    ta.replaceWith(shown);
-    if (v === (valueOf(card, f) || "")) return;
-    const { entry } = await change(card.bookId, `改「${card.name}」的${f.name}`, async (t) => {
-      const c = await t.card(card.id);
-      if (c) c.fields = { ...(c.fields || {}), [f.id]: v };
-    });
-    card.fields = { ...card.fields, [f.id]: v };
-    shown.classList.add("nm-saved");
-    if (entry) toast(`已改好「${card.name}」的${f.name}`, { action: { label: "撤销", run: () => appUndo.undoEntry(entry) } });
+    if (!keep || v === (valueOf(card, f) || "")) { if (pop && pop.render) pop.render(); return; }
+    await save(card, `改「${card.name}」的${f.name}`, (c) => { c.fields = { ...(c.fields || {}), [f.id]: v }; }, `${f.name}改好了`);
   };
   ta.addEventListener("keydown", (e) => {
-    if (e.isComposing || e.keyCode === 229) return;
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); save(); }
-    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); ta.value = valueOf(card, f); save(); }
+    if (composingKey(e)) return;
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); go(true); }
+    if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); go(false); }
   });
-  ta.addEventListener("blur", save);
+  ta.addEventListener("blur", () => go(true));
 }
 
 /** 选分类的一排小签：猜的那个排第一 */
@@ -236,14 +369,26 @@ function catChips(guess, onPick) {
 async function candPop(anchor, name) {
   if (!st.meta) st.meta = await readMeta(st.bookId);
   const c = st.cands.find((x) => x.name === name) || { name, kind: null };
-  const ign = h("button.btn.small.ghost", { type: "button" }, "忽略这个名字");
+  const input = h("input.input.nm-name-in", { value: name, "aria-label": "名字（可以改一下再收）", maxlength: 20 });
+  const ign = h("button.btn.small.ghost", { type: "button", title: "以后不再标这个名字" }, "忽略");
   ign.addEventListener("click", async () => { closePop(); await ignore([name]); toast(`以后不标「${name}」了。名字面板里能取消忽略。`); });
+  const drop = h("button.btn.small.ghost", { type: "button", title: "从疑似名单里拿掉（下次找名字还可能找到）" }, "移出名单");
+  drop.addEventListener("click", async () => { closePop(); await saveCands(st.cands.filter((x) => x.name !== name)); });
+  const pick = (cat) => {
+    const n = input.value.trim();
+    if (!n) { input.focus(); return; }
+    if (known(n)) { toast(`「${n}」已经在设定库里了`); return; }
+    closePop();
+    archive([{ name: n, catId: cat.id }]).then(() => { if (n !== name) saveCands(st.cands.filter((x) => x.name !== name)); });
+  };
   openPop(anchor, ".nm-cand", [
     h("p.nm-pop-q", {}, h("b", {}, "「" + name + "」"), "不在设定库里", c.n ? h("span.nm-count", {}, `　找到 ${c.n} 次${c.src === "ai" ? " · AI 找的" : ""}`) : null),
-    h("p.nm-pop-sub", {}, "收进哪个分类？"),
-    catChips(c.kind, (cat) => { closePop(); archive([{ name, catId: cat.id }]); }),
-    h("div.nm-pop-foot", {}, ign),
+    input,
+    h("p.nm-pop-sub", {}, "名字不对可以先改，再点一个分类收进去。"),
+    catChips(c.kind, pick),
+    h("div.nm-pop-foot", {}, drop, ign),
   ]);
+  input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !composingKey(e)) { e.preventDefault(); const first = pop && pop.el.querySelector(".nm-cat"); if (first) first.click(); } });
 }
 
 /** 正文里选中一段 →「收入设定库」：名字可以改一下，再挑分类 */
@@ -354,12 +499,12 @@ async function renderPanel() {
   const sec = (title, n, ...kids) => h("section.nm-sec", {}, h("h4.nm-sec-t", {}, title, n != null ? h("span.nm-n", {}, String(n)) : null), ...kids);
 
   const termItem = (x) => {
-    const b = h("button.nm-item", { type: "button", style: "--nm:" + x.term.color, title: "跳到第一次出现的地方" },
+    const b = h("button.nm-item", { type: "button", style: "--nm:" + x.term.color, title: "看这张卡、改、删" },
       h("i.nm-dot", { "aria-hidden": "true" }), h("span.nm-item-n", {}, x.term.name), h("span.nm-item-c", {}, x.term.cat), h("span.nm-item-x", {}, "×" + x.n));
-    b.addEventListener("click", () => { ws.editor.select(x.first, x.first + x.term.name.length); });
-    const o = h("button.icon-btn.nm-open", { type: "button", title: "打开卡片", "aria-label": "打开「" + x.term.name + "」的卡片" }, icon("lore"));
-    o.addEventListener("click", () => commands.run("cards.open", { bookId: st.bookId, id: x.term.id }));
-    return h("div.nm-li", {}, b, o);
+    b.addEventListener("click", () => termPop(b, x.term.id, { pinned: true }));
+    const go = h("button.icon-btn.nm-go-text", { type: "button", title: "跳到正文里第一次出现的地方", "aria-label": "跳到「" + x.term.name + "」" }, icon("search"));
+    go.addEventListener("click", () => ws.editor.select(x.first, x.first + x.term.name.length));
+    return h("div.nm-li", {}, b, go);
   };
 
   const picks = new Map(candHere.map((c) => [c.name, c.kind || guessKind(c.name)]));
@@ -373,11 +518,19 @@ async function renderPanel() {
     const go = h("button.btn.small.nm-go", { type: "button" }, "收进");
     const no = h("button.btn.small.ghost.nm-no", { type: "button" }, "忽略");
     const sel = catSel(c);
-    go.addEventListener("click", () => { const [kind, catId] = sel.value.split("|"); archive([{ name: c.name, kind, catId }]); });
+    const nameIn = h("input.nm-cand-in", { value: c.name, "aria-label": "名字（可以改）", maxlength: 20, title: "名字不对可以直接改" });
+    go.addEventListener("click", async () => {
+      const n = nameIn.value.trim();
+      if (!n) return;
+      if (known(n)) { toast(`「${n}」已经在设定库里了`); return; }
+      const [kind, catId] = sel.value.split("|");
+      await archive([{ name: n, kind, catId }]);
+      if (n !== c.name) saveCands(st.cands.filter((x) => x.name !== c.name));
+    });
     no.addEventListener("click", () => ignore([c.name]));
-    const nameB = h("button.nm-cand-n", { type: "button", title: c.here ? "跳到正文里" : "这一章没出现" }, c.name);
-    nameB.addEventListener("click", () => { if (!c.here) return; const i = text.indexOf(c.name); ws.editor.select(i, i + c.name.length); });
-    return h("div.nm-cli", {}, nameB, h("span.nm-item-x", {}, c.here ? "×" + c.here : "别章"), c.src === "ai" ? h("span.nm-src", { title: "AI 找到的" }, "AI") : null, sel, go, no);
+    const jump = h("button.icon-btn.nm-go-text", { type: "button", title: c.here ? "跳到正文里" : "这一章没出现", "aria-label": "跳到「" + c.name + "」", disabled: !c.here }, icon("search"));
+    jump.addEventListener("click", () => { const i = text.indexOf(c.name); if (i >= 0) ws.editor.select(i, i + c.name.length); });
+    return h("div.nm-cli", {}, nameIn, h("span.nm-item-x", {}, c.here ? "×" + c.here : "别章"), c.src === "ai" ? h("span.nm-src", { title: "AI 找到的" }, "AI") : jump, sel, go, no);
   };
   const localB = h("button.btn.small", { type: "button", title: "按「某某说」和地名、门派、节日的尾巴找，不花 token，可能不准" }, icon("search"), "本地找一找");
   localB.addEventListener("click", async () => { await scanLocal(scopeSel.value); renderPanel(); });
@@ -386,8 +539,10 @@ async function renderPanel() {
   aiB.addEventListener("click", () => scanAI());
   const allB = h("button.btn.small", { type: "button" }, "全部收进");
   allB.addEventListener("click", () => {
-    const sels = [...body.querySelectorAll(".nm-cli select")];
-    archive(candHere.map((c, i) => { const [kind, catId] = (sels[i] ? sels[i].value : "|").split("|"); return { name: c.name, kind, catId }; }));
+    const rowsEl = [...body.querySelectorAll(".nm-cli")];
+    const items = rowsEl.map((r) => { const n = r.querySelector(".nm-cand-in").value.trim(); const [kind, catId] = r.querySelector("select").value.split("|"); return { name: n, kind, catId }; })
+      .filter((x) => x.name && !known(x.name));
+    archive(items).then(() => saveCands(st.cands.filter((x) => !candHere.some((c) => c.name === x.name))));
   });
   const ignored = [...st.ignore];
   const ignBox = h("details.nm-ign", {}, h("summary", {}, `忽略过的 ${ignored.length} 个`),
@@ -439,7 +594,8 @@ function updateStatus() {
 // ---------------- 注册 ----------------
 export async function register() {
   FEATURES.names = "找新名字";
-  addEditorExtension([plugin, clicks]);
+  addEditorExtension([plugin, events]);
+  bus.on("typing:input", () => { lastKey = Date.now(); clearTimeout(hoverTimer); });
   bus.on("chapter:opened", () => { closePop(); if (ws.book && ws.book.id !== st.bookId) load(ws.book.id); else { redraw(); setTimeout(updateStatus, 0); } });
   bus.on("lore:changed", ({ bookId }) => { if (bookId === st.bookId) load(bookId); });
   bus.on("kv:changed", ({ key }) => { if (String(key).startsWith("names:") && st.bookId) load(st.bookId); });

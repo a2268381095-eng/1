@@ -40,30 +40,75 @@ const TEXT = [
   check(/#|rgb/.test(color), '用的是分类颜色 ' + color, fails);
   check(await page.isVisible('.toast:has-text("已收进设定库")'), '提示「已收进设定库」，带撤销', fails);
 
-  console.log('点名字弹卡片，直接改字段');
-  await page.click('.ed-host .nm-t');
+  console.log('鼠标停在名字上弹出卡片；点一下留住；直接改');
+  await page.hover('.ed-host .nm-t');
   await page.waitForSelector('.nm-pop.nm-term', { timeout: 3000 });
-  check((await page.textContent('.nm-pop-name')) === '林栀', '卡片上是这个名字', fails);
+  check(!(await page.$eval('.nm-pop', (e) => e.classList.contains('pinned'))), '停一会儿就弹出来（没点之前是「看一眼」）', fails);
+  await page.mouse.move(5, 400);
+  await page.waitForSelector('.nm-pop', { state: 'detached', timeout: 3000 });
+  check(true, '鼠标移开就收起', fails);
+  await page.click('.ed-host .nm-t');
+  await page.waitForSelector('.nm-pop.nm-term.pinned', { timeout: 3000 });
+  check((await page.textContent('.nm-name-b')) === '林栀', '卡片上是这个名字', fails);
   check(/这一章出现 2 次/.test(await page.textContent('.nm-pop .nm-count')), '显示这一章出现几次', fails);
+  check(await page.isVisible('.nm-pic.none') && await page.isVisible('.nm-mini:has-text("上传")') && await page.isVisible('.nm-mini:has-text("AI 画")'), '没有形象：占位图 + 上传 + AI 画', fails);
+  await page.mouse.move(5, 400);
+  await page.waitForTimeout(700);
+  check(await page.isVisible('.nm-pop.nm-term'), '点过以后鼠标移开也不收', fails);
   await page.click('.nm-pop .nm-row .nm-val');
   await page.fill('.nm-pop .nm-edit', '旧书店店主');
   await page.keyboard.press('Enter');
   await page.waitForTimeout(500);
   check((await page.textContent('.nm-pop .nm-row .nm-val')) === '旧书店店主', '字段改好了', fails);
+  check(/改好了/.test(await page.textContent('.nm-pop .nm-note-line')), '卡片底下说「改好了」带撤销', fails);
+  // 上传形象
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAADCAYAAAC56t6BAAAAFklEQVR4nGP4z8DwnwEIGP4zMDAwAAAx+gP9X0B1UQAAAABJRU5ErkJggg==', 'base64');
+  await page.setInputFiles('.nm-pop input[type=file]', { name: 'a.png', mimeType: 'image/png', buffer: png });
+  await page.waitForSelector('.nm-pop .nm-pic img', { timeout: 5000 });
+  check(true, '上传的图直接显示在卡片上', fails);
+  // 加别名：别名也上色
+  await page.fill('.nm-pop .nm-chip-in[data-focus="alias"]', '阿栀');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(700);
+  check((await page.$$eval('.nm-pop .nm-tag', (els) => els.map((e) => e.textContent))).some((t) => t.startsWith('阿栀')), '别名加上了', fails);
+  check(await page.$$eval('.ed-host .nm-t', (els) => els.some((e) => e.textContent === '阿栀')), '别名「阿栀」在正文里也上色了', fails);
+  // 改名字
+  await page.click('.nm-name-b');
+  await page.fill('.nm-name-edit', '林小栀');
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(700);
+  check((await page.textContent('.nm-name-b')) === '林小栀', '名字改好了', fails);
+  check(!(await page.$$eval('.ed-host .nm-t', (els) => els.some((e) => e.textContent === '林栀'))), '改名后正文里旧名字不再按这张卡标', fails);
+  await page.click('.nm-pop .nm-undo');
+  await page.waitForTimeout(700);
+  check((await page.textContent('.nm-name-b')) === '林栀', '卡片里「撤销」改回原名', fails);
+  // 换分类
+  await page.selectOption('.nm-catsel', { label: '地点' });
+  await page.waitForTimeout(600);
+  check((await page.$eval('.nm-catsel', (s) => s.options[s.selectedIndex].text)) === '地点', '分类换成地点', fails);
+  await page.selectOption('.nm-catsel', { label: '人物' });
+  await page.waitForTimeout(600);
   await page.keyboard.press('Escape');
   await page.waitForSelector('.nm-pop', { state: 'detached' });
   await page.click('.ed-host .nm-t');
   await page.waitForSelector('.nm-pop.nm-term');
   check((await page.textContent('.nm-pop .nm-row .nm-val')) === '旧书店店主', '再打开还在（存进设定库了）', fails);
-  await page.keyboard.press('Escape');
 
-  console.log('别名也上色');
+  console.log('从卡片里删掉 → 撤销');
+  await page.click('.nm-pop .nm-del');
+  await page.waitForSelector('.nm-pop', { state: 'detached' });
+  await page.waitForTimeout(600);
+  check((await page.$$('.ed-host .nm-t')).length === 0, '删掉以后正文不再标', fails);
+  await page.click('.toast:has-text("已删除") .toast-act:has-text("撤销")');
+  await page.waitForTimeout(700);
+  check((await page.$$('.ed-host .nm-t')).length >= 2, '撤销以后又标回来', fails);
+
+  console.log('打开卡片');
   await page.click('.ed-host .nm-t');
   await page.waitForSelector('.nm-pop.nm-term');
-  await page.click('.nm-pop .btn.primary');   // 打开卡片
+  await page.click('.nm-pop .btn.primary');
   await page.waitForTimeout(800);
-  const aliasOk = await page.evaluate(() => !!document.querySelector('.lr-panel-body, .lr-root'));
-  check(aliasOk, '「打开卡片」打开设定库里这张卡', fails);
+  check(await page.evaluate(() => !!document.querySelector('.lr-panel-body, .lr-root')), '「打开卡片」打开设定库里这张卡', fails);
   await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   const d = await page.$('.modal .btn:has-text("丢弃")'); if (d) await d.click();
 
@@ -76,6 +121,7 @@ const TEXT = [
   await page.click('.ed-host .nm-c:has-text("青云宗")');
   await page.waitForSelector('.nm-pop.nm-cand');
   check(/势力/.test(await page.textContent('.nm-cat.guess')), '青云宗猜成势力', fails);
+  check(await page.inputValue('.nm-pop .nm-name-in') === '青云宗', '收之前名字可以改', fails);
   await page.click('.nm-cat.guess');
   await page.waitForTimeout(600);
   check((await page.$$eval('.ed-host .nm-t', (els) => els.filter((e) => e.textContent === '青云宗').length)) === 2, '收进以后变成实线上色', fails);
@@ -90,7 +136,7 @@ const TEXT = [
   await page.waitForSelector('.nm-panel .nm-li');
   const here = await page.$$eval('.nm-panel .nm-item-n', (els) => els.map((e) => e.textContent));
   check(here.includes('林栀') && here.includes('青云宗'), '这一章出现的：' + here.join('、'), fails);
-  const candRows = await page.$$eval('.nm-panel .nm-cli .nm-cand-n', (els) => els.map((e) => e.textContent));
+  const candRows = await page.$$eval('.nm-panel .nm-cli .nm-cand-in', (els) => els.map((e) => e.value));
   check(candRows.includes('沈砚之') && candRows.includes('落霞镇'), '疑似新名字：' + candRows.join('、'), fails);
   check(await page.isVisible('.nm-ign summary'), '忽略过的可以展开取消', fails);
   await page.click('.nm-panel .nm-all .btn');
