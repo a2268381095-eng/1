@@ -1,5 +1,6 @@
 // AI 接入：接入界面（#/ai）、调用入口。选中调用的完整对比界面、提示词库、暂存盒在各自的模块里。
 import { nav } from "../../core/nav.js";
+import { refreshModels, startModelRefresh } from "./refresh.js";
 import { commands } from "../../core/commands.js";
 import { bus } from "../../core/bus.js";
 import { h, icon, modal, toast } from "../../core/ui.js";
@@ -35,6 +36,9 @@ async function selectionAsSample() {
 
 export function register() {
   nav.route("ai", "/ai", renderAIView);
+  commands.register({ id: "ai.refreshModels", title: "刷新模型列表", keywords: "模型 新模型 更新 拉取 刷新 列表", hint: "各家新出的模型拉进来（每天也会自动拉一次）",
+    run: async () => { toast("正在拉取各家的模型列表……"); const f = await refreshModels({ force: true, quiet: true }); toast(f.length ? f.map((x) => `${x.name} 新增 ${x.models.length} 个`).join("，") : "模型列表已是最新。"); } });
+  startModelRefresh();
   commands.register({ id: "ai.setup", title: "接入 AI", keywords: "AI Key 模型 ofox claude gpt gemini deepseek grok 接口", hint: "粘贴 Key、拉取模型、测试", run: () => nav.go("/ai") });
   commands.register({ id: "samples.fromSelection", title: "存为文风样本", keywords: "文风 样本 模仿 语气 句式 AI", hint: "把选中的一段存起来，调用 AI 时可以让它照着写", when: () => !!ws.book && !!ws.editor, run: selectionAsSample });
   commands.register({ id: "samples.open", title: "文风样本", keywords: "文风 样本 模仿 AI", hint: "管理存下来的文风样本", run: () => samplesModal() });

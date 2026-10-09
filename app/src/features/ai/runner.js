@@ -13,6 +13,7 @@ import { levelPicker } from "./levels.js";
 import { listSamples, noteSampleUse, sampleBlock } from "../../core/samples.js";
 import { samplesModal } from "./samples.js";
 import { ctxSource, ctxText, lastCtx, noteCtx, BEFORE_SIZES, CTX_NONE } from "./context.js";
+import { newModelSet, newKey } from "./refresh.js";
 
 const skipThisSession = new Set();   // "功能|提供商|模型|提示词" 本次会话不再询问
 
@@ -104,6 +105,7 @@ async function confirmCard(opts, prev = null) {
   const recent = (await recentOf(opts.feature)).filter((r) => ready.some((p) => p.id === r.providerId));
   const cheap = opts.simple && cfg.cheap && ready.some((p) => p.id === cfg.cheap.providerId) ? cfg.cheap : null;
   const uses = await db.getKV("ai:modelUses", {});
+  const fresh = await newModelSet();
   const globalLast = await db.getKV("ai:last", null);
   const last = lastOf(recent);
   const usable = (c) => c && ready.some((p) => p.id === c.providerId);
@@ -138,7 +140,7 @@ async function confirmCard(opts, prev = null) {
     }).sort((a, b) => b.n - a.n);
     groups.forEach(({ p, c, models }) => {
       const g = h("optgroup", { label: p.custom ? c.name || "自定义接口" : p.name });
-      models.forEach((m) => g.append(h("option", { value: modelKey(p.id, m.id), selected: p.id === start.providerId && m.id === start.model }, m.id + (m.n ? `　· 用过 ${m.n} 次` : ""))));
+      models.forEach((m) => g.append(h("option", { value: modelKey(p.id, m.id), selected: p.id === start.providerId && m.id === start.model }, m.id + (fresh.has(newKey(p.id, m.id)) ? "　· 新" : "") + (m.n ? `　· 用过 ${m.n} 次` : ""))));
       modelSel.append(g);
     });
     // 提示词

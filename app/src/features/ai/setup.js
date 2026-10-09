@@ -93,7 +93,7 @@ export async function renderSetup(root, opts = {}) {
       try {
         const r = await testModel(id, c, model);
         const all = await getConfig();
-        all.providers[id] = { ...c, models, ok: true, testModel: model, testedAt: Date.now() };
+        all.providers[id] = { ...c, models, ok: true, testModel: model, testedAt: Date.now(), modelsAt: Date.now() };
         await saveConfig(all);
         say("ok", "接好了。", `${p.custom ? (c.name || "自定义接口") : p.name} 回复：「${r.text.slice(0, 40)}」`);
         list.querySelector(`[data-id="${id}"]`).replaceWith(card(p));
