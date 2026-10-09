@@ -33,12 +33,15 @@ const DAY = 86400000;
   const bookId = await newBook(page, '暂存测试', [{ title: '门铃', text: '　　雨下到第三天。门铃响了。' }]);
   const chId = await idb((db, bookId) => new Promise((res) => { const q = db.transaction(['chapters']).objectStore('chapters').index('bookId').getAll(bookId); q.onsuccess = () => res(q.result[0].id); }), bookId);
   const now = Date.now();
+  // 「今天」的几条要落在今天之内（刚过零点跑测试也不会跨到昨天）
+  const today0 = new Date(now); today0.setHours(0, 0, 0, 0);
+  const t0 = Math.max(now - 600e3, today0.getTime() + 10e3);
   const long = '　　这是很长的一段摘要。'.repeat(30);
   const base = { kind: 'text', pinned: false, tags: [], providerId: 'mock', model: 'mock-small', prompt: '帮我改一下', input: '' };
   await seed([
-    { ...base, id: 'r1', at: now - 3600e3, bookId, feature: 'rewrite', ref: chId, title: '第一章 门铃 · 选中调用', text: '第一条改写结果。' },
-    { ...base, id: 'r2', at: now - 7200e3, bookId, feature: 'chapterName', ref: chId, title: '章名候选', text: '门铃响了' },
-    { ...base, id: 'r3', at: now - 10800e3, bookId, feature: 'chapterName', ref: 'other-ch', title: '章名候选', text: '旧信' },
+    { ...base, id: 'r1', at: t0, bookId, feature: 'rewrite', ref: chId, title: '第一章 门铃 · 选中调用', text: '第一条改写结果。' },
+    { ...base, id: 'r2', at: t0 - 1000, bookId, feature: 'chapterName', ref: chId, title: '章名候选', text: '门铃响了' },
+    { ...base, id: 'r3', at: t0 - 2000, bookId, feature: 'chapterName', ref: 'other-ch', title: '章名候选', text: '旧信' },
     { ...base, id: 'r4', at: now - 40 * DAY, bookId, feature: 'summary', ref: chId, title: '摘要', text: long },
     { ...base, id: 'r5', at: now - 35 * DAY, bookId, feature: 'summary', ref: chId, title: '摘要', text: '置顶的旧摘要', pinned: true },
     { ...base, id: 'r6', at: now - 3 * DAY, bookId: null, feature: 'chat', ref: null, title: '随便聊聊', text: '不属于作品的对话', tags: ['灵感'] },

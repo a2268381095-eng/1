@@ -7,7 +7,7 @@ import { bus } from "../../core/bus.js";
 import { h, icon, modal, pushLayer, toast } from "../../core/ui.js";
 import { tip } from "../demon/demon.js";
 import { cardEl, animateOut, focusKey, restoreFocus } from "./card.js";
-import { applyFilter, tally, featureName, timeBucket, BUCKETS, matchCond, DAY } from "./logic.js";
+import { applyFilter, tally, featureName, timeBucket, BUCKETS, matchCond } from "./logic.js";
 import { L, removeRows, failed, runUndo, runRedo, canUndoHere, canRedoHere } from "./ops.js";
 
 const S = {
@@ -311,4 +311,3 @@ export function leaveView() {
 }
 
 export const viewScroll = () => (onView() ? { stashScroll: S.main.scrollTop } : {});
-export { DAY };

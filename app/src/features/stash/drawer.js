@@ -202,4 +202,3 @@ export function openDrawer(opts = {}) {
   return handle;
 }
 
-export const drawerOpen = () => !!current;
