@@ -48,3 +48,9 @@
   .shelf .topbar .brand { white-space: nowrap; font-size: 16px; }
   .shelf .topbar .btn.primary { padding: 6px 10px; }
 }
+/* 再窄：新建作品也只留加号，按钮挤一挤 */
+@media (max-width: 460px) {
+  .shelf .topbar .tool-btn { padding: 0 5px; }
+  .shelf .topbar .btn.primary { font-size: 0; gap: 0; padding: 6px 8px; }
+  .shelf .topbar .brand { font-size: 15px; }
+}

@@ -22,7 +22,8 @@ export async function listPrompts() {
 }
 
 export async function savePrompt(p) {
-  const row = { id: p.id || uid("pr"), name: p.name || "未命名提示词", group: p.group || "", text: p.text || "", feature: p.feature || "",
+  // 先展开原记录，lastUsed 这类多出来的字段不丢
+  const row = { ...p, id: p.id || uid("pr"), name: p.name || "未命名提示词", group: p.group || "", text: p.text || "", feature: p.feature || "",
     order: p.order ?? Date.now(), uses: p.uses || 0, pinned: !!p.pinned, createdAt: p.createdAt || Date.now(), updatedAt: Date.now() };
   await db.put("prompts", row);
   bus.emit("prompts:changed", {});
@@ -51,15 +52,15 @@ export async function exportPrompts() {
   return { app: "xiaoemo", kind: "prompts", version: 1, prompts: await listPrompts() };
 }
 
-/** 导入：同名同分组的跳过，返回导入了几条 */
+/** 导入：同名同内容的跳过，返回导入了几条 */
 export async function importPrompts(data) {
   const list = (data && data.prompts) || [];
   const have = await listPrompts();
   let n = 0;
   for (const p of list) {
     if (!p || !p.text) continue;
-    if (have.some((h) => h.name === p.name && h.group === p.group && h.text === p.text)) continue;
-    await savePrompt({ ...p, id: undefined, uses: 0 });
+    if (have.some((h) => h.name === p.name && h.text === p.text)) continue;
+    await savePrompt({ ...p, id: undefined, uses: 0, lastUsed: undefined });
     n++;
   }
   return n;

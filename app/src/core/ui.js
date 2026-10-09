@@ -47,6 +47,7 @@ export const icon = (name) => {
     redo: "M15 14l5-5-5-5M20 9H9a5 5 0 0 0 0 10h3",
     upload: "M12 16V4M7 9l5-5 5 5M4 20h16",
     box: "M4 8l8-4 8 4v9l-8 4-8-4zM4 8l8 4 8-4M12 12v9",
+    prompt: "M5 4h14v12H10l-5 4V4zM9 9h6M9 12h4",
     download: "M12 4v12M7 11l5 5 5-5M4 20h16",
     book: "M5 4h10a4 4 0 0 1 4 4v12H9a4 4 0 0 1-4-4V4zM5 16a4 4 0 0 1 4-4h10",
     flag: "M5 21V4h11l-2 4 2 4H5",

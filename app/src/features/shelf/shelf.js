@@ -109,6 +109,7 @@ export async function renderShelf(root, restore) {
       h("span.brand", {}, "小恶魔文书"),
       h("span.spacer"),
       h("button.tool-btn", { type: "button", onclick: () => commands.run("io.import") }, icon("upload"), "导入"),
+      h("button.tool-btn", { type: "button", "data-cmd": "prompts.open", onclick: () => commands.run("prompts.open") }, icon("prompt"), "提示词"),
       h("button.tool-btn", { type: "button", "data-cmd": "stash.open", onclick: () => commands.run("stash.open") }, icon("box"), label("暂存盒")),
       h("button.tool-btn", { type: "button", onclick: () => nav.go("/trash") }, icon("trash"), label("回收站")),
       lookButton(),
