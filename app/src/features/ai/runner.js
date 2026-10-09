@@ -390,4 +390,4 @@ function explain(e, opts, c) {
   });
 }
 
-export { icon };
+export { icon, explain };

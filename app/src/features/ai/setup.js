@@ -1,9 +1,11 @@
 // AI 接入流程（一条路）：选提供商 → 粘贴 Key → 自动拉取模型 → 点「测试」发一条极短消息 → 成功。
 // 失败就在当前页说原因，不跳走。这个组件既用在「AI 接入」界面，也用在第一次调用 AI 时就地弹出来。
-import { allProviders, providerOf, getConfig, saveConfig, listModels, testModel, isDesktop } from "../../core/ai.js";
+// 下面另有「绘画」一段（可选）：选绘画接口、加绘画模型（从模型列表里挑或手动填），改了就存，不影响上面文字模型的流程。
+import { allProviders, providerOf, getConfig, saveConfig, listModels, testModel, isDesktop,
+  IMAGE_APIS, defaultImageApi, imageModelChoices, paintReady } from "../../core/ai.js";
 import { h, icon, modal } from "../../core/ui.js";
 
-/** 在 root 里画接入流程。opts.onDone(providerId) 测试成功后调用；opts.only 只显示某一家 */
+/** 在 root 里画接入流程。opts.onDone(providerId) 测试成功后调用；opts.onPaintReady(providerId) 绘画配好（有 Key、接口、模型）后调用；opts.only 只显示某一家 */
 export async function renderSetup(root, opts = {}) {
   const cfg = await getConfig();
   root.replaceChildren();
@@ -18,9 +20,10 @@ export async function renderSetup(root, opts = {}) {
   const card = (p) => {
     const c = cfg.providers[p.id];
     const ok = c && c.ok;
-    const b = h("button.ai-prov" + (ok ? ".ok" : ""), { type: "button", "data-id": p.id },
+    const paint = paintReady(c);
+    const b = h("button.ai-prov" + (ok ? ".ok" : "") + (paint ? ".paint" : ""), { type: "button", "data-id": p.id },
       h("span.ai-prov-name", {}, p.name),
-      h("span.ai-prov-state", {}, ok ? `已接入 · ${(c.models || []).length} 个模型` : "未接入"),
+      h("span.ai-prov-state", {}, (ok ? `已接入 · ${(c.models || []).length} 个模型` : "未接入") + (paint ? " · 能画图" : "")),
       p.note ? h("span.ai-prov-note", {}, p.note) : null);
     b.addEventListener("click", () => openFlow(p.id));
     return b;
@@ -121,11 +124,91 @@ export async function renderSetup(root, opts = {}) {
       h("div.field", {}, h("span", {}, (p.custom ? "③" : "②") + " 拉取可用的模型"), h("div.row", {}, fetchBtn, modelFilter), modelSel),
       h("div.row", {}, testBtn, h("span.muted.small-note", {}, "会发一条很短的消息，花费不到一分钱"), h("span.spacer"), removeBtn),
       status,
+      paintSection({ p, id, conf, confNow, models: () => models, refreshCard: () => { cfg.providers[id] = conf; list.querySelector(`[data-id="${id}"]`).replaceWith(card(p)); }, onReady: opts.onPaintReady }),
       h("p.muted.small-note", {}, "Key 只存在这台电脑上，不会上传到别处。")));
     (p.custom ? baseIn : keyIn).focus();
   }
 
   if (opts.only) openFlow(opts.only);
+}
+
+/**
+ * 「绘画」一段：绘画接口（OpenAI 图片接口 / Gemini 出图 / 不画图）+ 绘画模型（胶囊，能删；从模型列表里挑，或者手动填）。
+ * 改了马上存进 providers[id].image；这一家还没测试过文字模型时也先把 Key 存上（ok 不变，文字那边照旧要测试）。
+ */
+function paintSection({ p, id, conf, confNow, models, refreshCard, onReady }) {
+  const img = { api: (conf.image && conf.image.api) || defaultImageApi(id), models: [...((conf.image && conf.image.models) || [])] };
+  const apiSel = h("select.select.ai-paint-api", { "aria-label": "绘画接口" }, ...IMAGE_APIS.map((a) => h("option", { value: a.id, selected: a.id === img.api }, a.name)));
+  const chips = h("div.ai-paint-models", { role: "list", "aria-label": "绘画模型" });
+  const addIn = h("input.input.ai-paint-add", { placeholder: "手动填模型名，回车", "aria-label": "添加绘画模型", autocomplete: "off", spellcheck: "false" });
+  const pickBtn = h("button.btn.small.ghost.ai-paint-pick-btn", { type: "button", "aria-expanded": "false" }, "从模型列表里挑");
+  const pickBox = h("div.ai-paint-pick", { hidden: true });
+  const note = h("p.ai-paint-note", { role: "status", "aria-live": "polite" });
+  const body = h("div.ai-paint-body");
+
+  async function save() {
+    const all = await getConfig();
+    const c = confNow();
+    const old = all.providers[id] || {};
+    img.models = [...new Set(img.models.map((m) => m.trim()).filter(Boolean))];
+    conf.image = { api: img.api, models: [...img.models] };
+    // 已经测试过的 Key 不在这里改（改 Key 走上面的测试）；还没存过 Key 的先存上，画图要用
+    all.providers[id] = { ...old, ...(old.key ? {} : c.key ? { key: c.key } : {}), ...(p.custom && !old.base ? { base: c.base, name: c.name } : {}), image: conf.image };
+    if (!old.key && c.key) conf.key = c.key;
+    await saveConfig(all);
+    render();
+    refreshCard();
+    if (paintReady(all.providers[id]) && onReady) onReady(id);
+  }
+
+  function render() {
+    body.hidden = img.api === "none";
+    chips.replaceChildren(...img.models.map((m) => {
+      const x = h("button.ai-paint-x", { type: "button", "aria-label": `去掉 ${m}`, title: "去掉这个模型" }, icon("close"));
+      x.addEventListener("click", () => { img.models = img.models.filter((v) => v !== m); save(); });
+      return h("span.ai-paint-chip", { role: "listitem", "data-model": m }, h("span.ai-paint-chip-t", {}, m), x);
+    }));
+    if (!img.models.length) chips.append(h("span.ai-paint-none", {}, "还没有绘画模型"));
+    const key = (conf.key || confNow().key || "").trim();
+    note.className = "ai-paint-note";
+    if (img.api === "none") note.textContent = "这一家不用来画图。";
+    else if (!key) note.textContent = "先在上面粘贴 Key。";
+    else if (!img.models.length) note.textContent = "加一个绘画模型就能画图了。";
+    else { note.textContent = "能画图了：封面制作、角色形象里用。单价第一次画图时在确认卡上填。"; note.classList.add("ok"); }
+    if (!pickBox.hidden) fillPick();
+  }
+
+  function fillPick() {
+    const all = imageModelChoices(id, models()).filter((m) => !img.models.includes(m));
+    pickBox.replaceChildren(...(all.length ? all.map((m) => {
+      const b = h("button.chip.ai-paint-cand", { type: "button", "data-model": m }, "＋ " + m);
+      b.addEventListener("click", () => { img.models.push(m); save(); });
+      return b;
+    }) : [h("span.muted.ai-paint-empty", {}, models().length ? "拉到的模型里没有看起来能画图的（名字里带 image、dall-e、imagen、flux 这些）。手动填一个。" : "先拉取模型列表，或者手动填。")]));
+  }
+
+  apiSel.addEventListener("change", () => { img.api = apiSel.value; save(); });
+  addIn.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" || e.isComposing || e.keyCode === 229) return;
+    e.preventDefault();
+    const v = addIn.value.trim();
+    if (!v) return;
+    if (!img.models.includes(v)) img.models.push(v);
+    addIn.value = "";
+    save();
+  });
+  pickBtn.addEventListener("click", () => {
+    pickBox.hidden = !pickBox.hidden;
+    pickBtn.setAttribute("aria-expanded", String(!pickBox.hidden));
+    if (!pickBox.hidden) fillPick();
+  });
+  body.append(
+    h("div.field", {}, h("span", {}, "绘画模型"), chips, h("div.row.ai-paint-row", {}, addIn, pickBtn), pickBox));
+  render();
+  return h("section.ai-paint", { "aria-label": "绘画" },
+    h("h4.ai-paint-h", {}, icon("brush"), "绘画", h("span.ai-paint-opt", {}, "可选")),
+    h("label.field", {}, h("span", {}, "绘画接口"), apiSel),
+    body, note);
 }
 
 /** 第一次用 AI、还没接任何一家时，就地弹出接入流程；接好返回 providerId，关掉返回 null */

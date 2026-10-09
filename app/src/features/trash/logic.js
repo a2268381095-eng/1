@@ -4,7 +4,7 @@ import { chapterLabel, countWords } from "../../core/text.js";
 export const DAY = 86400000;
 export const KEEP_DAYS = 30;
 
-export const KIND_LABEL = { book: "作品", chapter: "章节", setting: "设定", image: "图片" };
+export const KIND_LABEL = { book: "作品", chapter: "章节", lore: "设定卡", setting: "设定", image: "图片" };
 export const kindLabel = (kind) => KIND_LABEL[kind] || "其他";
 
 /** 离自动清理还剩几天（向上取整；0 或负数表示已经到期，下次打开软件时清掉） */
@@ -71,7 +71,15 @@ export function describe(entry, books = {}) {
     info.excerpt = excerpt(ch.content);
     return info;
   }
-  info.title = entry.title || "（没有名字）";
+  if (entry.kind === "lore") {
+    const card = (entry.data && entry.data.card) || {};
+    const cat = entry.data && entry.data.cat;
+    info.title = "「" + (card.name || entry.title || "未命名") + "」";
+    info.sub = cat && cat.name ? cat.name : "";
+    const vals = Object.values(card.fields || {}).filter((v) => String(v || "").trim());
+    info.words = vals.reduce((n, v) => n + countWords(String(v)), 0);
+    info.excerpt = excerpt(vals.join(" "));
+  } else info.title = entry.title || "（没有名字）";
   const ctxBook = ctx && ctx.book;
   info.bookTitle = ctxBook ? ctxBook.title : "";
   info.bookState = !ctxBook ? "gone" : ctx.live ? "live" : "trashed";
@@ -85,14 +93,14 @@ export function filterKind(list, kind) {
 
 /** 列表里出现了哪几种类型（按固定顺序），只有一种时不用显示筛选 */
 export function kindsIn(list) {
-  const order = ["book", "chapter", "setting", "image"];
+  const order = ["book", "chapter", "lore", "setting", "image"];
   const seen = new Set(list.map((t) => t.kind));
   return [...order.filter((k) => seen.has(k)), ...[...seen].filter((k) => !order.includes(k))];
 }
 
-/** 恢复一章之前看它能不能直接放回去：ok 可以；book-trashed 作品也在回收站；book-gone 作品已经彻底删除 */
+/** 恢复一章（或一张设定卡）之前看它能不能直接放回去：ok 可以；book-trashed 作品也在回收站；book-gone 作品已经彻底删除 */
 export function restoreBlock(entry, books = {}) {
-  if (entry.kind !== "chapter") return "ok";
+  if (entry.kind !== "chapter" && entry.kind !== "lore") return "ok";
   const ctx = books[entry.bookId];
   if (ctx && ctx.live) return "ok";
   return ctx && ctx.book ? "book-trashed" : "book-gone";

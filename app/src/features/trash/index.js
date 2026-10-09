@@ -1,4 +1,4 @@
-// 回收站：删掉的作品、章节（以后还有设定、图片）先放这里 30 天，过了自动清理（启动时 purgeOldTrash）。
+// 回收站：删掉的作品、章节、设定卡（以后还有图片）先放这里 30 天，过了自动清理（启动时 purgeOldTrash）。
 // 独立界面：#/trash 看全部，#/trash/<bookId> 只看这本书的。
 // 恢复、彻底删除、清空都能撤销，一次操作算一步。界面里的叫法都走 label("回收站")（主题彩蛋会变成「地狱」）。
 // 发出的事件：trash:restored { entries }、trash:purged { count, all }
@@ -78,6 +78,15 @@ async function putBack(snap) {
       s.trash.put(entry);
     });
     bus.emit("book:deleted", { book, undo: true });
+    return true;
+  }
+  if (snap.kind === "lore") {
+    const was = snap.data.card;
+    const cur = await db.get("lore", was.id);
+    if (!cur) return false;
+    const entry = { ...snap, title: cur.name || snap.title, data: { ...snap.data, card: cur } };
+    await db.tx(["lore", "trash"], (s) => { s.lore.delete(cur.id); s.trash.put(entry); });
+    bus.emit("lore:changed", { bookId: cur.bookId, ids: [cur.id] });
     return true;
   }
   return false;
@@ -175,6 +184,7 @@ const nameOf = (entry) => describe(entry, S.books).title;
 function openEntry(entry) {
   const info = describe(entry, S.books);
   if (entry.kind === "chapter") return nav.go(`/book/${entry.bookId}/${info.chapterId}`);
+  if (entry.kind === "lore") return nav.go(`/lore/${entry.bookId}/${entry.data.card.id}`);
   return nav.go("/book/" + entry.bookId);
 }
 
@@ -232,15 +242,16 @@ async function restore(entry) {
     const ctx = S.books[entry.bookId];
     const bookEntry = (await listTrash(entry.bookId)).find((t) => t.kind === "book");
     if (bookEntry) {
+      const what = entry.kind === "lore" ? "这张设定卡" : "这一章";
       return notice({
-        what: `这一章所在的《${ctx.book.title}》也在${L()}里。`,
-        why: "章节要放回作品里，作品得先回到书架上。",
+        what: `${what}所在的《${ctx.book.title}》也在${L()}里。`,
+        why: (entry.kind === "lore" ? "设定卡" : "章节") + "要放回作品里，作品得先回到书架上。",
         actions: [{ label: "先恢复作品", primary: true, run: () => restoreEntries([bookEntry, entry], { what: `《${ctx.book.title}》和${nameOf(entry)}` }) }],
       });
     }
   }
-  if (block !== "ok") return bookGone(entry);
-  if (!["book", "chapter"].includes(entry.kind)) {
+  if (block !== "ok") return entry.kind === "lore" ? loreGone(entry) : bookGone(entry);
+  if (!["book", "chapter", "lore"].includes(entry.kind)) {
     return notice({ what: `「${kindLabel(entry.kind)}」还不能在这里恢复。`, why: "管这类内容的功能还没做好。它会一直留到自动清理那天。", actions: [] });
   }
   return restoreEntries([entry]);
@@ -252,6 +263,31 @@ function notGone(entry) {
     why: `可能在另一个窗口里恢复或删除了，或者放满 ${KEEP_DAYS} 天被清理了。`,
     actions: [{ label: "刷新列表", primary: true, run: refresh }],
   });
+}
+
+/** 设定卡原来的作品已经彻底删除：只能另存成 txt */
+function loreGone(entry) {
+  const card = entry.data.card;
+  notice({
+    what: `「${card.name || "未命名"}」所在的作品已经彻底删除了。`,
+    why: "设定卡要放回作品的设定库里。可以先把内容另存下来。",
+    actions: [{ label: "另存成 txt", primary: true, run: () => downloadText((card.name || "设定卡") + ".txt", loreText(entry)) }],
+  });
+}
+
+/** 设定卡写成文字（看内容、另存用） */
+function loreText(entry) {
+  const { card = {}, cat } = entry.data || {};
+  const fields = (cat && cat.fields) || [];
+  const lines = [card.name || "未命名"];
+  if (cat && cat.name) lines.push("分类：" + cat.name);
+  if ((card.aliases || []).length) lines.push("别名：" + card.aliases.join("、"));
+  if ((card.traits || []).length) lines.push("辨识特征：" + card.traits.join("、"));
+  const named = new Set();
+  fields.forEach((f) => { const v = (card.fields || {})[f.id]; named.add(f.id); if (String(v || "").trim()) lines.push(f.name + "：" + v); });
+  Object.entries(card.fields || {}).forEach(([id, v]) => { if (!named.has(id) && String(v || "").trim()) lines.push(v); });
+  (card.log || []).forEach((g) => lines.push("记：" + g.text));
+  return lines.join("\n");
 }
 
 /** 一章原来的作品已经彻底删除：放进别的作品，或者另存成 txt */
@@ -367,6 +403,8 @@ function preview(entry) {
       h("ol.trash-read-list", {}, ...sorted.map((c, i) => h("li", {},
         h("span.grow", {}, describe({ kind: "chapter", bookId: entry.bookId, data: { chapter: c } }, { [entry.bookId]: { book, live: false, chapters: sorted } }).title || `第${i + 1}章`),
         h("span.muted", {}, (c.words || 0).toLocaleString() + " 字")))));
+  } else if (entry.kind === "lore") {
+    body = h("div.trash-read", {}, loreText(entry));
   } else {
     body = h("p.muted", {}, "这类内容还不能在这里预览。");
   }

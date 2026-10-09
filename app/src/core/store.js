@@ -18,6 +18,7 @@ function serial(key, fn) {
 // ---------------- 作品 ----------------
 export const DEFAULT_BOOK = {
   title: "未命名作品",
+  author: "",           // 作者名（封面制作时锁在提示词里）
   intro: "",
   tags: [],
   cover: "",            // 600×800 的 JPEG dataURL，空着就显示默认书封
@@ -193,7 +194,7 @@ export async function listTrash(bookId) {
   return all.filter((t) => !bookId || t.bookId === bookId).sort((a, b) => b.deletedAt - a.deletedAt);
 }
 
-/** 从回收站恢复。章节回到原来的位置（按原 order 插回去）。 */
+/** 从回收站恢复。章节回到原来的位置（按原 order 插回去）；设定卡回到设定库。 */
 export async function restoreFromTrash(trashId) {
   const entry = await db.get("trash", trashId);
   if (!entry) return null;
@@ -216,6 +217,24 @@ export async function restoreFromTrash(trashId) {
     bus.emit("book:created", { book, restored: true });
     return book;
   }
+  if (entry.kind === "lore") {
+    // 设定卡：放回设定库。它的分类已经删了的话，把删卡时记下的分类也放回去
+    const { card, cat } = entry.data || {};
+    if (!card) return null;
+    if (!(await getBook(card.bookId))) throw new Error("这张设定卡所在的作品已经不在了，请先恢复作品");
+    await db.tx(["lore", "trash"], (s) => {
+      s.lore.put(card);
+      s.trash.delete(trashId);
+      if (!cat) return;
+      const q = s.lore.get("meta:" + card.bookId);
+      q.onsuccess = () => {
+        const m = q.result;
+        if (m && !(m.cats || []).some((c) => c.id === cat.id)) { m.cats = [...(m.cats || []), cat]; s.lore.put(m); }
+      };
+    });
+    bus.emit("lore:changed", { bookId: card.bookId, ids: [card.id], restored: true });
+    return card;
+  }
   return null;
 }
 
@@ -223,10 +242,11 @@ export async function purgeTrash(trashId) { await db.del("trash", trashId); }
 
 /** 把回收站条目原样放回去（撤销「恢复」「彻底删除」时用）：条目里的章节 / 作品会从书架上拿走 */
 export async function putTrashEntry(entry) {
-  const stores = ["trash", "chapters", "books"];
+  const stores = ["trash", "chapters", "books", "lore"];
   await db.tx(stores, (s) => {
     s.trash.put(entry);
     if (entry.kind === "chapter" && entry.data && entry.data.chapter) s.chapters.delete(entry.data.chapter.id);
+    if (entry.kind === "lore" && entry.data && entry.data.card) s.lore.delete(entry.data.card.id);
     if (entry.kind === "book" && entry.data) {
       s.books.delete(entry.data.book.id);
       (entry.data.chapters || []).forEach((c) => s.chapters.delete(c.id));

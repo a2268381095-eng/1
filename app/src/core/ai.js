@@ -365,3 +365,311 @@ export async function record({ providerId, model, feature, bookId, usage }) {
 }
 
 export async function usageRows() { return db.all("usage"); }
+
+// ---------------- 绘画 ----------------
+// 每家的「绘画接口」和「绘画模型」存在 providers[id].image = { api: "openai"|"gemini"|"none", models: [模型名] }。
+// OpenAI 图片接口：POST {base}/images/generations（照草稿出高清时用 /images/edits 带上草稿图），ofoxAI 这类中转也一样；
+// Gemini：generateContent，responseModalities 只要图片。单价按张算，和文字单价放在一起：prices["<提供商>/<模型>"] = { perImage（草稿每张）, perImageHd（高清每张，可空）, cur }。
+export const IMAGE_APIS = [
+  { id: "openai", name: "OpenAI 图片接口（/images）" },
+  { id: "gemini", name: "Gemini 出图（generateContent）" },
+  { id: "none", name: "不画图" },
+];
+
+/** 这一家默认用哪种绘画接口：Claude、DeepSeek 不画图，Gemini 用自己的，其余按 OpenAI 的走 */
+export function defaultImageApi(providerId) {
+  const p = providerOf(providerId);
+  if (!p) return "none";
+  if (p.protocol === "gemini") return "gemini";
+  if (p.protocol === "anthropic" || providerId === "deepseek") return "none";
+  return "openai";
+}
+
+const IMAGE_RE = /image|dall-?e|imagen|flux|seedream|seededit|cogview|kolors|recraft|ideogram|midjourney|stable-?diffusion|sdxl|hidream|wanx|jimeng/i;
+/** 模型名看起来能画图（名字里带 image、dall-e、imagen、flux 这些） */
+export const looksLikeImageModel = (id) => IMAGE_RE.test(String(id || ""));
+/** 从拉到的模型列表里挑出能画图的，给「绘画模型」做候选 */
+export function imageModelChoices(providerId, models) {
+  if ((providerOf(providerId) || {}).mock) return ["mock-image"];
+  return [...new Set((models || []).map((m) => (typeof m === "string" ? m : m.id)).filter(looksLikeImageModel))];
+}
+/** 这一家的配置能不能画图：有 Key、选了绘画接口、至少一个绘画模型 */
+export const paintReady = (c) => !!(c && c.key && c.image && c.image.api && c.image.api !== "none" && (c.image.models || []).length);
+/** 能画图的几家 */
+export async function paintProviders() {
+  const cfg = await getConfig();
+  return allProviders().filter((p) => paintReady(cfg.providers[p.id]));
+}
+
+const QUALITY = {
+  gpt: { list: [["low", "低"], ["medium", "中"], ["high", "高"]], draft: "low", final: "high" },
+  dalle3: { list: [["standard", "标准"], ["hd", "高清"]], draft: "standard", final: "hd" },
+};
+const px = (list) => list.map((id) => { const [w, h] = id.split("x").map(Number); return { id, w, h }; });
+/**
+ * 这个模型能出哪些尺寸、分不分画质。
+ * 返回 { kind, sizes: [{ id, w, h, ratio? }], quality: { list, draft, final } | null, free（能自己填尺寸）, draftSize/finalSize（不分画质时草稿用小图） }
+ */
+export function imageCaps(providerId, model, api) {
+  const p = providerOf(providerId) || {};
+  const m = String(model || "").toLowerCase();
+  if (p.mock) return { kind: "mock", sizes: px(["1024x1536", "1024x1024", "1536x1024", "768x1024"]), quality: QUALITY.gpt };
+  if ((api || defaultImageApi(providerId)) === "gemini") {
+    return { kind: "gemini", quality: null, sizes: ["3:4", "2:3", "1:1", "4:3", "3:2", "9:16", "16:9"].map((id) => { const [w, h] = id.split(":").map(Number); return { id, w, h, ratio: true }; }) };
+  }
+  if (/dall-?e-?3/.test(m)) return { kind: "dalle3", sizes: px(["1024x1792", "1024x1024", "1792x1024"]), quality: QUALITY.dalle3 };
+  if (/dall-?e-?2/.test(m)) return { kind: "dalle2", sizes: px(["256x256", "512x512", "1024x1024"]), quality: null, draftSize: "512x512", finalSize: "1024x1024" };
+  return { kind: "gpt", sizes: px(["1024x1536", "1024x1024", "1536x1024"]), quality: QUALITY.gpt, free: true };
+}
+/** 挑最接近目标比例（比如封面 3:4）的尺寸；不分画质的模型草稿用小图 */
+export function pickSize(caps, ratio = "3:4", step = "draft") {
+  if (caps.draftSize && caps.finalSize) return step === "final" ? caps.finalSize : caps.draftSize;
+  const [rw, rh] = String(ratio).split(":").map(Number);
+  const want = Math.log((rw || 3) / (rh || 4));
+  const off = (s) => Math.abs(Math.log(s.w / s.h) - want);
+  return caps.sizes.reduce((a, b) => (off(b) < off(a) - 1e-9 ? b : a), caps.sizes[0]).id;
+}
+/** 每张多少钱：高清没单独填就按草稿的算；没填返回 null */
+export function imageUnitPrice(price, step = "draft") {
+  if (!price) return null;
+  const hd = Number(price.perImageHd), lo = Number(price.perImage);
+  if (step === "final" && price.perImageHd !== "" && price.perImageHd != null && Number.isFinite(hd)) return hd;
+  return price.perImage !== "" && price.perImage != null && Number.isFinite(lo) ? lo : null;
+}
+
+/**
+ * 画图。返回 [{ dataUrl, w, h }]，数组上另挂 adjusted（自动调整过什么，给作者看的说明）。
+ * size：OpenAI 是 "1024x1536" 这样，Gemini 是比例 "3:4"；quality：low/medium/high 或 standard/hd，不分画质的模型不给；
+ * refImage：参考图的 dataUrl（照草稿出高清时带上）；signal 可以中途取消。
+ * 模型不接受画质、尺寸、参考图时自动去掉再发，adjusted 里写明；内容被拦、账号没认证这些给中文说明。
+ */
+export async function image({ providerId, conf, model, prompt, size, quality, refImage, signal }) {
+  const p = providerOf(providerId);
+  if (!p) throw aiError("request", { what: "找不到这一家接口。", why: "可能已经删掉了它的接入。" });
+  if (p.mock) return mockImage({ prompt, size, quality, refImage, signal, conf });
+  const api = (conf && conf.image && conf.image.api) || defaultImageApi(providerId);
+  if (api === "none") throw aiError("request", { what: `${p.name} 没有设绘画接口。`, why: "在「AI 接入」里给这一家选一个绘画接口。" });
+  const known = await unsupportedOf(providerId, model);
+  const args = { p, providerId, conf, model, prompt, size, quality, refImage, signal, known };
+  try {
+    return await (api === "gemini" ? geminiImage(args) : openaiImage(args));
+  } catch (e) {
+    throw imageError(e, p) || e;
+  }
+}
+
+// 画图特有的几种拒绝：内容被拦、账号没做组织认证
+function imageError(e, p) {
+  if (!e || !e.ai) return null;
+  const low = String(e.detail || "").toLowerCase();
+  if ((e.status === 400 || e.status === 422 || e.category === "content") && /content.?policy|moderation|safety|blocked|violat|sensitive|不安全|违规/.test(low)) {
+    return aiError("content", { what: "这张图被接口拦下了。", why: "提示词里可能有接口不让画的内容（真人、版权角色、暴力、露骨这类）。换个说法再试。", status: e.status, detail: e.detail });
+  }
+  if (e.category === "auth" && /verif|organization/.test(low)) {
+    return aiError("auth", { what: `${p.name} 这个账号还不能用这个绘画模型。`, why: "OpenAI 的 gpt-image 模型要先在后台完成组织认证（Verify Organization）。也可以换一家中转接口。", status: e.status, detail: e.detail });
+  }
+  return null;
+}
+
+async function openaiImage({ p, providerId, conf, model, prompt, size, quality, refImage, signal, known }) {
+  const base = endpoint(p, conf);
+  const adjusted = [];
+  let q = quality && !known.includes("quality") ? quality : null;
+  let sz = size || "1024x1024";
+  let ref = refImage && !known.includes("edit") ? refImage : null;
+  let fmt = /dall-?e/i.test(model) ? "b64_json" : null;
+  let res;
+  for (let tries = 0; ; tries++) {
+    try {
+      if (ref) {
+        // 照草稿重画：/images/edits，表单上传草稿图
+        const fd = new FormData();
+        fd.append("model", model); fd.append("prompt", prompt); fd.append("n", "1"); fd.append("size", sz);
+        if (q) fd.append("quality", q);
+        if (fmt) fd.append("response_format", fmt);
+        const blob = dataUrlToBlob(ref);
+        fd.append("image", blob, "draft." + (blob.type.split("/")[1] || "png").replace("jpeg", "jpg"));
+        res = await send(p, () => http(base + "/images/edits", { method: "POST", headers: { authorization: "Bearer " + conf.key }, body: fd, signal }));
+      } else {
+        const body = { model, prompt, n: 1, size: sz, ...(q ? { quality: q } : {}), ...(fmt ? { response_format: fmt } : {}) };
+        res = await send(p, () => http(base + "/images/generations", { method: "POST", headers: headersFor(p, conf.key), body: JSON.stringify(body), signal }));
+      }
+      break;
+    } catch (e) {
+      if (tries >= 4 || ["cancel", "network", "auth", "balance", "rate", "server"].includes(e.category)) throw e;
+      const low = String(e.detail || "").toLowerCase();
+      // 照草稿重画被拒（没有 /images/edits、模型不支持带图……）：去掉草稿图按普通出图再发一次；画质、尺寸、内容的问题另说
+      if (ref && [400, 404, 405, 415, 422].includes(e.status) && !/quality|size|dimension|content.?policy|moderation|safety/.test(low)) {
+        ref = null;
+        adjusted.push("这个接口不能照草稿重画，这次按同一段提示词重新画了，画面会和草稿不一样");
+        await noteUnsupported(providerId, model, "edit");
+        continue;
+      }
+      if (q && /quality/.test(low)) {
+        q = null;
+        adjusted.push("这个模型不分画质，这次没带画质参数");
+        await noteUnsupported(providerId, model, "quality");
+        continue;
+      }
+      if (fmt && /response_format/.test(low)) { fmt = null; continue; }
+      if (/size|dimension|resolution/.test(low) && sz !== "1024x1024") {
+        adjusted.push(`这个模型不接受 ${sz.replace("x", "×")}，这次按 1024×1024 画了，裁剪时再调`);
+        sz = "1024x1024";
+        continue;
+      }
+      throw e;
+    }
+  }
+  const j = await res.json();
+  const mime = j.output_format ? "image/" + String(j.output_format).replace("jpg", "jpeg") : "image/png";
+  const out = [];
+  for (const d of j.data || []) {
+    let url = "";
+    if (d.b64_json) url = `data:${mime};base64,${d.b64_json}`;
+    else if (d.url) url = /^data:/.test(d.url) ? d.url : await fetchAsDataUrl(p, d.url, signal);
+    if (url) out.push(await measureImage(url));
+  }
+  if (!out.length) throw aiError("content", { what: "接口没有返回图片。", why: "可能是内容被拦下了，或者这个模型不能出图。", detail: JSON.stringify(j).slice(0, 2000) });
+  out.adjusted = adjusted;
+  return out;
+}
+
+async function geminiImage({ p, providerId, conf, model, prompt, size, refImage, signal, known }) {
+  const base = endpoint(p, conf);
+  const adjusted = [];
+  let ratio = /^\d+:\d+$/.test(size || "") && !known.includes("ratio") ? size : null;
+  let modalities = ["IMAGE"];
+  let res;
+  for (let tries = 0; ; tries++) {
+    const parts = [];
+    const m = refImage ? /^data:([^;,]+);base64,(.*)$/.exec(refImage) : null;
+    if (m) parts.push({ inlineData: { mimeType: m[1], data: m[2] } });
+    parts.push({ text: prompt });
+    const body = { contents: [{ role: "user", parts }], generationConfig: { responseModalities: modalities, ...(ratio ? { imageConfig: { aspectRatio: ratio } } : {}) } };
+    try {
+      res = await send(p, () => http(`${base}/models/${encodeURIComponent(model)}:generateContent`, { method: "POST", headers: headersFor(p, conf.key), body: JSON.stringify(body), signal }));
+      break;
+    } catch (e) {
+      if (tries >= 3 || ["cancel", "network", "auth", "balance", "rate", "server"].includes(e.category)) throw e;
+      const low = String(e.detail || "").toLowerCase();
+      if (ratio && /image_?config|aspect/.test(low)) {
+        ratio = null;
+        adjusted.push("这个模型不能指定比例，这次按它默认的比例画了，裁剪时再调");
+        await noteUnsupported(providerId, model, "ratio");
+        continue;
+      }
+      if (modalities.length === 1 && /modalit/.test(low)) { modalities = ["TEXT", "IMAGE"]; continue; }
+      throw e;
+    }
+  }
+  const j = await res.json();
+  const cand = (j.candidates || [])[0];
+  const parts = (cand && cand.content && cand.content.parts) || [];
+  const out = [];
+  for (const part of parts) {
+    const d = part.inlineData || part.inline_data;
+    if (d && d.data) out.push(await measureImage(`data:${d.mimeType || d.mime_type || "image/png"};base64,${d.data}`));
+  }
+  if (!out.length) {
+    const block = (j.promptFeedback && j.promptFeedback.blockReason) || (cand && cand.finishReason) || "";
+    const said = parts.map((x) => x.text || "").join("").trim();
+    throw aiError("content", {
+      what: "模型没有画出图。",
+      why: /SAFETY|BLOCK|PROHIBITED/i.test(block) ? "被安全规则拦下了。换个说法再试。"
+        : said ? "模型只回了文字：" + said.slice(0, 80) : "这个模型可能不能出图。换一个名字里带 image 的模型。",
+      detail: JSON.stringify(j).slice(0, 2000),
+    });
+  }
+  out.adjusted = adjusted;
+  return out;
+}
+
+function dataUrlToBlob(dataUrl) {
+  const m = /^data:([^;,]+)(;base64)?,(.*)$/.exec(dataUrl || "");
+  if (!m) return new Blob([], { type: "image/png" });
+  const raw = m[2] ? atob(m[3]) : decodeURIComponent(m[3]);
+  const bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+  return new Blob([bytes], { type: m[1] });
+}
+
+async function fetchAsDataUrl(p, url, signal) {
+  try {
+    const res = await http(url, { signal });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const blob = await res.blob();
+    return await new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = () => reject(r.error); r.readAsDataURL(blob); });
+  } catch (e) {
+    if (e && e.name === "AbortError") throw aiError("cancel", { what: "已取消。" });
+    throw aiError("network", {
+      what: "图片画好了，但下载不下来。",
+      why: isDesktop() ? "网络不通，或者图片链接已经过期。" : "图片链接不让网页直接读取（浏览器的跨域限制）。用桌面版就没有这个限制。",
+      detail: url + "\n" + String(e && (e.stack || e.message || e)),
+    });
+  }
+}
+
+/** 读出图片的宽高：{ dataUrl, w, h } */
+export function measureImage(dataUrl) {
+  return new Promise((resolve) => {
+    const im = new Image();
+    im.onload = () => resolve({ dataUrl, w: im.naturalWidth, h: im.naturalHeight });
+    im.onerror = () => resolve({ dataUrl, w: 0, h: 0 });
+    im.src = dataUrl;
+  });
+}
+
+/** 假接口画图：按提示词的字挑颜色铺渐变，写上书名（或开头几个字）。提示词里带【报错】就出错，带【慢】就慢慢画（测试取消用） */
+async function mockImage({ prompt, size, quality, refImage, signal, conf }) {
+  if (conf && conf.key === "bad") throw aiError("auth", { what: "测试用假接口不认这个 Key。", why: "Key 填的是 bad。" });
+  if (/【报错】/.test(prompt)) throw aiError("server", { what: "测试用假接口故意出错。", why: "提示词里带了【报错】。" });
+  const wait = /【慢】/.test(prompt) ? 2500 : 160 + Math.random() * 160;
+  const t0 = Date.now();
+  while (Date.now() - t0 < wait) {
+    if (signal && signal.aborted) throw aiError("cancel", { what: "已取消。" });
+    await new Promise((r) => setTimeout(r, 30));
+  }
+  if (signal && signal.aborted) throw aiError("cancel", { what: "已取消。" });
+  const [W, H] = /^\d+x\d+$/.test(size || "") ? size.split("x").map(Number) : [1024, 1024];
+  const hd = /high|hd/.test(quality || "") || !!refImage;
+  const k = hd ? 0.5 : 0.25;
+  const w = Math.max(32, Math.round(W * k)), hh = Math.max(32, Math.round(H * k));
+  const c = document.createElement("canvas");
+  c.width = w; c.height = hh;
+  const g = c.getContext("2d");
+  let x = 7;
+  for (const ch of prompt) x = (x * 31 + ch.codePointAt(0)) >>> 0;
+  const hue = (x + Math.floor(Math.random() * 40)) % 360;
+  const grad = g.createLinearGradient(0, 0, w, hh);
+  grad.addColorStop(0, `hsl(${hue} 55% 82%)`);
+  grad.addColorStop(1, `hsl(${(hue + 50) % 360} 45% 60%)`);
+  g.fillStyle = grad;
+  g.fillRect(0, 0, w, hh);
+  if (refImage) {
+    const ref = await new Promise((resolve) => { const im = new Image(); im.onload = () => resolve(im); im.onerror = () => resolve(null); im.src = refImage; });
+    if (ref) { g.globalAlpha = 0.8; g.drawImage(ref, 0, 0, w, hh); g.globalAlpha = 1; }
+  }
+  g.fillStyle = "rgba(255, 255, 255, .9)";
+  g.beginPath(); g.arc(w / 2, hh * 0.56, Math.min(w, hh) * 0.2, 0, Math.PI * 2); g.fill();
+  const title = (prompt.match(/《([^》]{1,20})》/) || [])[1] || prompt.replace(/\s+/g, "").slice(0, 6) || "画";
+  g.fillStyle = "#3a2a36";
+  g.textAlign = "center";
+  g.font = `600 ${Math.max(10, Math.round(w / 9))}px sans-serif`;
+  g.fillText(title, w / 2, hh * 0.2);
+  g.font = `${Math.max(9, Math.round(w / 14))}px sans-serif`;
+  g.fillText(hd ? "高清" : "草稿", w / 2, hh * 0.9);
+  const out = [{ dataUrl: c.toDataURL("image/png"), w, h: hh }];
+  out.adjusted = [];
+  return out;
+}
+
+/** 画图记一笔：按张算钱 */
+export async function recordImage({ providerId, model, feature, bookId, count, step }) {
+  const price = await priceOf(providerId, model);
+  const unit = imageUnitPrice(price, step);
+  const row = { id: uid("u"), at: Date.now(), providerId, model, feature, bookId: bookId || null, kind: "image", images: count, input: 0, output: 0,
+    cost: unit != null ? unit * count : null, currency: unit != null ? price.cur || "USD" : null };
+  await db.put("usage", row);
+  bus.emit("ai:usage", { row });
+  return row;
+}

@@ -2,7 +2,7 @@
 // 以后换成桌面版（Tauri + SQLite）时，只需要换掉这个文件，接口不变。
 
 const DB_NAME = "xiaoemo-wenshu";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 // 表：
 //   books     作品          { id, title, intro, tags, cover, ... }
@@ -15,6 +15,8 @@ const DB_VERSION = 2;
 //   stash     暂存盒         { id, at, bookId, feature, kind: "text"|"image", ... }                     索引 bookId
 //   prompts   提示词库       { id, name, group, text, order, uses, pinned }
 //   chats     AI 对话        { id, bookId, feature, messages, parentId, ... }                           索引 bookId
+//   lore      设定库         每本书一条分类和阶梯 { id: "meta:<书id>" }，每张设定卡一条 { id, type: "card", ... }   索引 bookId（见 core/lore.js）
+//   loreimg   设定卡的图片原图 { id, bookId, data }
 const SCHEMA = {
   books: { keyPath: "id" },
   chapters: { keyPath: "id", indexes: ["bookId"] },
@@ -26,14 +28,15 @@ const SCHEMA = {
   stash: { keyPath: "id", indexes: ["bookId"] },
   prompts: { keyPath: "id" },
   chats: { keyPath: "id", indexes: ["bookId"] },
+  lore: { keyPath: "id", indexes: ["bookId"] },
+  loreimg: { keyPath: "id" },
 };
 
 let dbp = null;
 
-function open() {
-  if (dbp) return dbp;
-  dbp = new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
+function request(version) {
+  return new Promise((resolve, reject) => {
+    const req = version ? indexedDB.open(DB_NAME, version) : indexedDB.open(DB_NAME);
     req.onupgradeneeded = () => {
       const db = req.result;
       for (const [name, def] of Object.entries(SCHEMA)) {
@@ -46,6 +49,25 @@ function open() {
     req.onerror = () => reject(req.error);
     req.onblocked = () => reject(new Error("数据库被另一个窗口占用"));
   });
+}
+
+function open() {
+  if (dbp) return dbp;
+  dbp = (async () => {
+    let db;
+    // 用过更新版本的软件（版本号更高）：按现有版本打开
+    try { db = await request(DB_VERSION); }
+    catch (e) { if (!e || e.name !== "VersionError") throw e; db = await request(0); }
+    // 表定义里加了新表但版本号没跟上：再升一级补上
+    if (Object.keys(SCHEMA).some((n) => !db.objectStoreNames.contains(n))) {
+      const v = db.version + 1;
+      db.close();
+      db = await request(v);
+    }
+    // 另一个窗口要升级数据库：先让出来，下次用时重新打开
+    db.onversionchange = () => { db.close(); dbp = null; };
+    return db;
+  })();
   return dbp;
 }
 
