@@ -294,7 +294,8 @@ async function send(page) {
     check(n >= 4, `暂存盒抽屉只列这一章的选中调用：${n} 条`, fails);
     await page.click('.stash-drawer .stash-use >> nth=0');
     await page.waitForSelector('.rw-panel');
-    check((await page.$$('.rw-colh')).length === 2, '采用暂存盒里的一条：拿来再对比', fails);
+    await page.click('.rw-seg button[data-view="side"]');
+    check((await page.$$('.rw-colh')).length === 2 && (await page.textContent('.rw-panel .rw-body')).includes('真的'), '采用暂存盒里的一条：拿来再对比', fails);
     await page.click('.rw-panel .rw-stash');
     await page.waitForSelector('.stash-drawer .stash-use');
     await page.waitForSelector('.stash-drawer .stash-use >> nth=1');

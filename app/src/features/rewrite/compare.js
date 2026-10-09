@@ -338,7 +338,8 @@ export function openCompare(ctx, init = {}) {
   /** 并排：一列原文、每版一列，按段对齐，整张表一起滚 */
   function renderSide(live) {
     const cols = 1 + st.versions.length + live.length;
-    const grid = h("div.rw-grid", { style: { "--cols": String(cols) } });
+    const grid = h("div.rw-grid");
+    grid.style.setProperty("--cols", String(cols));
     grid.append(h("div.rw-colh.orig", { style: { gridColumn: "1", gridRow: "1" } }, h("span.rw-colh-t", {}, "原文"),
       st.orig !== st.input ? h("span.rw-colh-m", {}, "改过") : null));
     st.versions.forEach((ver, i) => {
