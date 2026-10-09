@@ -7,6 +7,7 @@ import { loadSettings, getSettings } from "./core/settings.js";
 import { purgeOldTrash } from "./core/store.js";
 import { notice, toast } from "./core/ui.js";
 import { mountDemon, currentStyleId } from "./features/demon/demon.js";
+import { mountGuide } from "./features/demon/guide.js";
 import { mountFx } from "./core/fx.js";
 import { mountPulse } from "./core/pulse.js";
 import { patternURL, markURL } from "./core/pattern.js";
@@ -88,6 +89,7 @@ async function start() {
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyLook);
   setInterval(() => { const s = getSettings(); if (s.palette === "time" || s.palette === "season" || s.theme === "time") applyLook(); }, 60000);
   mountDemon(document.body);
+  mountGuide();
   commands.register({ id: "scene.next", title: "换背景：走进 / 走出", keywords: "背景 插画 外景 内景 换景 轮换", hint: "在这套风格的外景和内景之间换",
     run: () => { if (!nextScene()) toast(getSettings().sceneBg === false ? "背景插画关着，在「配色」里打开。" : "这套风格只有一张背景图。"); } });
   mountFx();

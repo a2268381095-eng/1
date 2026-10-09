@@ -11,8 +11,12 @@ https://claude.ai/artifact/5qDbaq5hUWxRFzHuvwhaEL
 - **动静结合**：按审美判断哪里动、动多少，不机械地划分「这里静、那里动」。写字区域以不打扰阅读为准；热闹放在打字连击、里程碑、点击反馈这些时刻，有起有落。
 - **每套风格要在「形态」上不同，不只换名字、换颜色**：用户没逐项提到的地方也照这条做，不偷懒。凡是跟风格走的东西（纸面、码字进度、转场、点击特效、背景动效、庆祝、小恶魔的衣服和台词），每套都要有自己的样子和动法。例：码字进度魔法少女是魔法球、哥特是蜡烛，不能都是换了名字的进度条。
 - **主题和小恶魔是一体的**：配色 / 主题换到哪套，小恶魔就穿哪套、背景插画就是哪套、纸就是哪套。
-- **背景是主角，界面和画融在一起**：不能用实心界面把画挡住，也不能让画淹没文字。写字页用透光的纸和半透明侧栏，字加同色描边；停笔一阵界面淡去、屏幕交给动态背景，一动就按风格把纸「复写」回来。设置、回收站这类成片文字的页面用玻璃卡片。
-- **画面本身要动，还要能互动**：背景里的水、旗子、树、灯火自己动；点画上的东西有反应；码字连击、里程碑时整幅画跟着热闹。
+- **背景插画只在首页（书架）**：首页的画是主角，书卡是玻璃片浮在画上；画里的水、旗子、树、灯火自己动，点画上的东西有反应。
+- **写字页素净，有书香气**：不铺背景画，是一张书桌——实心的纸、平的桌面色，每套风格只在纸边留一点点缀（花边、印章、回形针……），纸面压低饱和度，不要珠光、星点铺满正文底下。设置、回收站这些工具页也不铺画。
+- **像素风是可选的**：背景默认用原图（`assets/bg/src/*.webp`，1536×1024），像素版、像素网点版是选项；以后别的地方加像素元素也要能关。
+- **配色要柔和，不艳俗**：强调色用压低饱和度的中间色，配一个渐变搭档色（`--accent-2`、`--grad`、`--glow`、`--tint`），主按钮是渐变胶囊、鼠标放上去有一道光扫过，控件要灵动（回弹、抬起、开关、分段胶囊）。不用大块浓色。
+- **深色模式只用灰和黑**：底色、纸、侧栏都是中性的灰黑，不要深紫、深绿、深棕这类带颜色的深色；风格只靠强调色区分。
+- 小恶魔是各种切换的入口：她旁边的口袋按钮（右键点她也行）里换配色、明暗、首页背景和画法；鼠标停在功能上她用自己的口吻讲一句（`features/demon/guide.js`，台词在 persona 的 `hover` / `hover_bare`）。
 - 对用户说话用中文；用户的写作偏好：少用比喻和形容词，禁止「不是……而是……」「一字一顿」「不像……倒像……」「指尖泛白」这几种句式。
 
 ## 小恶魔助手（`assistant_sprite/`）
@@ -30,8 +34,8 @@ https://claude.ai/artifact/5qDbaq5hUWxRFzHuvwhaEL
 
 ## 写作软件（`app/`）
 
-- 预览：https://claude.ai/artifact/11CP9vz8Rnka9HoJ6f5KWg（`app/dist/index.html`，`cd app && npm run build` 生成；发布时带上 `dist/sprites/` 里的 42 张图和 `dist/bg/` 里的 24 张背景）。
-- 背景插画：GPT 出图（提示词在 `app/assets/bg/PROMPTS.md`）→ `app/tools/pixelize_bg.py` 转成 384×256 的干净版和网点版 → `app/assets/bg/scenes.json` 登记推进位置、画面动效、点击点。引擎 `src/core/scene.js`。
+- 预览：https://claude.ai/artifact/11CP9vz8Rnka9HoJ6f5KWg（`app/dist/index.html`，`cd app && npm run build` 生成；发布时带上 `dist/sprites/` 里的 42 张图、`dist/bg/` 里的 24 张像素背景和 `dist/bg/orig/` 里的 12 张原图、`dist/fonts/` 里的字体和许可证）。
+- 背景插画：GPT 出图（提示词在 `app/assets/bg/PROMPTS.md`，原图放 `app/assets/bg/src/`）→ `app/tools/pixelize_bg.py` 转成 384×256 的干净版和网点版 → `app/assets/bg/scenes.json` 登记画面动效、点击点（坐标按 384×256，原图是 4 倍）。引擎 `src/core/scene.js`，只在首页显示。
 - 每套风格的纸 `src/styles/paper/<风格>.css` + 纸纹和装饰 `src/core/paper-art/<风格>.js`（`src/core/paper.js` 画成 CSS 变量），码字进度 `src/features/demon/meters/<风格>.js`，提示条和弹窗 `src/styles/forms.css`，书封 `src/features/shelf/covers.js`。
 - 先做网页版（单文件 HTML，数据在 IndexedDB），以后套 Tauri 做桌面版；`src/core/db.js` 是唯一碰存储的地方。
 - 结构：`src/core/`（数据、返回、撤销、浮层、命令表），`src/features/<功能>/`（每个功能一个目录，export `register()`，在 `features/index.js` 登记）。

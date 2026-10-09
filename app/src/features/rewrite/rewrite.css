@@ -3,7 +3,7 @@
    魔法少女 = 粉紫信笺 + 星星；水手服 = 作业本 + 胶带贴纸；古风 = 卷轴 + 朱砂印；哥特 = 切角魔典 + 烛光；侦探 = 牛皮纸案卷 + 图钉印章；冒险者 = 木框委托板 + 钉子。 */
 
 /* ================= 对比面板 ================= */
-.ws-body > .center > .rw-panel, body.has-scene .ws-body > .center > .rw-panel { position: absolute; z-index: 7; }
+.ws-body > .center > .rw-panel, body.desk .ws-body > .center > .rw-panel { position: absolute; z-index: 7; }
 .rw-panel { left: 0; right: 0; bottom: 8px; margin: 0 auto; width: min(calc(100% - 16px), max(calc(var(--text-width) + 180px), 780px)); min-height: 0;
   display: flex; flex-direction: column; background: var(--surface); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 12px;
   box-shadow: var(--shadow); overflow: hidden; outline: none; }
@@ -345,7 +345,7 @@ body.has-scene .rw-bar, body.has-scene .rw-menu { background-color: color-mix(in
 
 /* ================= 手机 ================= */
 @media (max-width: 640px) {
-  .ws-body > .center > .rw-panel, body.has-scene .ws-body > .center > .rw-panel { top: 0 !important; bottom: 0; width: 100%; }
+  .ws-body > .center > .rw-panel, body.desk .ws-body > .center > .rw-panel { top: 0 !important; bottom: 0; width: 100%; }
   .rw-panel { border-radius: 0 !important; clip-path: none !important; }
   .rw-head { flex-wrap: wrap; }
   .rw-head-t { order: 0; flex-basis: calc(100% - 80px); }

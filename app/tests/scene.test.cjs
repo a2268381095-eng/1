@@ -1,4 +1,4 @@
-// 背景插画、小恶魔跟着主题换衣服、停笔变回背景（Playwright）
+// 背景插画（只在首页，原图 / 像素可选）、小恶魔跟着主题换衣服、写字页是素净的书桌（Playwright）
 //   node build.mjs --out /tmp/xemo-scene && node tests/scene.test.cjs /tmp/xemo-scene
 // helpers 里开着「减少动态效果」，所以转场是直接换，不用等动画。
 const { launch, newBook, check } = require('./helpers.cjs');
@@ -24,7 +24,17 @@ async function main() {
   check(await scene() === 'magical_out', '默认：魔法少女外景', fails);
   check(await page.evaluate(() => document.body.classList.contains('has-scene')), 'body 有 has-scene', fails);
   const size = await page.evaluate(() => { const c = document.querySelector('.scene-layer'); const r = c.getBoundingClientRect(); return [c.width, c.height, r.width >= innerWidth - 1, r.height >= innerHeight - 1]; });
-  check(size[0] === 384 && size[1] === 256 && size[2] && size[3], '画布内部 384×256，盖满窗口', fails);
+  check(size[0] === 1536 && size[1] === 1024 && size[2] && size[3], '默认原图：画布内部 1536×1024，盖满窗口 ' + size, fails);
+  check(await page.evaluate(() => document.querySelector('.scene-layer').classList.contains('smooth')), '原图平滑放大', fails);
+
+  console.log('画法：像素是可选的');
+  await look(null, async () => { await page.click('.look-seg button:has-text("像素")'); });
+  await page.waitForTimeout(400);
+  const px = await page.evaluate(() => { const c = document.querySelector('.scene-layer'); return [c.width, c.height, c.classList.contains('smooth'), c.style.imageRendering || getComputedStyle(c).imageRendering]; });
+  check(px[0] === 384 && px[1] === 256 && !px[2] && px[3] === 'pixelated', '像素：画布 384×256、按像素放大 ' + px, fails);
+  await look(null, async () => { await page.click('.look-seg button:has-text("原图")'); });
+  await page.waitForTimeout(400);
+  check(await page.evaluate(() => document.querySelector('.scene-layer').width) === 1536, '换回原图', fails);
 
   console.log('换主题：背景和小恶魔都换成那一套');
   for (const id of ['gothic', 'detective', 'adventurer']) {
@@ -35,14 +45,16 @@ async function main() {
     check(await demon() === id, `配色「${NAMES[id]}」→ 小恶魔穿 ${id}`, fails);
   }
 
-  console.log('打开作品走进内景，回书架走回外景');
+  console.log('背景只在首页：写字页是素净的书桌，回书架画又出来');
   await newBook(page, '雨夜来信', [{ title: '', text: '雨下到第三天。' }]);
   await page.waitForTimeout(500);
-  check(await scene() === 'adventurer_in', '进书：冒险者公会大厅', fails);
+  const desk = await page.evaluate(() => ({ scene: !document.querySelector('.scene-layer').hidden, has: document.body.classList.contains('has-scene'), desk: document.body.classList.contains('desk') }));
+  check(!desk.scene && !desk.has && desk.desk, '写字页：不铺背景，body 是 desk ' + JSON.stringify(desk), fails);
   await page.evaluate(() => { location.hash = '#/'; });
   await page.waitForSelector('.shelf');
   await page.waitForTimeout(500);
   check(await scene() === 'adventurer_out', '回书架：公会门口', fails);
+  check(!(await page.evaluate(() => document.body.classList.contains('desk'))), '书架上不是 desk', fails);
 
   console.log('换景按钮');
   await look(null, async () => { await page.click('.look-scene'); });
@@ -63,7 +75,7 @@ async function main() {
   await look('跟随小恶魔');
   check(await demon() === 'magical' && (await scene()).startsWith('magical_'), '跟随：书架上按默认那套', fails);
 
-  console.log('写字页的纸、停笔变回背景');
+  console.log('写字页的纸：实心的，带这套风格的点缀');
   await page.click('.book-card');
   await page.waitForSelector('.cm-content');
   await page.waitForTimeout(500);
@@ -72,14 +84,9 @@ async function main() {
     return { content: st.content, bg: st.backgroundColor, w: parseFloat(st.width) };
   });
   check(paper.content !== 'none' && paper.w > 300, '写字页中间有一张纸', fails);
-  check(/rgba?\(.*,\s*0\.\d+\)$/.test(paper.bg) || paper.bg.startsWith('color(srgb'), '纸是半透明的：' + paper.bg, fails);
+  check(!/\/ 0?\.\d+\)$/.test(paper.bg) && !/rgba\(.*,\s*0?\.\d+\)$/.test(paper.bg), '纸是实心的：' + paper.bg, fails);
   check(await page.evaluate(() => document.documentElement.dataset.paper) === 'magical', '<html data-paper> 是这套风格', fails);
-  // 停笔：直接加上 paper-rest 看样子；一动键盘就该复写回来
-  await page.evaluate(() => document.body.classList.add('paper-rest'));
-  await page.waitForTimeout(100);
-  await page.keyboard.press('Shift');
-  await page.waitForTimeout(100);
-  check(!(await page.evaluate(() => document.body.classList.contains('paper-rest'))), '一按键纸就回来', fails);
+  check(await page.evaluate(() => document.querySelector('.scene-layer').hidden), '写字页背后没有画', fails);
   // 码字进度画在小画布上
   const meter = await page.evaluate(() => { const c = document.querySelector('.demon-badge .db-meter'); return c && [c.width, c.height, parseFloat(c.style.width)]; });
   check(meter && meter[0] > 0 && meter[2] === meter[0] * 3, '码字进度：画布按 3 倍显示', fails);

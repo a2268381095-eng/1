@@ -43,8 +43,9 @@ function fiber(g, w, h, t, rnd) {
   pixels(g, w, h, (px) => {
     for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
       const n = lo(x, y) * .55 + mid(x, y) * .45 + rnd() * .14;
-      if (n > .5) px(x, y, brown, (n - .5) * (dark ? .16 : .17));
-      else if (n < .3) px(x, y, pale, (.3 - n) * (dark ? .5 : .55));
+      // 斑驳压淡一些：书桌上一页干净的打字稿，旧得不过分
+      if (n > .55) px(x, y, brown, (n - .55) * (dark ? .1 : .1));
+      else if (n < .3) px(x, y, pale, (.3 - n) * (dark ? .4 : .45));
     }
     // 纤维：一根根短而弯，浅色的多、深色的少
     for (let i = 0; i < 240; i++) {

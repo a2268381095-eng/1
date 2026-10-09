@@ -8,7 +8,7 @@ import { commands, keyOf, prettyKey } from "../../core/commands.js";
 import { getSettings, setSettings } from "../../core/settings.js";
 import { burst, burstAt, stream, setFxStyle } from "../../core/fx.js";
 import { todayWords } from "../../core/store.js";
-import { resolvePalette } from "../../core/look.js";
+import { resolvePalette, openLookPop } from "../../core/look.js";
 import { meterFor } from "./meters/index.js";
 
 const W = 128, H = 224;
@@ -186,6 +186,19 @@ export function react(event, opts = {}) {
   say(text);
 }
 
+/** 鼠标停在某个功能上：用这套风格的口吻讲一句它是干什么的（features/demon/guide.js 调） */
+export function guideSay(name, hint) {
+  if (!el || !getSettings().demonOn || !style.persona) return false;
+  const lines = style.persona.lines || {};
+  const pool = hint ? lines.hover : lines.hover_bare;
+  if (!pool || !pool.length) return false;
+  const tpl = pool[Math.floor(Math.random() * pool.length)];
+  const clean = (t) => String(t || "").replace(/[。．.！!]+$/, "");
+  play("point", 2600);
+  say(tpl.replace("{name}", clean(name)).replace("{hint}", clean(hint)));
+  return true;
+}
+
 /** 第一次用某个功能时的说明：同一个 key 只说一次（设置里可以重置） */
 export async function tip(key, text) {
   const s = getSettings();
@@ -252,8 +265,13 @@ export function mountDemon(root) {
     b.addEventListener("click", (e) => { e.stopPropagation(); fn(); });
     return b;
   };
+  // 她的口袋：配色、明暗、首页背景（铺不铺、原图 / 像素、换内外景），右键点她也能打开
+  let pocketBtn = null;
+  const openPocket = () => { openLookPop(pocketBtn); play("point", 1600); };
+  pocketBtn = ctl("pocket", "她的口袋：换配色、背景、原图还是像素", "✦", openPocket);
   const tools = h("div.demon-tools", {},
     ctl("help", "找不到功能？问她（F1）", "?", openHelp),
+    pocketBtn,
     ctl("smaller", "变小", "−", () => stepSize(-1)),
     ctl("bigger", "变大", "+", () => stepSize(1)),
     ctl("hide", "收起小恶魔", icon("close"), () => setSettings({ demonOn: false })));
@@ -275,6 +293,7 @@ export function mountDemon(root) {
     if (pokes.length >= 3) { pokes = []; react("poke_many", { act: "shock" }); }
     else react("poke", { act: ["shock", "wave", "cheer", "think"][pokeN++ % 4] });
   });
+  poke.addEventListener("contextmenu", (e) => { e.preventDefault(); openPocket(); });
   wireDrag(poke);
   wireGrip(grip);
   poke.addEventListener("keydown", (e) => {
@@ -294,6 +313,7 @@ export function mountDemon(root) {
   wireEvents();
   wirePulse();
   commands.register({ id: "help.open", title: "找功能（问小恶魔）", keywords: "帮助 找不到 怎么 功能", hint: "搜功能名，直接点就能用", key: "F1", run: openHelp });
+  commands.register({ id: "demon.pocket", title: "小恶魔的口袋（配色、背景）", keywords: "配色 背景 原图 像素 网点 内景 外景 明暗 换装", hint: "换配色、明暗、首页背景和画法", run: openPocket });
   commands.register({ id: "demon.reset", title: "小恶魔回到右下角", keywords: "小恶魔 位置 大小 找不到她 复位", hint: "位置和大小都恢复默认", run: () => { setSettings({ demonPos: null, demonScale: 1, demonOn: true }); } });
 }
 

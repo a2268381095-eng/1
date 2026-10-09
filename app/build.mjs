@@ -70,9 +70,13 @@ function buildScenes() {
       fs.copyFileSync(path.join(BG_SRC, f), path.join(DIST, "bg", f));
       const hasDither = fs.existsSync(path.join(BG_SRC, dither));
       if (hasDither) fs.copyFileSync(path.join(BG_SRC, dither), path.join(DIST, "bg", dither));
+      // 原图（1536×1024，坐标是像素版的 4 倍）放 bg/orig/
+      const orig = path.join(BG_SRC, "src", `${id}_${kind}.webp`);
+      const hasOrig = fs.existsSync(orig);
+      if (hasOrig) { fs.mkdirSync(path.join(DIST, "bg", "orig"), { recursive: true }); fs.copyFileSync(orig, path.join(DIST, "bg", "orig", `${id}_${kind}.webp`)); }
       const st = meta[id] || {};
       out[id] = out[id] || { transition: st.transition || "mosaic" };
-      out[id][kind] = { focus: [192, 128], anchor: [0.5, 0.5], fx: [], ...(st[kind] || {}), dither: hasDither };
+      out[id][kind] = { focus: [192, 128], anchor: [0.5, 0.5], fx: [], ...(st[kind] || {}), dither: hasDither, orig: hasOrig };
       n++;
     }
   }

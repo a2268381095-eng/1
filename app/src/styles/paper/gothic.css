@@ -8,10 +8,10 @@
 :root[data-paper="gothic"][data-dark] {
   --gt-tint: #1b1b1c; --gt-tint-a: .35; --gt-burn: rgba(0, 0, 0, .55); --gt-line: #8d6a78; --gt-line2: rgba(200, 198, 204, .38);
   --gt-glow: 255, 150, 70; --gt-glow-a: .26; --gt-rubric: #e597b6; }
-:root[data-paper="gothic"] body.has-scene .ws-body > .center { --gt-w: min(100%, calc(var(--text-width) + 120px)); }
+:root[data-paper="gothic"] body.desk .ws-body > .center { --gt-w: min(100%, calc(var(--text-width) + 120px)); }
 
 /* ---------- 纸：毛边遮罩（整张减掉四条边上剪掉的小口）+ 皮纹、霉斑、焦边 + 一层犊皮纸的暖色（跟着「背景透出」走） ---------- */
-:root[data-paper="gothic"] body.has-scene .ws-body > .center::before {
+:root[data-paper="gothic"] body.desk .ws-body > .center::before {
   top: 12px; bottom: 12px; image-rendering: pixelated;
   background-image: var(--pa-edgeL), var(--pa-edgeR), var(--pa-edgeT), var(--pa-edgeB), var(--pa-fox), var(--pa-vellum),
     radial-gradient(ellipse 75% 70% at 50% 45%, transparent 55%, var(--gt-burn) 100%),
@@ -34,7 +34,7 @@
 
 /* ---------- 纸上的装饰：铁艺包角、酒红双线框（上下在蝙蝠和蜡封处断开）、蝙蝠、蜡封、蜡滴、烛光 ---------- */
 @property --gt-fl { syntax: "<number>"; inherits: false; initial-value: .6; }
-:root[data-paper="gothic"] body.has-scene .ws-body > .center::after {
+:root[data-paper="gothic"] body.desk .ws-body > .center::after {
   --o: 24px; --i: 30px; --gap: 44px;
   content: ""; position: absolute; z-index: 0; pointer-events: none; top: 12px; bottom: 12px; height: auto; left: 50%; width: var(--gt-w); margin-left: calc(var(--gt-w) / -2);
   image-rendering: pixelated; opacity: 1;
@@ -63,9 +63,9 @@
     0 0;
   background-repeat: no-repeat;
   transition: opacity 1.6s ease; }
-:root[data-paper="gothic"][data-dark] body.has-scene .ws-body > .center::after { filter: drop-shadow(0 0 3px rgba(229, 151, 182, .18)); }
+:root[data-paper="gothic"][data-dark] body.desk .ws-body > .center::after { filter: drop-shadow(0 0 3px rgba(229, 151, 182, .18)); }
 /* 烛光极慢地晃：一呼一吸里夹着两下小抖 */
-:root[data-paper="gothic"][data-motion="full"] body.has-scene .ws-body > .center::after { animation: gt-orn-in .6s ease-out backwards, gt-candle 9s steps(54) infinite; }
+:root[data-paper="gothic"][data-motion="full"] body.desk .ws-body > .center::after { animation: gt-orn-in .6s ease-out backwards, gt-candle 9s steps(54) infinite; }
 @keyframes gt-orn-in { from { opacity: 0; } }
 @keyframes gt-candle {
   0%, 100% { --gt-fl: .55; } 18% { --gt-fl: .85; } 24% { --gt-fl: .6; } 30% { --gt-fl: .78; } 52% { --gt-fl: .35; } 66% { --gt-fl: .7; } 72% { --gt-fl: .5; } 84% { --gt-fl: .9; }
@@ -75,7 +75,7 @@
 
 /* ---------- 醒来：烛光从左下角一圈圈推开，书页跟着亮出来；暗处的蝙蝠被惊飞 ---------- */
 @property --gt-r { syntax: "<length>"; inherits: false; initial-value: 0px; }
-:root[data-paper="gothic"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::before {
+:root[data-paper="gothic"][data-motion="full"] body.desk.paper-wake .ws-body > .center::before {
   -webkit-mask-image: radial-gradient(circle at 0% 100%, #000 calc(var(--gt-r) - 160px), rgba(0, 0, 0, .55) calc(var(--gt-r) - 60px), transparent var(--gt-r));
   mask-image: radial-gradient(circle at 0% 100%, #000 calc(var(--gt-r) - 160px), rgba(0, 0, 0, .55) calc(var(--gt-r) - 60px), transparent var(--gt-r));
   -webkit-mask-size: 100% 100%; mask-size: 100% 100%; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-composite: source-over; mask-composite: add;
@@ -93,7 +93,7 @@
   0% { --gt-r: 0px; } 14% { --gt-r: 300px; } 22% { --gt-r: 250px; } 46% { --gt-r: 820px; } 56% { --gt-r: 760px; } 100% { --gt-r: 2400px; }
 }
 @keyframes gt-warm { 0% { filter: sepia(.5) saturate(1.4) brightness(1.25) hue-rotate(-14deg); } 60% { filter: sepia(.25) saturate(1.15) brightness(1.08) hue-rotate(-8deg); } 100% { filter: none; } }
-:root[data-paper="gothic"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::after {
+:root[data-paper="gothic"][data-motion="full"] body.desk.paper-wake .ws-body > .center::after {
   top: 14%; bottom: auto; height: var(--pa-flock-h); width: var(--pa-flock-w); margin-left: calc(var(--gt-w) / 2 - var(--pa-flock-w) - 40px);
   background: var(--pa-flock) center / 100% 100% no-repeat; image-rendering: pixelated; opacity: 1;
   filter: drop-shadow(0 0 1px rgba(255, 170, 190, .9)) drop-shadow(0 0 5px rgba(255, 90, 122, .55));

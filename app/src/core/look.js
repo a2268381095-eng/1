@@ -3,7 +3,7 @@
 import { getSettings, setSettings } from "./settings.js";
 import { PALETTES } from "./pattern.js";
 import { h, icon, pushLayer, toast } from "./ui.js";
-import { nextScene, sceneInfo } from "./scene.js";
+import { nextScene, sceneInfo, sceneArt } from "./scene.js";
 
 /** 一天里的时段 → 配色 */
 export function paletteByTime(d = new Date()) {
@@ -80,19 +80,24 @@ export function openLookPop(anchor) {
         btn.addEventListener("click", async () => { await setSettings({ theme: v }); render(); });
         return btn;
       })),
-      h("div.look-head", {}, h("b", {}, "背景插画")),
-      h("div.look-seg", { role: "group", "aria-label": "背景插画" }, ...[[true, "铺上"], [false, "不铺"]].map(([v, t]) => {
+      h("div.look-head", {}, h("b", {}, "首页背景")),
+      h("div.look-seg", { role: "group", "aria-label": "首页背景" }, ...[[true, "铺上"], [false, "不铺"]].map(([v, t]) => {
         const btn = h("button", { type: "button", "aria-pressed": String((s().sceneBg !== false) === v) }, t);
         btn.addEventListener("click", async () => { await setSettings({ sceneBg: v }); render(); });
         return btn;
       }), sceneButton()),
+      h("div.look-seg", { role: "group", "aria-label": "背景画法" }, ...[["orig", "原图"], ["pixel", "像素"], ["dot", "像素网点"]].map(([v, t]) => {
+        const btn = h("button", { type: "button", "aria-pressed": String(sceneArt() === v) }, t);
+        btn.addEventListener("click", async () => { await setSettings({ sceneArt: v, sceneDither: v === "dot" }); render(); });
+        return btn;
+      })),
       h("p.look-note", {}, nowText()));
   };
   const sceneButton = () => {
     const info = sceneInfo();
     const can = info && info.kinds.length > 1;
     const btn = h("button.look-scene", { type: "button", disabled: !can, title: can ? "在这套风格的外景和内景之间换" : "这套风格只有一张背景图" },
-      info && info.kind === "in" ? "走出去" : "走进去");
+      info && info.kind === "in" ? "换成外景" : "换成内景");
     btn.addEventListener("click", () => { if (!nextScene()) toast("这套风格只有一张背景图。"); setTimeout(render, 50); });
     return btn;
   };
@@ -110,12 +115,14 @@ export function openLookPop(anchor) {
   };
   document.body.append(box);
   const r = anchor.getBoundingClientRect();
-  box.style.top = r.bottom + 6 + "px";
+  render();
+  // 下面放不下（比如从右下角的小恶魔打开）就放在上面
+  const bh = box.offsetHeight || 420;
+  box.style.top = (r.bottom + 6 + bh > innerHeight - 8 ? Math.max(8, r.top - 6 - bh) : r.bottom + 6) + "px";
   box.style.left = Math.max(8, Math.min(r.left, innerWidth - 336)) + "px";
   const off = (e) => { if (!box.contains(e.target) && !anchor.contains(e.target)) layerObj.close(); };
   const layerObj = pushLayer({ onClose: () => { box.remove(); pop = null; document.removeEventListener("mousedown", off, true); } });
   pop = { layer: layerObj };
   setTimeout(() => document.addEventListener("mousedown", off, true), 0);
-  render();
   box.querySelector(".look-item[aria-pressed=\"true\"]")?.focus();
 }

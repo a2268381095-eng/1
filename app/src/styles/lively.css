@@ -1,7 +1,14 @@
 /* 灵动的通用件：分段按钮是淡色轨道上的白胶囊，勾选是开关，滑块是渐变轨道加圆钮，卡片鼠标放上去会抬起。
    颜色都从配色变量里取（--accent / --accent-2 / --grad / --glow / --tint），换配色跟着变；各套风格的形状在 themes.css 里另说。 */
 
-/* ---------- 分段按钮（设置页的 .st-seg；字体卡片 .st-fonts 除外） ---------- */
+/* ---------- 分段按钮（设置页的 .st-seg、口袋里的 .look-seg；字体卡片 .st-fonts 除外） ---------- */
+.look-seg { display: flex !important; flex-wrap: wrap; gap: 2px !important; padding: 3px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 7%, var(--side)); }
+.look-seg > button { flex: 1 1 auto; border: 0 !important; background: transparent !important; color: var(--muted); border-radius: 999px !important; padding: 5px 10px;
+  transition: background-color .2s, color .2s, box-shadow .25s; }
+.look-seg > button:hover { color: var(--ink); background: color-mix(in srgb, var(--surface) 70%, transparent) !important; }
+.look-seg > button[aria-pressed="true"] { background: var(--surface) !important; color: color-mix(in srgb, var(--accent) 85%, var(--ink)) !important; font-weight: 600;
+  box-shadow: 0 3px 10px -4px var(--glow), 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent); }
+.look-seg > .look-scene { flex-basis: 100%; }
 .st-seg:not(.st-fonts) { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border-radius: 999px;
   background: color-mix(in srgb, var(--accent) 7%, var(--side)); box-shadow: inset 0 1px 2px color-mix(in srgb, var(--ink) 8%, transparent); }
 .st-seg:not(.st-fonts) button { border: 0; background: transparent; color: var(--muted); border-radius: 999px; padding: 5px 14px;

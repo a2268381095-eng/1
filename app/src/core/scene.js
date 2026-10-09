@@ -1,5 +1,7 @@
-// 背景插画：每套风格一张外景、一张内景（GPT 出图后转成 384×256 的像素画，见 assets/bg/PROMPTS.md）。
-// 画在窗口最底下的一张画布上。画布内部就是 384×256，按整数倍放大，像素不糊；上面叠小动效（花瓣、星光、灯火、蝙蝠……）。
+// 背景插画：每套风格一张外景、一张内景（GPT 出的原图 1536×1024，另有转好的 384×256 像素版和网点版，见 assets/bg/PROMPTS.md）。
+// 只铺在首页（书架）；写字页是素净的书桌，不铺。画法可选：原图（默认）/ 像素 / 像素网点。
+// 坐标一律按 384×256 算：像素版画布就是这么大，按整数倍放大；原图版画布是它的 4 倍，水波、摆动从原图上取，
+// 星光、花瓣这些粒子画在一张 384×256 的薄层上再柔化放大，成了柔光点，不出方块。
 // 外景和内景轮换：镜头推向外景里的门窗，按这套风格自己的转场走进内景（魔法星光圈、古风墨晕、哥特蝙蝠群、
 // 侦探放大镜、水手服百叶窗、冒险者菱形格），过一阵再退回外景。只在同一套风格的外景、内景之间换。
 // 正在打字时动效放轻，轮换也等停笔以后再换。
@@ -8,6 +10,8 @@ import { bus } from "./bus.js";
 import { getSettings } from "./settings.js";
 
 const W = 384, H = 256;
+let RES = 1;                // 画布是 W×H 的几倍：像素版 1，原图版 4
+const SCREEN_FX = new Set(["glow", "flicker"]);   // 这几种是提亮的光，原图版单独一层用「滤色」叠上去
 const AMBIENT_MS = 83;      // 平时 12 帧/秒，像素动画的节奏
 const TRANS_MS = 2600;      // 走进、走出
 const SWAP_MS = 1100;       // 换风格、换像素版本
@@ -30,6 +34,11 @@ const SPR = {
   bat: [["#.....#", "##.#.##", ".#####.", "...#..."], ["...#...", ".#####.", "##...##", "#.....#"]],
   bird: [["#...#", ".#.#.", "..#.."], ["##.##", "..#.."]],
 };
+/** 从图上取一块（坐标按 384×256 算，原图版自动换算成原图上的位置） */
+function blit(g, img, sx, sy, sw, sh, dx, dy, dw, dh) {
+  const k = (img.naturalWidth || img.width) / W;
+  g.drawImage(img, sx * k, sy * k, sw * k, sh * k, dx, dy, dw, dh);
+}
 function rows(g, r, x, y) {
   for (let j = 0; j < r.length; j++) for (let i = 0; i < r[j].length; i++) if (r[j][i] === "#") g.fillRect(x + i, y + j, 1, 1);
 }
@@ -156,7 +165,7 @@ const FX = {
       const t = now / 1000, amp = d.amp || 1, sp = d.speed || 2, k = d.k || 0.55;
       for (let j = 0; j < h; j++) {
         const dx = Math.round(Math.sin(j * k + t * sp) * amp * (d.grow ? (j + 1) / h : 1));
-        if (dx) g.drawImage(img, x, y + j, w, 1, x + dx, y + j, w, 1);
+        if (dx) blit(g, img, x, y + j, w, 1, x + dx, y + j, w, 1);
       }
     },
   },
@@ -173,14 +182,14 @@ const FX = {
         for (let i = 0; i < w; i++) {
           const f = d.pin === "left" ? (i + 1) / w : 1 - i / w;
           const dy = Math.round(base * amp * f * f + Math.sin(i * 0.35 + t * 3) * (d.ripple || 0) * f);
-          if (dy) g.drawImage(img, x + i, y, 1, h, x + i, y + dy, 1, h);
+          if (dy) blit(g, img, x + i, y, 1, h, x + i, y + dy, 1, h);
         }
         return;
       }
       for (let j = 0; j < h; j++) {
         const f = d.pin === "bottom" ? 1 - j / h : (j + 1) / h;
         const dx = Math.round(base * amp * f * f + Math.sin(j * 0.35 + t * 3) * (d.ripple || 0) * f);
-        if (dx) g.drawImage(img, x, y + j, w, 1, x + dx, y + j, w, 1);
+        if (dx) blit(g, img, x, y + j, w, 1, x + dx, y + j, w, 1);
       }
     },
   },
@@ -189,7 +198,7 @@ const FX = {
     draw(g, d, s, now, img) {
       const [x, y, w, h] = d.rect;
       const dy = Math.round(Math.sin((now / d.period) * Math.PI * 2) * d.amp);
-      if (dy) g.drawImage(img, x, y, w, h, x, y + dy, w, h);
+      if (dy) blit(g, img, x, y, w, h, x, y + dy, w, h);
     },
   },
   // 飘落的花瓣
@@ -320,9 +329,15 @@ function loadImg(url) {
   }
   return imgs.get(url);
 }
+/** 背景画法：orig 原图（默认）/ pixel 像素 / dot 像素网点。旧设置 sceneDither 当作网点 */
+export function sceneArt() {
+  const s = getSettings();
+  return s.sceneArt || (s.sceneDither ? "dot" : "orig");
+}
 function urlOf(style, kind) {
-  const m = metaOf(style, kind);
-  return `bg/${style}_${kind}${getSettings().sceneDither && m.dither ? "_dither" : ""}.png`;
+  const m = metaOf(style, kind), art = sceneArt();
+  if (art === "orig" && m.orig !== false) return `bg/orig/${style}_${kind}.webp`;
+  return `bg/${style}_${kind}${art === "dot" && m.dither ? "_dither" : ""}.png`;
 }
 async function makeScene(style, kind) {
   const meta = metaOf(style, kind);
@@ -485,26 +500,53 @@ let routeName = "", token = 0, dark = false;
 
 const motion = () => document.documentElement.dataset.motion || "full";
 
-function newCanvas() { const c = document.createElement("canvas"); c.width = W; c.height = H; return c; }
+function newCanvas(r = RES) { const c = document.createElement("canvas"); c.width = W * r; c.height = H * r; return c; }
 function g2d(c) { const g = c.getContext("2d"); g.imageSmoothingEnabled = false; return g; }
+// 原图版的粒子薄层：384×256，画完柔化放大叠上去
+let fxN = null, gN = null, fxS = null, gS = null;
+/** 换画法时调整画布大小 */
+function setRes(r) {
+  if (r === RES && canvas && canvas.width === W * r) return;
+  RES = r;
+  for (const c of [canvas, bufA, bufB, maskC]) if (c) { c.width = W * r; c.height = H * r; }
+  if (gM) gM.setTransform(r, 0, 0, r, 0, 0);
+  if (canvas) canvas.classList.toggle("smooth", r > 1);
+  if (r > 1 && !fxN) { fxN = newCanvas(1); gN = g2d(fxN); fxS = newCanvas(1); gS = g2d(fxS); }
+}
 
 /** 画一张场景。cam：{ z 放大倍数, fx/fy 原图上的点, px/py 这个点落在画面上的位置 } */
 function paint(g, sc, now, cam) {
-  g.setTransform(1, 0, 0, 1, 0, 0);
-  g.globalAlpha = 1; g.globalCompositeOperation = "source-over"; g.imageSmoothingEnabled = false;
+  const soft = RES > 1;
+  g.setTransform(RES, 0, 0, RES, 0, 0);
+  g.globalAlpha = 1; g.globalCompositeOperation = "source-over"; g.imageSmoothingEnabled = soft;
+  let z = 1, sx = 0, sy = 0;
   if (cam && cam.z > 1.001) {
-    const z = cam.z;
-    const sx = clamp(cam.fx - cam.px / z, 0, W - W / z), sy = clamp(cam.fy - cam.py / z, 0, H - H / z);
-    g.drawImage(sc.img, sx, sy, W / z, H / z, 0, 0, W, H);
-    g.setTransform(z, 0, 0, z, -sx * z, -sy * z);
+    z = cam.z;
+    sx = clamp(cam.fx - cam.px / z, 0, W - W / z); sy = clamp(cam.fy - cam.py / z, 0, H - H / z);
+    blit(g, sc.img, sx, sy, W / z, H / z, 0, 0, W, H);
   } else {
-    g.drawImage(sc.img, 0, 0);
+    g.drawImage(sc.img, 0, 0, W, H);
   }
+  const view = (gg, r) => gg.setTransform(z * r, 0, 0, z * r, -sx * z * r, -sy * z * r);
   if (motion() !== "off") {
-    for (const f of sc.fx) FX[f.d.type].draw(g, f.d, f.s, now, sc.img);
-    drawBursts(g, sc, now);
+    if (!soft) {
+      view(g, 1);
+      for (const f of sc.fx) FX[f.d.type].draw(g, f.d, f.s, now, sc.img);
+      drawBursts(g, sc, now);
+    } else {
+      // 原图版：画里会动的部分直接在原图上挪；粒子画在薄层上，柔化放大后叠上去，提亮的光用「滤色」
+      view(g, RES);
+      for (const f of sc.fx) if (MOVERS.has(f.d.type)) FX[f.d.type].draw(g, f.d, f.s, now, sc.img);
+      for (const [gg] of [[gN], [gS]]) { gg.setTransform(1, 0, 0, 1, 0, 0); gg.clearRect(0, 0, W, H); gg.globalAlpha = 1; gg.globalCompositeOperation = "source-over"; view(gg, 1); }
+      for (const f of sc.fx) if (!MOVERS.has(f.d.type)) FX[f.d.type].draw(SCREEN_FX.has(f.d.type) ? gS : gN, f.d, f.s, now, sc.img);
+      drawBursts(gN, sc, now);
+      g.setTransform(RES, 0, 0, RES, 0, 0);
+      g.imageSmoothingEnabled = true;
+      g.globalCompositeOperation = "screen"; g.drawImage(fxS, 0, 0, W, H);
+      g.globalCompositeOperation = "source-over"; g.drawImage(fxN, 0, 0, W, H);
+    }
   }
-  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.setTransform(RES, 0, 0, RES, 0, 0);
   g.globalAlpha = 1; g.globalCompositeOperation = "source-over";
   // 一下删了很多字：画面暗一下、抖一下
   if (sc.shiver) {
@@ -684,9 +726,12 @@ function render(now) {
   if (!T) { ctx.globalAlpha = c.p; ctx.drawImage(bufB, 0, 0); ctx.globalAlpha = 1; return; }   // fade：淡入
   gM.clearRect(0, 0, W, H); gM.fillStyle = "#fff";
   T.mask(gM, c.p, o, tr);
+  gB.setTransform(1, 0, 0, 1, 0, 0);
   gB.globalCompositeOperation = "destination-in"; gB.drawImage(maskC, 0, 0); gB.globalCompositeOperation = "source-over";
   ctx.drawImage(bufB, 0, 0);
+  ctx.setTransform(RES, 0, 0, RES, 0, 0);
   if (T.deco) T.deco(ctx, c.p, o, tr, now);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
 }
 
 function finish() {
@@ -705,7 +750,7 @@ function markCanvas() {
 
 // ---------------- 帧循环 ----------------
 function schedule() {
-  if (raf || timer || !cur || document.hidden) return;
+  if (raf || timer || !cur || document.hidden || canvas.hidden) return;
   const m = motion();
   const animated = trans || (m !== "off" && (cur.fx.length || cur.bursts.length || m === "full"));
   if (!animated) return;
@@ -741,7 +786,9 @@ function layout(sc = cur, smooth = false) {
   if (!canvas || !sc) return;
   const dpr = window.devicePixelRatio || 1;
   const vw = window.innerWidth, vh = window.innerHeight;
-  const s = Math.max(1, Math.ceil(Math.max((vw * dpr) / W, (vh * dpr) / H) - 0.001));
+  // 像素版按整数倍放大不糊；原图版正好盖满就行
+  const cover = Math.max((vw * dpr) / W, (vh * dpr) / H);
+  const s = RES > 1 ? cover : Math.max(1, Math.ceil(cover - 0.001));
   const cw = (W * s) / dpr, ch = (H * s) / dpr;
   const [ax, ay] = sc.meta.anchor || [0.5, 0.5];
   const left = clamp(vw / 2 - ax * cw, vw - cw, 0), top = clamp(vh / 2 - ay * ch, vh - ch, 0);
@@ -783,6 +830,7 @@ async function go(style, kind, dir) {
   let sc;
   try { sc = await makeScene(style, kind); } catch (e) { console.warn(e.message); if (my === token) hide(); return; }
   if (my !== token) return;
+  setRes(sc.url.startsWith("bg/orig/") ? 4 : 1);
   show();
   const m = motion();
   if (trans) finish();
@@ -803,15 +851,30 @@ async function go(style, kind, dir) {
 
 function preferKind(style) {
   const kinds = sceneKinds(style);
-  const s = getSettings();
-  let k = cur && cur.style === style ? cur.kind : s.sceneNav !== false && routeName === "book" ? "in" : "out";
+  let k = cur && cur.style === style ? cur.kind : "out";
   if (cur && cur.style !== style && kinds.includes(cur.kind)) k = cur.kind;
   return kinds.includes(k) ? k : kinds[0];
 }
 
+// 背景只铺在首页（书架）；别的页面收起来、停掉动画，回到首页再接着动
+const onHome = () => routeName === "shelf" || routeName === "";
 function show() {
+  if (!onHome()) { park(); return; }
   canvas.hidden = false;
   document.body.classList.add("has-scene");
+}
+function park() {
+  if (!canvas) return;
+  canvas.hidden = true;
+  document.body.classList.remove("has-scene", "scene-hot");
+  cancelAnimationFrame(raf); raf = 0; clearTimeout(timer); timer = 0;
+}
+function unpark() {
+  if (!canvas || !cur || getSettings().sceneBg === false) return;
+  canvas.hidden = false;
+  document.body.classList.add("has-scene");
+  layout(trans ? trans.to : cur);
+  redraw();
 }
 function hide() {
   token++;
@@ -901,15 +964,11 @@ export function mountScene() {
     clearTimeout(typingTimer);
     typingTimer = setTimeout(() => document.body.classList.remove("scene-typing"), 3000);
   });
-  // 打开作品：走进室内；回到书架：走到外面
+  // 只有首页铺背景；写字页是素净的书桌（body.desk），其他页面也不铺
   bus.on("route", ({ name }) => {
-    const prev = routeName;
     routeName = name;
-    if (getSettings().sceneNav === false || prev === name || (prev !== "book" && name !== "book")) return;
-    const sc = trans ? trans.to : cur;
-    if (!sc) return;
-    const k = name === "book" ? "in" : "out";
-    if (sc.kind !== k && sceneKinds(sc.style).includes(k)) go(sc.style, k, prev ? (k === "in" ? "in" : "out") : null);
+    document.body.classList.toggle("desk", name === "book");
+    if (onHome()) unpark(); else park();
   });
   bus.on("paper:rest", () => { resting = true; kickLoop(); });
   bus.on("paper:wake", () => { resting = false; });
@@ -948,7 +1007,7 @@ export function mountScene() {
   setInterval(() => {
     const sc = cur;
     const cycle = Number(getSettings().sceneCycle) || 0;
-    if (!sc || trans || !cycle || document.hidden || sceneKinds(sc.style).length < 2) return;
+    if (!sc || trans || !cycle || document.hidden || canvas.hidden || sceneKinds(sc.style).length < 2) return;
     const now = performance.now();
     if (now - lastSwitch < cycle * 60000 || now - lastType < 10000 || document.querySelector(".modal-back")) return;
     nextScene();

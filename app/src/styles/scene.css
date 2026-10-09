@@ -2,6 +2,7 @@
    书架整幅露出来；写字页中间一张透光的纸；顶栏、侧栏、卡片都是薄纱，浓淡可调。 */
 .scene-layer { position: fixed; left: 0; top: 0; z-index: 0; pointer-events: none; image-rendering: pixelated; will-change: transform; transition: filter .8s ease; }
 .scene-layer[hidden] { display: none; }
+.scene-layer.smooth { image-rendering: auto; }   /* 原图版：平滑放大 */
 /* 深色模式压暗一点；本来就是夜景的少压一点 */
 .scene-layer.dim { filter: brightness(.58) saturate(.92); }
 .scene-layer.dim.night { filter: brightness(.86); }
@@ -26,22 +27,28 @@ body.has-scene .ch-title::placeholder { color: color-mix(in srgb, var(--muted) 8
 
 /* 写字页：中间一张透光的纸。.center::before 是纸本身，.center::after 留给纸上的装饰（夹子、标签、印章……）。
    每套风格的纸在 styles/paper/<风格>.css 里画，选择器用 :root[data-paper="<风格>"]。打字时纸浓一点，停笔几秒又变清。 */
-body.has-scene .ws-body > .center { background: transparent; }
-body.has-scene .ws-body > .center::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; z-index: 0; pointer-events: none;
+body.desk .ws-body > .center { background: transparent; }
+body.desk .ws-body > .center::before { content: ""; position: absolute; top: 0; bottom: 0; left: 50%; z-index: 0; pointer-events: none;
   width: min(100%, calc(var(--text-width) + 120px)); transform: translateX(-50%);
   background-color: color-mix(in srgb, var(--paper) var(--a-paper), transparent);
   -webkit-backdrop-filter: blur(var(--b-paper)) saturate(1.1); backdrop-filter: blur(var(--b-paper)) saturate(1.1);
   box-shadow: 0 10px 40px rgba(0, 0, 0, .16);
   transition: background-color 1.2s ease, -webkit-backdrop-filter 1.6s ease, backdrop-filter 1.6s ease, opacity 1.6s ease; }
+/* ---------- 写字页：素净的书桌（body.desk）。背景插画只在首页，这里纸是实的，纸外面是淡淡的桌面色，底纹可选 ---------- */
+body.desk { --a-paper: 100%; --a-paper-typing: 100%; --b-paper: 0px; }
+body.desk .ws-body > .center { background: transparent; }
+body.desk .ws-body > .center::before { -webkit-backdrop-filter: none; backdrop-filter: none;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 6%, transparent), 0 14px 34px -16px color-mix(in srgb, var(--ink) 30%, transparent); }
+:root[data-dark] body.desk .ws-body > .center::before { box-shadow: 0 1px 0 rgba(255, 255, 255, .03) inset, 0 16px 36px -14px rgba(0, 0, 0, .6); }
 /* 书香气：纸这一块整体压低饱和度（纸后面透过来的画、纸上的珠光花纹都跟着变素），纸外面的画照旧 */
-body.has-scene .ws-body > .center::before { filter: saturate(var(--sheet-sat, .5)) sepia(.06); }
-:root[data-dark] body.has-scene .ws-body > .center::before { --sheet-sat: .3; filter: saturate(var(--sheet-sat)); }
-body.has-scene .ws-body > .center::after { filter: saturate(.7); }
+body.desk .ws-body > .center::before { filter: saturate(var(--sheet-sat, .6)) sepia(.05); }
+:root[data-dark] body.desk .ws-body > .center::before { --sheet-sat: .3; filter: saturate(var(--sheet-sat)); }
+body.desk .ws-body > .center::after { filter: saturate(.7); }
 /* ::after 留给各套纸的装饰：把旧的底纹剪影规则（固定 144px 高、专注模式压暗）重置掉 */
-body.has-scene .ws-body > .center::after { content: none; height: auto; background: none; opacity: 1; }
+body.desk .ws-body > .center::after { content: none; height: auto; background: none; opacity: 1; }
 body.has-scene:not(.paper-rest) .ws.focus .ws-body > .center::after { opacity: 1; }
-body.has-scene.scene-typing .ws-body > .center::before { background-color: color-mix(in srgb, var(--paper) var(--a-paper-typing), transparent); transition-duration: .5s; }
-body.has-scene .ws-body > .center > * { position: relative; z-index: 1; }
+body.desk.scene-typing .ws-body > .center::before { background-color: color-mix(in srgb, var(--paper) var(--a-paper-typing), transparent); transition-duration: .5s; }
+body.desk .ws-body > .center > * { position: relative; z-index: 1; }
 /* 字加一圈和纸同色的淡描边，画透过来也看得清 */
 body.has-scene .ed-host .cm-content, body.has-scene .ch-head { text-shadow: 0 0 2px color-mix(in srgb, var(--paper) var(--halo), transparent), 0 0 6px color-mix(in srgb, var(--paper) var(--halo), transparent); }
 body.has-scene .side-left, body.has-scene .side-right, body.has-scene .topbar, body.has-scene .statusbar {
@@ -66,7 +73,7 @@ body.has-scene.paper-rest .ws-body > .center::before { box-shadow: none; }
 body.has-scene.paper-rest .ws-body > .center::after { opacity: 0; transition: opacity 1.6s ease; }
 /* 回来的时候侧栏从两边滑进来，顶栏从上面落下来 */
 /* 动一下：纸复写回来。默认从上往下一行一行印出来；各套风格在自己的纸里换 animation-name */
-[data-motion="full"] body.has-scene.paper-wake .ws-body > .center::before { animation: paper-wake .8s steps(12) both; }
+[data-motion="full"] body.desk.paper-wake .ws-body > .center::before { animation: paper-wake .8s steps(12) both; }
 @keyframes paper-wake { from { clip-path: inset(0 0 100% 0); } to { clip-path: inset(0 0 0 0); } }
 
 /* 书架：书卡是玻璃片，浮在画上 */

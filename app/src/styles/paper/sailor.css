@@ -12,9 +12,9 @@
   --sl-rim-glow: rgba(160, 186, 228, .1); --sl-rim-glow2: rgba(160, 186, 228, .05); }
 
 /* 红线在打孔和正文中间：宽纸离孔 10px，纸窄到正文贴边时往左让（手机上贴着孔） */
-:root[data-paper="sailor"] body.has-scene .ws-body > .center::before { --sl-margin-x: max(28px, min(46px, calc((100% - min(100%, var(--text-width))) / 2 + 20px))); }
+:root[data-paper="sailor"] body.desk .ws-body > .center::before { --sl-margin-x: max(28px, min(46px, calc((100% - min(100%, var(--text-width))) / 2 + 20px))); }
 /* 纸：打孔一列 36px 宽，上下各留一段不打孔（padding 圈出打孔的范围，round 让孔整颗排满） */
-:root[data-paper="sailor"] body.has-scene .ws-body > .center::before {
+:root[data-paper="sailor"] body.desk .ws-body > .center::before {
   /* 纸边比纸心白：内阴影是白色的，一圈宽的一圈窄的 */
   padding: 36px 0 27px; image-rendering: pixelated;
   box-shadow: inset 0 0 0 1px var(--sl-edge), inset 0 0 8px 1px var(--sl-rim-glow2), inset 0 0 46px 6px var(--sl-rim-glow2);
@@ -39,13 +39,13 @@
   -webkit-mask-origin: content-box, border-box, border-box, border-box; mask-origin: content-box, border-box, border-box, border-box;
   -webkit-mask-clip: content-box, border-box, border-box, border-box; mask-clip: content-box, border-box, border-box, border-box; }
 /* 纸的影子和贴纸：挖孔把 ::before 自己的影子也剪掉了，影子挪到 ::after 上（外影子只画在框外，不盖纸） */
-:root[data-paper="sailor"] body.has-scene .ws-body > .center::after {
+:root[data-paper="sailor"] body.desk .ws-body > .center::after {
   content: ""; position: absolute; top: 0; bottom: 0; left: 50%; z-index: 0; pointer-events: none; height: auto;
   width: min(100%, calc(var(--text-width) + 120px)); transform: translateX(-50%); image-rendering: pixelated;
   background: var(--pa-star) right 10px top 10px / var(--pa-star-w) var(--pa-star-h) no-repeat,
     var(--pa-tail) right 14px bottom 20px / var(--pa-tail-w) var(--pa-tail-h) no-repeat;
   box-shadow: 0 10px 40px rgba(0, 0, 0, .14), 4px 4px 0 color-mix(in srgb, #1f2a3d 12%, transparent); transition: opacity 1.6s ease; }
-:root[data-paper="sailor"][data-dark] body.has-scene .ws-body > .center::after { filter: brightness(.82) saturate(.9); }
+:root[data-paper="sailor"][data-dark] body.desk .ws-body > .center::after { filter: brightness(.82) saturate(.9); }
 :root[data-paper="sailor"] body.has-scene.paper-rest .ws-body > .center::before { opacity: 0; }
 :root[data-paper="sailor"] body.has-scene:not(.paper-rest) .ws.focus .ws-body > .center::after { opacity: 1; }
 
@@ -70,8 +70,8 @@
   background-repeat: repeat-y; background-attachment: local; }
 
 /* 醒来：这页纸从上沿往下翻，越落越快，落平时弹两下；贴纸和影子跟着纸一起翻。纸色不等慢慢渐变，跟着翻页一起到位 */
-:root[data-paper="sailor"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::before,
-:root[data-paper="sailor"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::after {
+:root[data-paper="sailor"][data-motion="full"] body.desk.paper-wake .ws-body > .center::before,
+:root[data-paper="sailor"][data-motion="full"] body.desk.paper-wake .ws-body > .center::after {
   transform-origin: 50% 0; animation: sl-flip .82s linear both; transition-duration: .25s; }
 @keyframes sl-flip {
   0% { transform: translateX(-50%) perspective(1600px) rotateX(-80deg); opacity: .5; animation-timing-function: cubic-bezier(.5, 0, .9, .6); }

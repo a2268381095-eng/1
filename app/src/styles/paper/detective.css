@@ -3,7 +3,7 @@
    纸面有纤维和墨屑，台灯从上方打下来一团暖光，边上旧得发黄；正文外面右上盖一枚歪着的红色「卷宗」章，右下角留一圈咖啡杯印。
    正文底下一行一道打字机点线。醒来：打字机把这页一行一行打出来，色带跟着字走，打完「叮」一声回车。 */
 :root[data-paper="detective"] {
-  --dt-top: 28px; --dt-tint: rgba(222, 190, 128, .16); --dt-age: rgba(150, 100, 40, .24); --dt-lamp: rgba(255, 238, 196, .3);
+  --dt-top: 28px; --dt-tint: rgba(222, 196, 150, .1); --dt-age: rgba(150, 110, 60, .14); --dt-lamp: rgba(255, 240, 210, .28);
   --dt-shade: rgba(70, 46, 20, .1); --dt-board: #c9a063; --dt-board-e: #8f6a3a; --dt-edge: rgba(120, 88, 50, .28); --dt-lip: rgba(255, 255, 255, .55);
   --dt-ink: #2e2620; --dt-red: #b3262e; }
 :root[data-paper="detective"][data-dark] {
@@ -11,7 +11,7 @@
   --dt-shade: rgba(0, 0, 0, .26); --dt-board: #3a3835; --dt-board-e: #232220; --dt-edge: rgba(214, 186, 140, .14); --dt-lip: rgba(255, 230, 190, .06); }
 
 /* 纸：上沿往下让出标签耳的高度，下沿留出档案夹的边 */
-:root[data-paper="detective"] body.has-scene .ws-body > .center::before {
+:root[data-paper="detective"] body.desk .ws-body > .center::before {
   top: var(--dt-top); bottom: 12px; image-rendering: pixelated;
   background-image: var(--pa-stamp), var(--pa-ring), var(--pa-fiber),
     radial-gradient(ellipse 72% 42% at 42% 0%, var(--dt-lamp), transparent 72%),
@@ -29,13 +29,13 @@
 @media (max-width: 640px) { :root[data-paper="detective"] body.has-scene .ch-head { padding-top: 46px; } }
 
 /* 回形针和标签耳在 ::after：比纸高出一截，露在纸的上沿外面 */
-:root[data-paper="detective"] body.has-scene .ws-body > .center::after {
+:root[data-paper="detective"] body.desk .ws-body > .center::after {
   content: ""; position: absolute; z-index: 0; pointer-events: none; top: 0; bottom: 12px; left: 50%; height: auto;
   width: min(100%, calc(var(--text-width) + 120px)); transform: translateX(-50%); image-rendering: pixelated;
   background: var(--pa-clip) left 24px top 6px / var(--pa-clip-w) var(--pa-clip-h) no-repeat,
     var(--pa-tab) right 34px top calc(var(--dt-top) - var(--pa-tab-h) + 1px) / var(--pa-tab-w) var(--pa-tab-h) no-repeat;
   filter: drop-shadow(1px 2px 0 rgba(40, 28, 16, .3)); transition: opacity 1.6s ease; }
-:root[data-paper="detective"][data-motion="full"] body.has-scene .ws-body > .center::after { animation: dt-orn-in .5s steps(5) backwards; }
+:root[data-paper="detective"][data-motion="full"] body.desk .ws-body > .center::after { animation: dt-orn-in .5s steps(5) backwards; }
 @keyframes dt-orn-in { 0% { opacity: 0; transform: translateX(-50%) translateY(-8px); } 60% { opacity: 1; transform: translateX(-50%) translateY(2px); } }
 
 /* 打字机格线：只在正文底下，一行一道点线，跟着字一起走；左边那道红色页边线留着 */
@@ -51,9 +51,9 @@
 
 /* ---------- 复写回来：打字机一行一行打出来 ----------
    纸按行露出来，每行从左往右一格一格跳；::after 变成色带（上黑下红），跟着正在打的那一格走；打完纸往左一顿（回车）。 */
-:root[data-paper="detective"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::before {
+:root[data-paper="detective"][data-motion="full"] body.desk.paper-wake .ws-body > .center::before {
   animation: dt-type .86s linear both, dt-return .86s linear both; transition-duration: .2s; }
-:root[data-paper="detective"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::after {
+:root[data-paper="detective"][data-motion="full"] body.desk.paper-wake .ws-body > .center::after {
   top: var(--dt-top); filter: none; opacity: 1;
   background: linear-gradient(transparent 0 26%, var(--dt-ink) 26% 54%, var(--dt-red) 54% 80%, transparent 80%) 0 0 / 100% calc(100% / 12) repeat-y;
   animation: dt-head .86s linear both; }

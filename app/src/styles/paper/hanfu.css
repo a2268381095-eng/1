@@ -8,11 +8,11 @@
 :root[data-paper="hanfu"][data-dark] {
   --hf-verm: #d9705a; --hf-verm2: color-mix(in srgb, #d9705a 48%, transparent); --hf-bleed: rgba(217, 112, 90, .3);
   --hf-light: rgba(236, 222, 196, .05); --hf-shade: rgba(0, 0, 0, .22); --hf-core: color-mix(in srgb, var(--paper) 46%, transparent); }
-:root[data-paper="hanfu"] body.has-scene .ws-body > .center { --hf-w: min(100%, calc(var(--text-width) + 120px)); }
+:root[data-paper="hanfu"] body.desk .ws-body > .center { --hf-w: min(100%, calc(var(--text-width) + 120px)); }
 
 /* ---------- 纸 ----------
    毛边：左右两条遮罩只铺在上下毛边之间（padding 圈出 content-box），上下两条铺满整宽，中间一块实心 */
-:root[data-paper="hanfu"] body.has-scene .ws-body > .center::before {
+:root[data-paper="hanfu"] body.desk .ws-body > .center::before {
   padding: 16px 0; box-shadow: none; image-rendering: pixelated;
   background-image:
     radial-gradient(ellipse 46% 52% at 50% 44%, var(--hf-core), transparent 100%),
@@ -33,11 +33,11 @@
   -webkit-mask-clip: content-box, content-box, border-box, border-box, content-box; mask-clip: content-box, content-box, border-box, border-box, content-box; }
 /* 停笔：纸整张隐去，框和印留个淡影 */
 :root[data-paper="hanfu"] body.has-scene.paper-rest .ws-body > .center::before { opacity: 0; }
-:root[data-paper="hanfu"] body.has-scene.paper-wake .ws-body > .center::before { transition-duration: .25s, .6s, .6s, .12s; }
+:root[data-paper="hanfu"] body.desk.paper-wake .ws-body > .center::before { transition-duration: .25s, .6s, .6s, .12s; }
 
 /* ---------- 朱砂双线框 + 朱印 + 墨梅（::after，框离纸边 22px）----------
    外线 2px、内线 1px；整层用 bleed 遮罩打出浓淡，再加一圈朱红的晕，像印泥吃进纸里 */
-:root[data-paper="hanfu"] body.has-scene .ws-body > .center::after {
+:root[data-paper="hanfu"] body.desk .ws-body > .center::after {
   content: ""; position: absolute; z-index: 0; pointer-events: none; box-sizing: border-box;
   top: 24px; bottom: 24px; height: auto; left: 50%; right: auto; width: calc(var(--hf-w) - 48px); transform: translateX(-50%);
   image-rendering: pixelated;
@@ -63,7 +63,7 @@
 /* ---------- 复写回来：墨滴落纸晕开 ----------
    五滴墨先后落在纸上，各自往外洇（边是软的），连成一整张；纸先湿后干：一开始糊、发暗，慢慢清楚 */
 @property --hf-r { syntax: "<length>"; inherits: false; initial-value: 0px; }
-:root[data-paper="hanfu"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::before {
+:root[data-paper="hanfu"][data-motion="full"] body.desk.paper-wake .ws-body > .center::before {
   -webkit-mask: none; mask: none;
   -webkit-mask-image: radial-gradient(circle at 50% 38%, #000 calc(var(--hf-r) * 1), transparent calc(var(--hf-r) * 1 + 70px)),
     radial-gradient(circle at 22% 16%, #000 calc(var(--hf-r) * .7 - 120px), transparent calc(var(--hf-r) * .7 - 60px)),
@@ -79,7 +79,7 @@
 @keyframes hf-spread { from { --hf-r: 0px; } to { --hf-r: 1500px; } }
 @keyframes hf-dry { 0% { filter: blur(3px) brightness(.8) saturate(.7); } 45% { filter: blur(1.2px) brightness(.92); } 100% { filter: none; } }
 /* 框和印：等纸洇开一半，朱砂才从淡到浓显出来 */
-:root[data-paper="hanfu"][data-motion="full"] body.has-scene.paper-wake .ws-body > .center::after { animation: hf-stamp .9s ease-out both; }
+:root[data-paper="hanfu"][data-motion="full"] body.desk.paper-wake .ws-body > .center::after { animation: hf-stamp .9s ease-out both; }
 @keyframes hf-stamp {
   0%, 35% { opacity: 0; filter: blur(2px) drop-shadow(0 0 4px var(--hf-bleed)); transform: translateX(-50%) scale(1.012); }
   70% { opacity: 1; filter: blur(.4px) drop-shadow(0 0 3px var(--hf-bleed)); transform: translateX(-50%) scale(.998); }

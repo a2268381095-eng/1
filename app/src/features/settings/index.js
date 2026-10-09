@@ -3,7 +3,7 @@
 // 发出的事件：settings:changed（core 发）、book:updated（store 发）、
 //   settings:reset { group }、settings:font-added { font }、settings:font-removed { font }、settings:errlog-cleared { count }
 import { PALETTES } from "../../core/pattern.js";
-import { nextScene } from "../../core/scene.js";
+import { nextScene, sceneArt } from "../../core/scene.js";
 import { resolvePalette } from "../../core/look.js";
 import { getBook, updateBook, listChapters, updateChapter, DEFAULT_BOOK } from "../../core/store.js";
 import { db, uid } from "../../core/db.js";
@@ -242,6 +242,18 @@ function toggle(text, get, set, name) {
   return h("label.check.st-check", {}, cb, h("span", {}, text));
 }
 
+/** 存在 kv 里的开关（选中调用这些模块自己的设置）：改完发 rewrite:prefs 让模块重读 */
+function kvToggle(text, key) {
+  const cb = h("input", { type: "checkbox", "data-kv": key });
+  db.getKV(key, true).then((v) => { cb.checked = v !== false; });
+  cb.addEventListener("change", async () => {
+    await db.setKV(key, cb.checked);
+    bus.emit("rewrite:prefs", {});
+    toast(text + (cb.checked ? "：开" : "：关"));
+  });
+  return h("label.check.st-check", {}, cb, h("span", {}, text));
+}
+
 /** 滑块：拖的时候就生效，一次拖动算一步撤销 */
 function slider(name, key, { min, max, step }, fmt, lbl) {
   const input = h("input.st-range", { type: "range", min, max, step, "aria-label": name, "data-key": key });
@@ -336,24 +348,19 @@ function renderLook(body) {
       seg("主题", [["auto", "跟随系统"], ["light", "浅色"], ["dark", "深色"], ["time", "随时间"]], () => s().theme,
         (v) => change({ theme: v }, { auto: "主题跟随系统", light: "换成浅色", dark: "换成深色", time: "明暗随时间" }[v]))),
     row("配色", "「跟随小恶魔」：打开哪本书，界面就换成她这本书穿的那套风格的颜色。选了某一套配色，或者随时间、随季节换时，小恶魔也换上那一套衣服，背景插画也换成那一套。", palettePicker()),
-    row("像素底纹", "书架这些空白处铺一层很淡的像素图案，写字的纸面不铺。",
+    row("像素底纹", "空白处铺一层很淡的像素图案（写字页纸外面的桌面也算），纸面不铺。",
       toggle("铺底纹", () => s().pixelBg, (v) => change({ pixelBg: v }, v ? "铺上像素底纹" : "去掉像素底纹"), "pixelBg")),
-    row("背景插画", "书架和写字页四周铺一幅像素插画，每套风格一张外景、一张内景。画里的水、旗子、灯火会动，点画上的灯、水面、花树会有反应，写到里程碑整幅画一起热闹。写字的纸面不铺。",
+    row("背景插画", "首页（书架）铺一幅插画，每套风格一张外景、一张内景。画里的水、旗子、灯火会动，点画上的灯、水面、花树会有反应。写字页是素净的书桌，不铺。",
       toggle("铺背景插画", () => s().sceneBg !== false, (v) => change({ sceneBg: v }, v ? "铺上背景插画" : "去掉背景插画"), "sceneBg")),
-    row("背景透出", "写字页的纸、侧栏、顶栏透出多少画。越大画越清楚，越小界面越实。打字时纸会自动浓一点，停笔几秒又变清。",
+    row("背景透出", "首页的书卡、顶栏透出多少画。越大画越清楚，越小界面越实。",
       slider("背景透出", "sceneVeil", { min: 0, max: 100, step: 5 }, (v) => v + "%", "改背景透出")),
-    row("插画像素", "「干净」色块平整；「网点」加一层老游戏机那样的网点。",
-      seg("插画像素", [["clean", "干净"], ["dither", "网点"]], () => (s().sceneDither ? "dither" : "clean"),
-        (v) => change({ sceneDither: v === "dither" }, "插画改成" + (v === "dither" ? "网点" : "干净") + "像素"))),
+    row("背景画法", "「原图」是画好的插画本身；「像素」转成老游戏那样的像素画；「像素网点」再加一层网点。",
+      seg("背景画法", [["orig", "原图"], ["pixel", "像素"], ["dot", "像素网点"]], () => sceneArt(),
+        (v) => change({ sceneArt: v, sceneDither: v === "dot" }, "背景改成" + { orig: "原图", pixel: "像素", dot: "像素网点" }[v]))),
     row("内外轮换", "隔一段时间，镜头从外景走进内景，再退回外景，每套风格的转场不一样。正在打字时等你停下来再换。",
       seg("内外轮换", [[0, "不轮换"], [5, "5 分钟"], [10, "10 分钟"], [30, "30 分钟"]], () => Number(s().sceneCycle) || 0,
         (v) => change({ sceneCycle: v }, v ? `背景每 ${v} 分钟换一次` : "背景不再轮换")),
       h("button.btn.small.st-scene-now", { type: "button", onclick: () => { if (!nextScene()) toast("现在这套风格只有一张背景图。"); } }, "现在换一次")),
-    row("停笔后变回背景", "写字页停笔、不动鼠标一阵以后，侧栏、顶栏隐去，纸变透明，屏幕只剩动态背景。一动鼠标或打字，界面回来，纸按这套风格的方式复写回来。",
-      seg("停笔后变回背景", [[0, "不变"], [15, "15 秒"], [30, "30 秒"], [60, "1 分钟"], [180, "3 分钟"]], () => Number(s().paperRest) || 0,
-        (v) => change({ paperRest: v }, v ? `停笔 ${v >= 60 ? v / 60 + " 分钟" : v + " 秒"}后变回背景` : "停笔后不再变回背景"))),
-    row("走进作品", "打开一本书，镜头走进内景；回到书架，走回外景。",
-      toggle("打开作品时走进室内", () => s().sceneNav !== false, (v) => change({ sceneNav: v }, v ? "打开作品时走进室内" : "打开作品时不换背景"), "sceneNav")),
     row("界面动效", "按钮回弹、弹窗弹出、面板滑入这些动作。「简洁」只淡入淡出；系统设置了减少动态效果时「自动」会关掉。",
       seg("界面动效", [["auto", "自动"], ["full", "完整"], ["simple", "简洁"], ["off", "关闭"]], () => s().motion,
         (v) => change({ motion: v }, "界面动效改成" + { auto: "自动", full: "完整", simple: "简洁", off: "关闭" }[v]))),
@@ -561,6 +568,10 @@ function renderDemon(body) {
     row("话多少", "少：只在打开软件、完成字数目标、写完一章时说话。你戳她、出错时照常说。",
       seg("话多少", [["quiet", "少"], ["normal", "正常"], ["chatty", "多"]], () => s().demonChatty,
         (v) => change({ demonChatty: v }, "小恶魔话多少改成" + { quiet: "少", normal: "正常", chatty: "多" }[v]))),
+    row("讲解功能", "鼠标在按钮、功能入口上停一小会儿，她用自己的口吻讲一句这是干什么的。同一个功能每次打开软件只讲一遍。",
+      toggle("鼠标停在功能上时讲一句", () => s().demonGuide !== "off", (v) => change({ demonGuide: v ? "on" : "off" }, v ? "小恶魔会讲解功能" : "小恶魔不再讲解功能"), "demonGuide")),
+    row("选中文字时", "在正文里选中一段，旁边浮出 AI 工具栏，列出你的提示词。关掉以后用 Ctrl+Shift+A 手动叫出来。AI 改过的段落可以留一层淡色底，方便回看。",
+      kvToggle("选中文字时自动弹出 AI 工具栏", "rewrite:auto"), kvToggle("AI 改过的段落留淡色标记", "rewrite:marks")),
     row("停笔多久算久", "停笔这么久，她会打瞌睡，等你回来。",
       numberBox("停笔多久算久", () => s().idleMinutes, (v) => change({ idleMinutes: v }, "改停笔时间", { merge: true }), { min: 1, max: 120 }, "分钟")),
     row("功能说明", "第一次用某个功能时她会说一句说明，看过就不再说。点这里让说明重新出现。",

@@ -7,7 +7,8 @@ export const DEFAULT_SETTINGS = {
   palette: "follow",          // 配色：follow 跟随小恶魔 / time 随时间 / season 随季节 / magical / sailor / hanfu / gothic / detective / adventurer
   pixelBg: true,              // 空白处铺像素底纹
   sceneBg: true,              // 背景插画（每套风格一张外景、一张内景）
-  sceneDither: false,         // 背景插画用网点版
+  sceneArt: "",               // 背景画法：orig 原图（默认）/ pixel 像素 / dot 像素网点；空着时看旧的 sceneDither
+  sceneDither: false,         // 旧设置：背景插画用网点版
   sceneVeil: 60,              // 背景透出：0 界面最实 — 100 画最清楚
   sceneCycle: 10,             // 外景、内景轮换：每几分钟，0 不轮换
   sceneNav: true,             // 打开作品时走进内景，回书架走回外景
@@ -16,7 +17,7 @@ export const DEFAULT_SETTINGS = {
   clickFx: "style",           // 点击特效：style 跟随小恶魔的道具 / hearts 像素爱心 / ripple 魔法波纹 / ink 墨点 / off
   demonPulse: true,           // 码字互动：字数牌子、连击
   uiFont: "system",           // 界面字体
-  textFont: "serif",          // 正文字体
+  textFont: "kai",            // 正文字体：默认霞鹜文楷（打包在软件里，书卷气）
   textSize: 18,               // 正文字号 px
   lineHeight: 1.9,            // 正文行高
   textWidth: 720,             // 正文栏最大宽度 px
@@ -27,6 +28,7 @@ export const DEFAULT_SETTINGS = {
   demonPos: null,             // 位置 { right, bottom }（px，离窗口右下角），null 是默认的右下角
   demonStyle: "magical",      // 书架等没有作品时用哪套
   demonChatty: "normal",      // quiet 少说话 / normal / chatty 多说话
+  demonGuide: "on",          // 鼠标停在功能上时小恶魔讲一句（on / off）
   idleMinutes: 5,             // 停笔多少分钟算「停笔很久」
   tipsSeen: {},               // 第一次使用的说明看过哪些
   keys: {},                   // 自定义快捷键 { commandId: "Mod-Shift-f" }
