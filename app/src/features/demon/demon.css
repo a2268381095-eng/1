@@ -60,8 +60,10 @@
 .help-item:hover, .help-item.sel { background: var(--accent-soft); }
 @media (max-width: 640px) { .demon-bubble { max-width: 200px; font-size: 13px; } }
 
-/* 字数牌子：挂在她脚边。进度的样子每套风格不一样（meters/*.js 画在 .db-meter 画布上） */
-.demon-badge { position: absolute; left: 50%; bottom: -10px; transform: translateX(-50%); min-width: 132px; padding: 3px 6px 5px; display: grid; gap: 3px;
+/* 字数牌子：放在她脚下，像托着她的小台子，不挡人。牌子出来时人往上让出它的高度（--badge-room 由 demon.js 量好写上）。
+   进度的样子每套风格不一样（meters/*.js 画在 .db-meter 画布上） */
+.demon-body { margin-bottom: var(--badge-room, 0px); transition: margin-bottom .3s ease; }
+.demon-badge { position: absolute; left: 50%; top: calc(100% - 2px); bottom: auto; transform: translateX(-50%); min-width: 132px; padding: 3px 6px 5px; display: grid; gap: 3px;
   border: 2px solid var(--bubble-line); border-radius: 3px; background: var(--surface); box-shadow: 2px 2px 0 var(--accent-soft);
   font-family: var(--f-pixel); font-size: 11px; line-height: 1.2; color: var(--ink); pointer-events: none; z-index: 1; }
 .demon-badge[hidden] { display: none; }

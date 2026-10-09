@@ -3,13 +3,13 @@
 import { h, icon, modal, confirm, prompt } from "../../core/ui.js";
 import { uid } from "../../core/db.js";
 import { TEMPLATES, parseLadder, newLadder, stepsOf, levelAt, levelIndex, kindOf } from "../../core/lore.js";
-import { popover, menu, editable, adder, chip, chapterSelect, undoToast, flash, composing } from "./bits.js";
+import { popover, menu, editable, adder, chip, chapterSelect, undoToast, flash, composing, vars } from "./bits.js";
 
 /** 一排柱子：count 级，cur 是当前第几级（从 0 数，-1 是还没设） */
 export function bars(count, cur = -1, cls = "") {
   const n = Math.max(1, count);
-  const el = h("span.lr-bars" + cls, { style: { "--n": String(n) }, "aria-hidden": "true" });
-  for (let k = 0; k < n; k++) el.append(h("i" + (k <= cur ? ".on" : "") + (k === cur ? ".cur" : ""), { style: { "--k": String(k + 1) } }));
+  const el = h("span.lr-bars" + cls, { style: vars({ "--n": n }), "aria-hidden": "true" });
+  for (let k = 0; k < n; k++) el.append(h("i" + (k <= cur ? ".on" : "") + (k === cur ? ".cur" : ""), { style: vars({ "--k": k + 1 }) }));
   return el;
 }
 
@@ -160,7 +160,7 @@ function focusLadder(env, id) {
 
 function ladderCard(env, lad, index, nUsers) {
   const meta = env.meta;
-  const card = h("article.lr-ladder", { "data-id": lad.id, style: { "--i": String(index) } });
+  const card = h("article.lr-ladder", { "data-id": lad.id, style: vars({ "--i": index }) });
   const name = h("h3.lr-ladder-name");
   editable(name, { get: () => lad.name, env, empty: "未命名阶梯", save: (v) => env.updateMeta(`阶梯改名「${v || "未命名"}」`, (m) => { const x = m.ladders.find((y) => y.id === lad.id); if (x) x.name = v.trim() || "未命名阶梯"; }) });
   const more = h("button.icon-btn", { type: "button", "aria-label": "这条阶梯的更多操作", title: "更多" }, icon("more"));
@@ -235,7 +235,7 @@ function levelRow(env, lad, lv, k) {
   up.addEventListener("click", () => env.updateMeta("挪动等级", (m) => { const x = m.ladders.find((y) => y.id === lad.id); if (x) move(x.levels, lv.id, -1); }));
   const ratio = h("span.lr-lv-ratio");
   editable(ratio, { get: () => lv.ratio, env, empty: "人数比例", save: set("ratio", "在世人数") });
-  li.append(h("div.lr-lv-main", {}, h("span.lr-lv-k", {}, String(k + 1)), name, ratio, h("span.lr-lv-acts", {}, up, toggle, del)));
+  li.append(h("div.lr-lv-main", {}, h("span.lr-lv-k", { "data-k": String(k + 1) }, String(k + 1)), name, ratio, h("span.lr-lv-acts", {}, up, toggle, del)));
   const more = h("div.lr-lv-more");
   LV_FIELDS.slice(0, 3).forEach(([key, label, hint]) => {
     const v = h("div.lr-fv");

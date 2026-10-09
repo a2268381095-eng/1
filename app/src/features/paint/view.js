@@ -267,7 +267,7 @@ export async function openPaint(opts = {}) {
 
     function cardEl(it) {
       const [rw, rh] = it.w && it.h ? [it.w, it.h] : ratioNums();
-      const el = h("article.paint-card.is-" + it.kind + ".st-" + it.state + (it.picked ? ".picked" : ""), { role: "listitem", "data-key": it.key, style: `--ar: ${rw} / ${rh}; --i: ${it.i || 0}` });
+      const el = h("article.paint-card.is-" + it.kind + ".st-" + it.state + (it.picked ? ".picked" : ""), { role: "listitem", "data-key": it.key, style: `--ar: ${rw} / ${rh}; --i: ${it.state === "wait" ? it.i || 0 : 0}` });
       if (it.state === "wait") {
         el.setAttribute("aria-busy", "true");
         el.append(h("div.paint-card-img.paint-wait", {}, h("span.paint-wait-a", { "aria-hidden": "true" }), h("span.paint-wait-b", { "aria-hidden": "true" }),

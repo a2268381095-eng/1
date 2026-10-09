@@ -180,3 +180,68 @@ body.has-scene .ai-samples { -webkit-backdrop-filter: blur(14px) saturate(1.2); 
 :root[data-paper="detective"] .ai-ctx { border-radius: 2px; border-left: 3px solid #8a6a3a; }
 :root[data-paper="adventurer"] .ai-ctx { border: 2px solid color-mix(in srgb, #8a5a32 45%, transparent); border-radius: 6px; }
 :root[data-paper="magical"] .ai-ctx { border-radius: 14px; border-style: dashed; border-color: color-mix(in srgb, var(--accent) 40%, transparent); }
+
+/* ---------- 绘画：接入流程里的一段（选绘画接口、加绘画模型） ---------- */
+.ai-paint { display: grid; gap: 10px; padding: 12px 14px; border-radius: 12px; border: 1px dashed color-mix(in srgb, var(--accent) 35%, var(--line));
+  background: color-mix(in srgb, var(--accent) 4%, var(--surface)); }
+.ai-paint-h { margin: 0; display: flex; align-items: center; gap: 6px; font-size: 14px; }
+.ai-paint-h .ico { color: var(--accent); }
+.ai-paint-opt { font-size: 11.5px; font-weight: 400; color: var(--muted); padding: 0 8px; border-radius: 999px; background: var(--side); }
+.ai-paint-body[hidden] { display: none; }
+.ai-paint-models { display: flex; flex-wrap: wrap; gap: 6px; min-height: 28px; align-items: center; }
+.ai-paint-chip { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; min-width: 0; padding: 2px 2px 2px 11px; border-radius: 999px; background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent); font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12px; }
+.ai-paint-chip-t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ai-paint-x { width: 22px; height: 22px; border: 0; border-radius: 50%; background: transparent; color: var(--muted); display: grid; place-items: center; cursor: pointer; padding: 0; flex: 0 0 auto; }
+.ai-paint-x:hover { background: var(--danger-soft); color: var(--danger); }
+.ai-paint-x .ico svg { width: 12px; height: 12px; }
+.ai-paint-none { font-size: 12.5px; color: var(--faint); }
+.ai-paint-row .input { flex: 1 1 200px; }
+.ai-paint-pick { display: flex; flex-wrap: wrap; gap: 6px; }
+.ai-paint-pick[hidden] { display: none; }
+.ai-paint-cand { border: 0; font-family: ui-monospace, Menlo, Consolas, monospace; }
+.ai-paint-empty { font-size: 12.5px; line-height: 1.6; }
+.ai-paint-note { margin: 0; font-size: 12.5px; color: var(--muted); }
+.ai-paint-note.ok { color: var(--ok); }
+.ai-prov.paint .ai-prov-state { color: var(--ok); }
+[data-motion="full"] .ai-paint-chip { animation: ai-paint-in .35s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes ai-paint-in { from { transform: scale(.6); opacity: 0; } }
+:root[data-paper="sailor"] .ai-paint { border-radius: 3px; border-style: solid; border-left: 4px solid var(--accent); }
+:root[data-paper="hanfu"] .ai-paint { border-radius: 1px; border-width: 1px 0; border-style: solid; }
+:root[data-paper="gothic"] .ai-paint { border-radius: 0; clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px); }
+:root[data-paper="detective"] .ai-paint { border-radius: 2px; border-style: solid; border-left: 4px solid color-mix(in srgb, #8a6a3a 70%, transparent); }
+:root[data-paper="adventurer"] .ai-paint { border-radius: 8px; border: 2px solid color-mix(in srgb, #8a5a32 45%, transparent); }
+:root[data-paper="hanfu"] .ai-paint-chip, :root[data-paper="detective"] .ai-paint-chip { border-radius: 3px; }
+:root[data-paper="gothic"] .ai-paint-chip { border-radius: 0; }
+
+/* ---------- 画图的确认卡 ---------- */
+.modal.ai-img-modal { width: min(580px, 100%); }
+.ai-img-grid { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: start; }
+@media (max-width: 520px) { .ai-img-grid { grid-template-columns: minmax(0, 1fr); } }
+.ai-img-seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 7%, var(--side)); justify-self: start; }
+.ai-img-seg button { border: 0; background: transparent; color: var(--muted); border-radius: 999px; padding: 4px 12px; cursor: pointer; font-size: 13px; white-space: nowrap;
+  transition: background-color .2s, color .2s, box-shadow .25s, transform .25s cubic-bezier(.3, 1.6, .5, 1); }
+.ai-img-seg button:hover { color: var(--ink); background: color-mix(in srgb, var(--surface) 70%, transparent); }
+.ai-img-seg button[aria-pressed="true"] { background: var(--surface); color: color-mix(in srgb, var(--accent) 85%, var(--ink)); font-weight: 600;
+  box-shadow: 0 3px 10px -4px var(--glow), 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent); }
+[data-motion="full"] .ai-img-seg button[aria-pressed="true"] { animation: seg-pick .35s cubic-bezier(.3, 1.6, .5, 1); }
+.ai-img-note { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.6; }
+.ai-img-note:empty { display: none; }
+.ai-img-size-in[hidden] { display: none; }
+.ai-img-size-in.bad { border-color: var(--danger); }
+.ai-img-fixed { margin: 0; font-size: 13px; padding: 4px 0; }
+.ai-img-qual:empty { display: none; }
+.ai-img-pinfo { gap: 8px; font-size: 13px; }
+.ai-img-src { font-weight: 600; }
+.ai-img-prompt { max-height: 210px; }
+.ai-img-est { gap: 8px; }
+.ai-img-cost { color: var(--ink); font-weight: 600; }
+.ai-img-price-hint { font-size: 12px; }
+.ai-img-card .ai-price .input { width: 96px; }
+:root[data-paper="hanfu"] .ai-img-seg, :root[data-paper="hanfu"] .ai-img-seg button { border-radius: 3px; }
+:root[data-paper="gothic"] .ai-img-seg, :root[data-paper="gothic"] .ai-img-seg button { border-radius: 0;
+  clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px); }
+:root[data-paper="detective"] .ai-img-seg, :root[data-paper="detective"] .ai-img-seg button { border-radius: 4px; }
+:root[data-paper="detective"] .ai-img-seg button { font-family: "Courier New", var(--f-ui); }
+:root[data-paper="sailor"] .ai-img-seg button[aria-pressed="true"] { box-shadow: 1px 2px 0 color-mix(in srgb, var(--ink) 30%, transparent); }
+:root[data-paper="adventurer"] .ai-img-seg { border: 1.5px solid color-mix(in srgb, #8a5a32 40%, transparent); }

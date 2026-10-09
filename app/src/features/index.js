@@ -17,6 +17,7 @@ import * as rewrite from "./rewrite/index.js";
 import * as stash from "./stash/index.js";
 import * as chat from "./chat/index.js";
 import * as chapterai from "./chapterai/index.js";
+import * as lore from "./lore/index.js";
 import * as paint from "./paint/index.js";
 
 const PENDING = [
@@ -37,7 +38,7 @@ function stubView(title) {
 }
 
 export async function registerFeatures() {
-  const mods = [search, format, versions, trash, io, settings, ai, prompts, rewrite, stash, chat, chapterai, paint];
+  const mods = [search, format, versions, trash, io, settings, ai, prompts, rewrite, stash, chat, chapterai, paint, lore];
   for (const m of mods) {
     try { if (m && m.register) await m.register(); }
     catch (e) { console.error("功能模块启动失败", e); }

@@ -476,9 +476,16 @@ async function refreshBadge(n) {
   if (!badge) return;
   const on = getSettings().demonPulse !== false && bookCtx && bookCtx.dailyGoal;
   badge.hidden = !on;
-  if (!on) return;
+  if (!on) { badgeRoom(); return; }
   if (n == null) { todayN = await todayWords(bookCtx.id); typedSinceSave = 0; } else todayN = n;
   drawBadge();
+  badgeRoom();
+}
+/** 牌子在她脚下：人往上让出牌子的高度，牌子不挡人 */
+function badgeRoom() {
+  if (!el || !badge) return;
+  const hgt = badge.hidden ? 0 : badge.offsetHeight;
+  el.style.setProperty("--badge-room", hgt ? hgt + "px" : "0px");
 }
 
 // 进度的样子按风格换（meters/*.js），画在一张小画布上，按 3 倍放大
@@ -515,6 +522,7 @@ function meterFrame(now) {
     st.styleId = style.id; st.colors = null;
     cv.width = m.w; cv.height = m.h;
     cv.style.width = m.w * 3 + "px"; cv.style.height = m.h * 3 + "px";
+    badgeRoom();   // 换了一套风格，牌子高度变了，人跟着让
   }
   if (!st.colors) st.colors = meterColors();
   const motion = document.documentElement.dataset.motion || "full";

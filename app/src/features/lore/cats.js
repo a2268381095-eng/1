@@ -4,7 +4,7 @@ import { h, icon, modal, toast, prompt } from "../../core/ui.js";
 import { uid } from "../../core/db.js";
 import { KINDS, SWATCHES, newCat } from "../../core/lore.js";
 import { placeholder } from "./image.js";
-import { undoToast } from "./bits.js";
+import { undoToast, vars } from "./bits.js";
 
 const KIND_HINT = {
   person: "人物卡：形象和服装、定位、辨识特征、晋升阶梯、所在地",
@@ -30,7 +30,7 @@ export function catSettings(env, catId) {
   const custom = h("input.lr-cs-color", { type: "color", value: d.color, "aria-label": "自己调颜色", title: "自己调颜色" });
   const paintSw = () => {
     sw.replaceChildren(...SWATCHES.map((c) => {
-      const b = h("button.lr-cs-c", { type: "button", role: "radio", "aria-checked": String(c === d.color), style: { "--c": c }, title: c });
+      const b = h("button.lr-cs-c", { type: "button", role: "radio", "aria-checked": String(c === d.color), style: vars({ "--c": c }), title: c });
       b.addEventListener("click", () => { d.color = c; custom.value = c; paintSw(); paintPrev(); });
       return b;
     }), custom);

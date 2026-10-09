@@ -4,6 +4,9 @@ import { h, icon, pushLayer, toast } from "../../core/ui.js";
 import { undo as appUndo } from "../../core/undo.js";
 
 export const composing = (e) => e.isComposing || e.keyCode === 229;
+/** CSS 变量写成 style 字符串（h() 的 style 对象设不了 --变量） */
+export const vars = (o) => Object.entries(o).filter(([, v]) => v != null && v !== "")
+  .map(([k, v]) => `${k}: ${String(v).replace(/[^#\w(),.\s%-]/g, "")}`).join("; ");
 export const typing = () => { const a = document.activeElement; return !!a && /INPUT|TEXTAREA|SELECT/.test(a.tagName); };
 const modalOpen = () => !!document.querySelector(".modal-back");
 
@@ -23,13 +26,17 @@ export function flash(el, cls = "lr-saved") {
 }
 
 function placeNear(el, anchor) {
+  if (!anchor || !anchor.isConnected) return;
   const r = anchor.getBoundingClientRect();
-  const w = el.offsetWidth, ht = el.offsetHeight;
-  const left = Math.max(8, Math.min(r.left, innerWidth - w - 8));
-  let top = r.bottom + 6;
-  if (top + ht > innerHeight - 8) top = Math.max(8, r.top - ht - 6);
-  el.style.left = left + "px";
-  el.style.top = top + "px";
+  const below = innerHeight - r.bottom - 14, above = r.top - 14;
+  el.style.maxHeight = "";
+  const ht = el.scrollHeight + 2;
+  const down = ht <= below || below >= above;
+  const room = Math.max(140, down ? below : above);
+  el.style.maxHeight = Math.min(room, Math.round(innerHeight * 0.8)) + "px";
+  const w = el.offsetWidth, hh = el.offsetHeight;
+  el.style.left = Math.max(8, Math.min(r.left, innerWidth - w - 8)) + "px";
+  el.style.top = (down ? r.bottom + 6 : Math.max(8, r.top - hh - 6)) + "px";
 }
 
 /**
@@ -48,6 +55,7 @@ export function popover(anchor, content, opts = {}) {
     onKeepDraft: opts.onKeepDraft,
     onClose: () => {
       el.remove();
+      if (ro) ro.disconnect();
       if (anchor) anchor._lrPop = null;
       document.removeEventListener("mousedown", off, true);
       window.removeEventListener("resize", re);
@@ -59,6 +67,12 @@ export function popover(anchor, content, opts = {}) {
   if (anchor) anchor._lrPop = layer;
   setTimeout(() => document.addEventListener("mousedown", off, true), 0);
   window.addEventListener("resize", re);
+  // 里面的东西变多变少（搜索结果）时重新找位置
+  let ro = null, lastH = 0;
+  if (window.ResizeObserver) {
+    ro = new ResizeObserver(() => { const hh = el.scrollHeight; if (Math.abs(hh - lastH) > 2) { lastH = hh; re(); } });
+    [...el.children].forEach((c) => ro.observe(c));
+  }
   setTimeout(() => {
     const f = el.querySelector("[autofocus], input, textarea, select, button");
     if (f) f.focus();
@@ -175,7 +189,7 @@ export function adder(label, { placeholder = "", onAdd, env, cls = "" }) {
 
 /** 一枚小标签，带 × */
 export function chip(text, { cls = "", onRemove, onClick, title, color } = {}) {
-  const el = h("span.lr-chip" + cls, { title: title || null, style: color ? { "--c": color } : null });
+  const el = h("span.lr-chip" + cls, { title: title || null, style: color ? vars({ "--c": color }) : null });
   const t = onClick ? h("button.lr-chip-t", { type: "button" }, text) : h("span.lr-chip-t", {}, text);
   if (onClick) t.addEventListener("click", onClick);
   el.append(t);

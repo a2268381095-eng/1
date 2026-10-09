@@ -103,7 +103,7 @@
 
 /* 菜单（全部采用选哪一版、工具栏的「更多」） */
 .rw-menu { position: absolute; z-index: 3; top: calc(100% + 6px); left: 0; display: grid; gap: 1px; min-width: 190px; max-width: min(320px, calc(100vw - 24px)); max-height: 260px; overflow: auto;
-  padding: 4px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 8px; box-shadow: var(--shadow); }
+  padding: 4px; background: var(--surface); color: var(--ink); text-shadow: none; border: 1px solid var(--line-strong); border-radius: 8px; box-shadow: var(--shadow); }
 .rw-menu[hidden] { display: none; }
 .rw-menu.up { top: auto; bottom: calc(100% + 6px); }
 .rw-menu-i { border: 0; background: transparent; text-align: left; padding: 6px 9px; border-radius: 6px; font-size: 13px; cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

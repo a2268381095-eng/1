@@ -180,12 +180,14 @@ function paintSection({ p, id, conf, confNow, keyIn, models, refreshCard, onRead
   }
 
   function fillPick() {
-    const all = imageModelChoices(id, models()).filter((m) => !img.models.includes(m));
+    const cands = imageModelChoices(id, models());
+    const all = cands.filter((m) => !img.models.includes(m));
     pickBox.replaceChildren(...(all.length ? all.map((m) => {
       const b = h("button.chip.ai-paint-cand", { type: "button", "data-model": m }, "＋ " + m);
       b.addEventListener("click", () => { img.models.push(m); save(); });
       return b;
-    }) : [h("span.muted.ai-paint-empty", {}, models().length ? "拉到的模型里没有看起来能画图的（名字里带 image、dall-e、imagen、flux 这些）。手动填一个。" : "先拉取模型列表，或者手动填。")]));
+    }) : [h("span.muted.ai-paint-empty", {}, cands.length ? "看起来能画图的都加上了。别的可以手动填。"
+      : models().length ? "拉到的模型里没有看起来能画图的（名字里带 image、dall-e、imagen、flux 这些）。手动填一个。" : "先拉取模型列表，或者手动填。")]));
   }
 
   apiSel.addEventListener("change", () => { img.api = apiSel.value; save(); });

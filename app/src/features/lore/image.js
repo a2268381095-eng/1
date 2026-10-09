@@ -1,6 +1,7 @@
 // 设定卡的图：没有图时按分类画一个占位（大字 + 线条剪影，各分类一眼分得清），有图时显示图。
 // 上传、拖进来、复制图片后按 Ctrl+V 都行；图缩到最长边 1024 存本地，卡上另存一张小缩略图。
 import { h, icon, toast } from "../../core/ui.js";
+import { vars } from "./bits.js";
 
 const SIL = {
   person: '<circle cx="32" cy="22" r="10"/><path d="M11 60c0-13 9.4-21 21-21s21 8 21 21z"/>',
@@ -17,7 +18,7 @@ const SIL = {
 export function placeholder(cat, { big = false } = {}) {
   const kind = SIL[cat.kind] ? cat.kind : "other";
   const sil = h("span.lr-ph-sil", { "aria-hidden": "true", html: `<svg viewBox="0 0 64 64" fill="currentColor">${SIL[kind]}</svg>` });
-  return h("span.lr-ph" + (big ? ".big" : ""), { "data-kind": kind, style: { "--c": cat.color || "var(--accent)" }, "aria-hidden": big ? null : "true" },
+  return h("span.lr-ph" + (big ? ".big" : ""), { "data-kind": kind, style: vars({ "--c": cat.color || "var(--accent)" }), "aria-hidden": big ? null : "true" },
     sil, h("span.lr-ph-g", {}, (cat.glyph || "设").slice(0, 2)));
 }
 
@@ -98,7 +99,7 @@ export function imageArea(opts) {
   const box = h("div.lr-img" + (img ? ".has" : ""), {
     tabindex: "0", role: "group",
     "aria-label": (opts.label || "形象") + "：可以上传、拖进来，或复制图片后在这里按 Ctrl+V",
-    style: { "--c": cat.color || "var(--accent)" },
+    style: vars({ "--c": cat.color || "var(--accent)" }),
   });
   if (img) {
     const pic = h("img.lr-img-pic", { alt: opts.label || "形象", src: img.thumb, draggable: "false" });

@@ -35,7 +35,9 @@ export function cropper({ src, ratio = [3, 4], onChange }) {
   function layout() {
     const r = stage.getBoundingClientRect();
     if (!r.width || !r.height || !N.w) return;
-    const s = Math.min(r.width / N.w, r.height / N.h);
+    // 四周留一圈，拖角的把手不会被台子边缘切掉
+    const pad = Math.min(22, r.width * 0.06, r.height * 0.06);
+    const s = Math.min((r.width - pad * 2) / N.w, (r.height - pad * 2) / N.h);
     D = { s, ox: (r.width - N.w * s) / 2, oy: (r.height - N.h * s) / 2 };
     Object.assign(img.style, { width: N.w * s + "px", height: N.h * s + "px", left: D.ox + "px", top: D.oy + "px" });
     paint();

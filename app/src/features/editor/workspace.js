@@ -120,7 +120,7 @@ function buildLayout(app) {
   const topbar = h("header.topbar", {}, back, bookTitle, h("span.spacer"), undoBtn, redoBtn, h("span.tb-sep"),
     tb("search", "查找", "search.open", "查找替换（Ctrl+F）"), tb("format", "排版", "format.open", "一键排版"),
     tb("history", "历史", "versions.open", "本章历史版本"), tb("download", "导出", "io.export", "导出 txt / md"),
-    tb("box", label("暂存盒"), "stash.drawer", "这本书的 AI 结果"), tb("chat", "对话", "chat.new", "和 AI 聊聊（Ctrl+Shift+J）"),
+    tb("lore", "设定", "lore.open", "设定库：人物、地点、物品……"), tb("box", label("暂存盒"), "stash.drawer", "这本书的 AI 结果"), tb("chat", "对话", "chat.new", "和 AI 聊聊（Ctrl+Shift+J）"),
     tb("focus", "专注", "focus.toggle", "专注模式（F11）"),
     h("span.tb-sep"), lookButton(), pointsBtn,
     h("button.icon-btn", { type: "button", title: label("设置"), "aria-label": label("设置"), onclick: () => nav.go("/settings/" + ws.book.id) }, icon("gear")));

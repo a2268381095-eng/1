@@ -12,7 +12,7 @@ import { placeholder } from "./image.js";
 import { cardView } from "./card.js";
 import { renderSystem } from "./ladders.js";
 import { catSettings, newCategory } from "./cats.js";
-import { undoToast, flash, composing } from "./bits.js";
+import { undoToast, flash, composing, vars } from "./bits.js";
 
 const pref = (k, d) => { try { return localStorage.getItem("xemo.lore." + k) || d; } catch (_) { return d; } };
 const setPref = (k, v) => { try { localStorage.setItem("xemo.lore." + k, v); } catch (_) { /* 存不了就算了 */ } };
@@ -141,7 +141,11 @@ export function mountLore(host, opts) {
     for (const s of [...env.stack].reverse()) if (s.id === id) s.layer.close(true);
     if (!env.stack.length) renderList();
   };
-  env.redrawCard = (id, ...parts) => { const t = top(); if (t && t.id === id) t.view.redraw(...(parts.length ? parts : [])); if (t && t.id === id && !parts.length) t.view.render(); };
+  env.redrawCard = (id, ...parts) => {
+    const t = top();
+    if (!t || t.id !== id) return;
+    if (parts.length) t.view.redraw(...parts); else t.view.render();
+  };
   env.showTab = (tab) => {
     for (const s of [...env.stack].reverse()) s.layer.close(true);
     env.tab = tab;
@@ -166,13 +170,18 @@ export function mountLore(host, opts) {
     const tabs = h("div.lr-tabs", { role: "tablist", "aria-label": "分类" });
     const tab = (id, kids, extra = {}) => {
       const b = h("button.lr-tab", { type: "button", role: "tab", "aria-selected": String(env.tab === id), "data-tab": id, ...extra }, ...kids);
-      b.addEventListener("click", () => { if (env.tab !== id) { env.tab = id; env.q = env.q; renderList(); flash(b, "lr-tabbed"); } });
+      b.addEventListener("click", () => {
+        if (env.tab === id) return;
+        env.tab = id;
+        renderList();
+        flash(listWrap.querySelector(`.lr-tab[data-tab="${id}"]`), "lr-tabbed");
+      });
       return b;
     };
     tabs.append(tab("all", [h("span.lr-tab-t", {}, "全部"), h("span.lr-tab-n", {}, String(env.cards.length))]));
     meta.cats.forEach((c) => {
       const n = env.cards.filter((x) => x.cat === c.id).length;
-      const b = tab(c.id, [h("i.lr-dot"), h("span.lr-tab-t", {}, c.name), h("span.lr-tab-n", {}, String(n))], { style: { "--c": c.color }, title: "双击改分类设置" });
+      const b = tab(c.id, [h("i.lr-dot"), h("span.lr-tab-t", {}, c.name), h("span.lr-tab-n", {}, String(n))], { style: vars({ "--c": c.color }), title: "双击改分类设置" });
       b.addEventListener("dblclick", () => catSettings(env, c.id));
       tabs.append(b);
     });
@@ -245,7 +254,7 @@ export function mountLore(host, opts) {
     const o = c.outfit && (c.outfits || []).find((x) => x.id === c.outfit && x.img);
     const img = (o && o.img) || c.img;
     const sub = subOf(c, cat);
-    const b = h("button.lr-item", { type: "button", role: "listitem", "data-id": c.id, "data-kind": cat.kind, style: { "--c": cat.color, "--i": String(Math.min(i, 24)) }, title: c.name },
+    const b = h("button.lr-item", { type: "button", role: "listitem", "data-id": c.id, "data-kind": cat.kind, style: vars({ "--c": cat.color, "--i": Math.min(i, 24) }), title: c.name },
       h("span.lr-item-pic", {}, img ? h("img", { src: img.thumb, alt: "", loading: "lazy" }) : placeholder(cat)),
       h("span.lr-item-body", {},
         h("span.lr-item-name", {}, c.name || "未命名"),
@@ -267,7 +276,7 @@ export function mountLore(host, opts) {
     const input = h("input.input.lr-new-in", { placeholder: "名字，比如 林晚", maxlength: "40", value: name, "aria-label": "新卡的名字" });
     const ok = h("button.btn.small.primary", { type: "button" }, "建好");
     const no = h("button.btn.small.ghost", { type: "button" }, "取消");
-    newRow.replaceChildren(catId && env.tab !== "all" ? h("span.lr-new-cat", { style: { "--c": (cats.find((c) => c.id === catId) || {}).color } }, h("i.lr-dot"), (cats.find((c) => c.id === catId) || {}).name) : sel, input, ok, no);
+    newRow.replaceChildren(catId && env.tab !== "all" ? h("span.lr-new-cat", { style: vars({ "--c": (cats.find((c) => c.id === catId) || {}).color }) }, h("i.lr-dot"), (cats.find((c) => c.id === catId) || {}).name) : sel, input, ok, no);
     newRow.hidden = false;
     const close = () => { newRow.hidden = true; newRow.replaceChildren(); newRow._layer = null; };
     const create = async () => {
@@ -288,13 +297,12 @@ export function mountLore(host, opts) {
   }
 
   async function createCard(catId, name) {
-    const { result, entry } = await change(env.bookId, `新建设定卡「${name}」`, async (t) => {
+    const { result } = await change(env.bookId, `新建设定卡「${name}」`, async (t) => {
       const m = await t.meta();
       const cat = m.cats.find((c) => c.id === catId) || m.cats[0];
       return t.add(newCard(env.bookId, cat, { name }));
     }, { source: env.source });
     await load();
-    undoToast(`已新建「${name}」`, entry);
     return result;
   }
   env.createCard = createCard;
@@ -307,6 +315,7 @@ export function mountLore(host, opts) {
       await load();
       renderAll();
     }),
+    bus.on("chapter:opened", () => { if (live() && !env.destroyed && top()) renderAll(); }),
     bus.on("chapter:created", () => { if (!live() && !env.destroyed) load(); }),
     bus.on("chapter:deleted", () => { if (!live() && !env.destroyed) load(); }),
   ];

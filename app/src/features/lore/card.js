@@ -9,7 +9,7 @@ import { imageArea, readImage, placeholder } from "./image.js";
 import { ladderRow } from "./ladders.js";
 import { suggestBox, runFill, fromStash } from "./aifill.js";
 import { catSettings } from "./cats.js";
-import { popover, menu, editable, adder, chip, chapterSelect, undoToast, flash, composing } from "./bits.js";
+import { popover, menu, editable, adder, chip, chapterSelect, undoToast, flash, composing, vars } from "./bits.js";
 
 const modalOpen = () => !!document.querySelector(".modal-back");
 
@@ -96,7 +96,7 @@ export function cardView(env, cardId, { quick: quickWanted = false } = {}) {
       ["删除这张卡", () => remove(), { danger: true }],
     ], env));
     return h("div.lr-cv-head", {}, back,
-      h("span.lr-cv-where", { style: { "--c": cat.color } }, h("i.lr-dot"), cat.name),
+      h("span.lr-cv-where", { style: vars({ "--c": cat.color }) }, h("i.lr-dot"), cat.name),
       h("span.spacer"), ai, stash, more);
   }
 
@@ -138,7 +138,6 @@ export function cardView(env, cardId, { quick: quickWanted = false } = {}) {
         await env.reloadCard(cardId);
         redraw("img", "thumbs");
         flash(S.img, "lr-flip");
-        undoToast("图换好了", e);
       },
       onPaint: () => paint(),
       onClear: async () => {
@@ -154,7 +153,7 @@ export function cardView(env, cardId, { quick: quickWanted = false } = {}) {
     const c = cur(), cat = catNow(), o = outfitOf(c);
     if (!commands.get("paint.open")) { toast("绘画功能马上就来"); return; }
     commands.run("paint.open", {
-      bookId: env.bookId, cardId, outfitId: o ? o.id : null,
+      bookId: env.bookId, cardId, outfitId: o ? o.id : null, name: c.name + (o ? "（" + o.name + "）" : ""),
       purpose: (KINDS[cat.kind] || KINDS.other).purpose,
       prompt: lookText(c, cat, o),
       onDone: async (dataUrl) => {
@@ -190,9 +189,8 @@ export function cardView(env, cardId, { quick: quickWanted = false } = {}) {
         if (!name) { input.focus(); return; }
         p.close(true);
         const o = { id: uid("of"), name, img: null, desc: "", fromId: null, toId: null };
-        const e = await save(`「${cur().name}」加造型「${name}」`, (x) => { x.outfits = [...(x.outfits || []), o]; x.outfit = o.id; }, "img", "thumbs", "outfit");
+        await save(`「${cur().name}」加造型「${name}」`, (x) => { x.outfits = [...(x.outfits || []), o]; x.outfit = o.id; }, "img", "thumbs", "outfit");
         flash(S.outfit, "lr-born");
-        undoToast(`已加「${name}」`, e);
       };
       input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !composing(e)) { e.preventDefault(); make(input.value); } });
       const quickNames = ["战斗装", "礼服", "便装", "伪装"].map((n) => { const b = h("button.lr-pick-chip", { type: "button" }, n); b.addEventListener("click", () => make(n)); return b; });
@@ -239,9 +237,8 @@ export function cardView(env, cardId, { quick: quickWanted = false } = {}) {
       put: async (v) => {
         const old = cur().name;
         if (!v) { input.value = old; toast("名字不能空着"); return; }
-        const e = await env.updateCard(cardId, `「${old}」改名「${v}」`, (x) => { x.name = v; });
+        await env.updateCard(cardId, `「${old}」改名「${v}」`, (x) => { x.name = v; });
         flash(S.name);
-        undoToast(`改名为「${v}」`, e);
       },
     });
     const row = h("div.lr-name-row", { "data-key": "name" }, input);
@@ -307,10 +304,9 @@ export function cardView(env, cardId, { quick: quickWanted = false } = {}) {
     } else {
       env.meta.ladders.forEach((lad) => box.append(ladderRow(env, c, lad, {
         onChange: async (lbl, fn) => {
-          const e = await save(lbl, fn, "ladders");
+          await save(lbl, fn, "ladders");
           const row = S.ladders && S.ladders.querySelector(`[data-ladder="${lad.id}"]`);
           flash(row, "lr-lvup");
-          undoToast("记下了", e);
         },
       })));
     }
@@ -332,7 +328,7 @@ export function cardView(env, cardId, { quick: quickWanted = false } = {}) {
       const hits = pool().filter((x) => !s || [x.name, ...(x.aliases || [])].join(" ").toLowerCase().includes(s)).slice(0, 40);
       list.replaceChildren(...hits.map((x) => {
         const cc = catOf(meta, x);
-        const b = h("button.lr-pick-i" + (x.id === current ? ".on" : ""), { type: "button", role: "option", style: { "--c": cc.color } },
+        const b = h("button.lr-pick-i" + (x.id === current ? ".on" : ""), { type: "button", role: "option", style: vars({ "--c": cc.color }) },
           h("span.lr-pick-pic", {}, x.img ? h("img", { src: x.img.thumb, alt: "" }) : placeholder(cc)),
           h("span.lr-pick-n", {}, x.name || "未命名"), h("span.lr-pick-c", {}, cc.name));
         b.addEventListener("click", async () => { p.close(true); await onPick(x.id, rel ? rel.value.trim() : ""); });
@@ -388,7 +384,7 @@ export function cardView(env, cardId, { quick: quickWanted = false } = {}) {
           : await linkTo(`「${cur().name}」在新地点「${made.name}」`, made, (x, to) => { x.placeId = to; });
         redraw("place");
         flash(S.place, "lr-pinned");
-        undoToast("所在地记下了", entry);
+        if (!id) undoToast(`已新建地点「${made.name}」`, entry);
       },
       onClear: async () => { const e = await save(`清掉「${cur().name}」的所在地`, (x) => { x.placeId = null; }, "place"); undoToast("已清掉所在地", e); },
     }));
@@ -421,7 +417,7 @@ export function cardView(env, cardId, { quick: quickWanted = false } = {}) {
           : await linkTo(`关联到新卡「${made.name}」`, made, (x, to) => { x.links = [...(x.links || []), link(to)]; });
         redraw("links");
         flash(S.links);
-        undoToast("关联好了", entry);
+        if (!id) undoToast(`已新建「${made.name}」并关联上`, entry);
       },
     }));
     box.append(add);
@@ -451,9 +447,17 @@ export function cardView(env, cardId, { quick: quickWanted = false } = {}) {
     const x = h("button.icon-btn.lr-quick-x", { type: "button", title: "先不填", "aria-label": "收起快速填写" }, icon("close"));
     x.addEventListener("click", () => { quick = false; redraw("quick"); });
     const inputs = [];
+    // 三样都写了，焦点离开这一块时收起来
+    const fold = () => setTimeout(() => {
+      if (!quick || !box.isConnected || box.contains(document.activeElement) || !filled()) return;
+      quick = false;
+      redraw("quick");
+    }, 400);
+    box.addEventListener("focusout", fold);
+    const filled = () => { const y = cur(), cc = catNow(); return (y.traits || []).length > 0 && ["identity", "personality"].every((k) => !fieldByKey(cc, k) || String(valueOf(y, fieldByKey(cc, k))).trim()); };
     const add = (label, ph, get, put) => {
       const i = h("input.input.lr-quick-in", { placeholder: ph, "aria-label": label, value: get() || "", maxlength: "200" });
-      bindInput(i, { get, put: async (v) => { await put(v); flash(i.closest(".lr-quick-f")); } });
+      bindInput(i, { get, put: async (v) => { await put(v); flash(i.closest(".lr-quick-f")); fold(); } });
       inputs.push(h("label.lr-quick-f", {}, h("span", {}, label), i));
     };
     add("一眼能认出的特征", "比如 白发、左眼下有泪痣", () => (cur().traits || []).join("、"), async (v) => {
@@ -523,9 +527,8 @@ export function cardView(env, cardId, { quick: quickWanted = false } = {}) {
         if (!text) { ta.focus(); return; }
         const chId = ch.value || null;
         close();
-        const e = await save(`「${cur().name}」记一笔`, (x) => { x.log = [...(x.log || []), { id: uid("lg"), chapterId: chId, text, at: Date.now() }]; }, "log");
+        await save(`「${cur().name}」记一笔`, (x) => { x.log = [...(x.log || []), { id: uid("lg"), chapterId: chId, text, at: Date.now() }]; }, "log");
         flash(S.log && S.log.querySelector(".lr-log-i"), "lr-born");
-        undoToast("记下了", e);
       };
       // 浮层栈：Esc 先收起这一小块（写了字的会问保留还是丢弃）
       const layer = env.pushLayer({ isDirty: () => api.dirty(), onKeepDraft: () => write(), onClose: () => close() });
@@ -570,7 +573,7 @@ export function cardView(env, cardId, { quick: quickWanted = false } = {}) {
     for (const k of Object.keys(B)) S[k] = B[k]();
     const a = h("div.lr-sheet-a", {}, S.img, S.thumbs, S.outfit);
     const b = h("div.lr-sheet-b", {}, S.ai, S.name, S.aliases, S.traits, S.quick, S.ladders, S.place, S.fields, S.links, S.refs, S.tags, S.log);
-    const sheet = h("article.lr-sheet", { "data-kind": cat.kind, style: { "--c": cat.color } },
+    const sheet = h("article.lr-sheet", { "data-kind": cat.kind, "data-glyph": (cat.glyph || "设").slice(0, 1), "data-cat": cat.name, style: vars({ "--c": cat.color }) },
       h("span.lr-sheet-deco", { "aria-hidden": "true" }), h("span.lr-sheet-deco2", { "aria-hidden": "true" }), a, b);
     root.replaceChildren(S.head, sheet);
   }
