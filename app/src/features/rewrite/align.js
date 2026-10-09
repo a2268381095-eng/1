@@ -245,10 +245,13 @@ export function remapPicks(oldSegs, oldPicks, newSegs, { origChanged = false, ed
     if (!olds.length) return edited != null ? edited : -1;
     const first = oldSegs[olds[0]], last = oldSegs[olds[olds.length - 1]];
     const ps = olds.map((k) => oldPicks[k]);
-    if (olds.length === 1 && first.oa === ns.oa && first.ob === ns.ob) return ps[0];
+    const tiles = first.oa === ns.oa && last.ob === ns.ob;
+    // 作者在某一版里改过的句子，就用那一版（不然改了也进不了结果）
+    if (tiles && edited != null && edited >= 0 && olds.map((k) => oldSegs[k].alts[edited]).join("") !== ns.alts[edited]) return edited;
+    if (olds.length === 1 && tiles) return ps[0];
     if (ps.every((p) => typeof p === "number" && p === ps[0])) return ps[0];
     if (edited != null && ps.includes(edited)) return edited;
-    if (first.oa === ns.oa && last.ob === ns.ob) return { c: olds.map((k) => pickText(oldSegs[k], oldPicks[k])).join("") };
+    if (tiles) return { c: olds.map((k) => pickText(oldSegs[k], oldPicks[k])).join("") };
     const p0 = ps[0];
     if (typeof p0 === "number") return p0;
     return first.oa === ns.oa ? p0 : { c: "" };

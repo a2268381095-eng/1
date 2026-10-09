@@ -355,8 +355,14 @@ export function createManager(host, { feature = "", scrollEl = null } = {}) {
 
   async function del(p, el) {
     if (motionOn() && el && el.isConnected) {
+      el.classList.remove("pr-flash", "pr-in");
       el.classList.add("pr-out");
-      await new Promise((res) => { const t = setTimeout(res, 420); el.addEventListener("animationend", () => { clearTimeout(t); res(); }, { once: true }); });
+      await new Promise((res) => {
+        const t = setTimeout(done, 460);
+        function done() { clearTimeout(t); el.removeEventListener("animationend", onEnd); res(); }
+        function onEnd(ev) { if (ev.target === el && /^pr-out|^pr-fade/.test(ev.animationName)) done(); }
+        el.addEventListener("animationend", onEnd);
+      });
     }
     const r = await guarded("没能删除这条提示词。", () => ops.remove(p), () => del(p));
     if (!r) { if (el) el.classList.remove("pr-out"); return; }

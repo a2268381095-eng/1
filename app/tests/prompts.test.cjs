@@ -230,7 +230,9 @@ const path = require('path');
   await page.click('.cm-content');
   await page.keyboard.press('Control+a');
   await page.keyboard.press('Control+j');
-  await page.waitForSelector('.ai-setup-modal');
+  // 选中调用：可能直接弹确认流程，也可能先浮出 AI 工具栏（rewrite 模块），从「临时写一个」进确认卡
+  await page.waitForSelector('.ai-setup-modal, .rw-bar .rw-temp');
+  if (!(await page.$('.ai-setup-modal'))) { await page.click('.rw-bar .rw-temp'); await page.waitForSelector('.ai-setup-modal'); }
   await page.click('.ai-setup-modal .ai-prov[data-id="mock"]');
   await page.fill('.ai-steps input[type="password"]', 'good');
   await page.click('.ai-steps .btn:has-text("拉取模型列表")');
@@ -243,6 +245,14 @@ const path = require('path');
   check((await page.evaluate(() => location.hash)) === hashBefore && (await page.textContent('.pr-modal .modal-title')).includes('选中调用'), '在当前界面上弹窗，不跳走', fails);
   await mk('弹窗里写的', '比较', '丙：{选中文本}', '.pr-modal');
   check(await page.$('.pr-modal .pr-item:has-text("弹窗里写的") .pr-feat') !== null, '弹窗里新建的记上是哪个功能用的', fails);
+  await page.focus('.pr-modal .pr-new');
+  await page.keyboard.press('Control+z');
+  await page.waitForTimeout(400);
+  check(!(await names('.pr-modal')).includes('弹窗里写的') && await page.$('.ai-card') !== null, '弹窗里 Ctrl+Z 只撤提示词库的改动', fails);
+  await page.focus('.pr-modal .pr-new');
+  await page.keyboard.press('Control+Shift+z');
+  await page.waitForTimeout(400);
+  check((await names('.pr-modal')).includes('弹窗里写的'), '弹窗里 Ctrl+Shift+Z 重做', fails);
   await page.keyboard.press('Escape');
   await page.waitForSelector('.pr-modal', { state: 'detached' });
   await page.waitForTimeout(300);
@@ -255,7 +265,12 @@ const path = require('path');
   for (let i = 0; i < 40; i++) { if (((await rows()).find((p) => p.name === '乙') || {}).uses === 1) break; await page.waitForTimeout(200); }
   check(((await rows()).find((p) => p.name === '乙') || {}).uses === 1, '用过一次记下来', fails);
   await page.waitForTimeout(600);
-  for (let i = 0; i < 4 && (await layerCount()); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); }
+  // 关掉结果界面（弹窗或对比面板）；问保留还是丢弃时选丢弃
+  for (let i = 0; i < 6 && ((await layerCount()) || i < 2); i++) {
+    const discard = await page.$('.modal-foot .btn:has-text("丢弃")');
+    if (discard) await discard.click(); else await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
+  }
 
   // ---------- 按用得多少排 ----------
   await page.evaluate(() => { location.hash = '#/prompts'; });

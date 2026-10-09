@@ -140,7 +140,8 @@ export function openCompare(ctx, init = {}) {
   const okBtn = h("button.btn.primary.rw-ok", { type: "button" }, icon("check"), "完成");
   const foot = h("div.rw-foot", {}, sum, h("div.rw-foot-btns", {}, cancelBtn, okBtn));
   const fragBtn = h("button.rw-frag", { type: "button", hidden: true }, "只采用选中的这段");
-  const box = h("section.rw-panel", { role: "dialog", "aria-label": "AI 结果对比", tabindex: "-1" }, head, acts, banner, body, foot, fragBtn);
+  // 「完成」放在上面：靠近原文，也不会被右下角的小恶魔挡住
+  const box = h("section.rw-panel", { role: "dialog", "aria-label": "AI 结果对比", tabindex: "-1" }, head, foot, acts, banner, body, fragBtn);
   center.classList.add("rw-on");
   center.append(box);
 

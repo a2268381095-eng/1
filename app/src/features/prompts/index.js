@@ -48,6 +48,13 @@ function openManage(opts = {}) {
     });
     m.el.classList.add("pr-modal");
     manageLayers.add(m.layer);
+    // 弹窗里按 Ctrl+Z / Ctrl+Shift+Z 只撤提示词库的改动，不碰后面界面里的东西
+    m.el.addEventListener("keydown", (e) => {
+      if (e.isComposing || e.keyCode === 229 || !(e.ctrlKey || e.metaKey) || e.altKey || e.key.toLowerCase() !== "z" || typing()) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.shiftKey) ops.runRedo(); else ops.runUndo();
+    });
     mgr = createManager(host, { feature, scrollEl: m.body });
     tip("prompts-first", TIP);
   });
