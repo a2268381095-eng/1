@@ -159,6 +159,7 @@ function optionItems() {
     check("选中时自动弹出", prefs.auto, (on) => setAuto(on)),
     check("AI 改过的段落留淡色标记", prefs.marks, (on) => setMarks(on)),
     item("清除 AI 标记……", () => { hideBar(); clearMarks(); }),
+    commands.get("samples.fromSelection") ? item("存为文风样本……", () => { hideBar(); commands.run("samples.fromSelection"); }) : null,
     commands.get("prompts.manage") ? item("管理提示词……", () => { hideBar(); commands.run("prompts.manage", { feature: "rewrite" }); }) : null,
     h("p.rw-menu-note", {}, `手动弹出：${prettyKey(keyOf(commands.get("rewrite.open")) || "Mod-Shift-a")}`),
   ].filter(Boolean);

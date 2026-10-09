@@ -101,36 +101,110 @@ export async function getBalance(providerId, conf) {
   return Number.isFinite(amount) ? { amount, currency: d.currency || "USD" } : null;
 }
 
+// ---------------- 创意度、思考程度 ----------------
+// 两样都分 5 档，另有第 0 档「默认」：不发这个参数，按模型自己的默认。各家参数名和取值不同，下面换算。
+export const CREATIVITY = [
+  { name: "默认", desc: "不指定，按模型自己的默认" },
+  { name: "严谨", desc: "贴着原文和要求写，少发挥" },
+  { name: "稳妥", desc: "小处换说法，整体不走样" },
+  { name: "平衡", desc: "有自己的写法，不跑题" },
+  { name: "活泼", desc: "多换说法、多加细节" },
+  { name: "放飞", desc: "大胆发挥，每次出来差别大" },
+];
+export const THINKING = [
+  { name: "默认", desc: "不指定，按模型自己的默认" },
+  { name: "快答", desc: "几乎不想，最快最省" },
+  { name: "浅想", desc: "想一下再写" },
+  { name: "细想", desc: "理清前后再写" },
+  { name: "深想", desc: "反复推敲，慢一些、贵一些" },
+  { name: "想透", desc: "能想多久想多久，最慢最贵" },
+];
+const TEMP = { anthropic: [0.1, 0.3, 0.5, 0.75, 1], gemini: [0.2, 0.5, 0.9, 1.3, 1.7], openai: [0.2, 0.5, 0.8, 1.1, 1.4] };
+const EFFORT = { anthropic: ["low", "medium", "high", "xhigh", "max"], openai: ["minimal", "low", "medium", "high", "xhigh"] };
+const BUDGET = [0, 1024, 4096, 12288, 24576];   // Gemini 的 thinkingBudget
+/** 思考也算在输出里：按档位多留的输出额度（第 0 档时 Claude 新模型默认也会想，留一点） */
+export function thinkingExtra(protocol, level) {
+  if (!level) return protocol === "anthropic" ? 1024 : 0;
+  return [0, 512, 2048, 6144, 12288, 24576][level];
+}
+export function temperatureOf(protocol, level) { return level ? (TEMP[protocol] || TEMP.openai)[level - 1] : null; }
+
+// 某个模型不接受的参数记下来（"temperature" / "think"），下次直接不发
+async function unsupportedOf(providerId, model) { return ((await db.getKV("ai:unsupported", {}))[providerId + "/" + model]) || []; }
+async function noteUnsupported(providerId, model, what) {
+  const all = await db.getKV("ai:unsupported", {});
+  const k = providerId + "/" + model;
+  all[k] = [...new Set([...(all[k] || []), what])];
+  await db.setKV("ai:unsupported", all);
+}
+export async function unsupportedParams(providerId, model) { return unsupportedOf(providerId, model); }
+
 /**
  * 调用模型。messages: [{ role: "user"|"assistant", content }]，system 可选。
- * onDelta(text) 收到一段就回调一次（流式）。返回 { text, usage: { input, output } }。
+ * creativity、thinking：0–5 档（见 CREATIVITY、THINKING），0 不发参数。
+ * onDelta(text) 收到一段就回调一次（流式）。返回 { text, usage: { input, output }, adjusted: [说明] }。
+ * 模型不接受某一档时自动降一档，降不了就去掉这个参数再发，adjusted 里写明。
  * signal 可以中途取消。
  */
-export async function chat({ providerId, conf, model, system = "", messages, maxTokens = 1024, temperature, onDelta, signal, cache = true }) {
+export async function chat({ providerId, conf, model, system = "", messages, maxTokens = 1024, temperature, creativity = 0, thinking = 0, onDelta, signal, cache = true }) {
   const p = providerOf(providerId);
-  if (p.mock) return mockChat({ system, messages, maxTokens, onDelta, signal, conf });
+  if (p.mock) return mockChat({ system, messages, maxTokens, creativity, thinking, onDelta, signal, conf });
   const base = endpoint(p, conf);
-  let url, body;
-  if (p.protocol === "anthropic") {
-    url = base + "/v1/messages";
-    const sys = system ? [{ type: "text", text: system, ...(cache && system.length > 2000 ? { cache_control: { type: "ephemeral" } } : {}) }] : undefined;
-    body = { model, max_tokens: maxTokens, messages, stream: true, ...(sys ? { system: sys } : {}), ...(temperature != null ? { temperature } : {}) };
-  } else if (p.protocol === "gemini") {
-    url = `${base}/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`;
-    body = {
-      contents: messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
-      ...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}),
-      generationConfig: { maxOutputTokens: maxTokens, ...(temperature != null ? { temperature } : {}) },
-    };
-  } else {
-    url = base + "/chat/completions";
-    body = {
-      model, stream: true, stream_options: { include_usage: true }, max_tokens: maxTokens,
+  const proto = p.protocol === "anthropic" || p.protocol === "gemini" ? p.protocol : "openai";
+  const known = await unsupportedOf(providerId, model);
+  let cLv = known.includes("temperature") ? 0 : creativity, tLv = known.includes("think") ? 0 : thinking;
+  let useCompletionTokens = false;
+  const adjusted = [];
+  const build = () => {
+    const temp = temperature != null ? temperature : temperatureOf(proto, cLv);
+    const max = maxTokens + thinkingExtra(proto, tLv);
+    if (proto === "anthropic") {
+      const sys = system ? [{ type: "text", text: system, ...(cache && system.length > 2000 ? { cache_control: { type: "ephemeral" } } : {}) }] : undefined;
+      return { url: base + "/v1/messages", body: { model, max_tokens: max, messages, stream: true, ...(sys ? { system: sys } : {}), ...(temp != null ? { temperature: temp } : {}),
+        ...(tLv ? { thinking: { type: "adaptive" }, output_config: { effort: EFFORT.anthropic[tLv - 1] } } : {}) } };
+    }
+    if (proto === "gemini") {
+      return { url: `${base}/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`, body: {
+        contents: messages.map((m) => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
+        ...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}),
+        generationConfig: { maxOutputTokens: max, ...(temp != null ? { temperature: temp } : {}), ...(tLv ? { thinkingConfig: { thinkingBudget: BUDGET[tLv - 1] } } : {}) },
+      } };
+    }
+    return { url: base + "/chat/completions", body: {
+      model, stream: true, stream_options: { include_usage: true }, ...(useCompletionTokens ? { max_completion_tokens: max } : { max_tokens: max }),
       messages: [...(system ? [{ role: "system", content: system }] : []), ...messages],
-      ...(temperature != null ? { temperature } : {}),
-    };
+      ...(temp != null ? { temperature: temp } : {}), ...(tLv ? { reasoning_effort: EFFORT.openai[tLv - 1] } : {}),
+    } };
+  };
+  let res;
+  for (let tries = 0; ; tries++) {
+    const { url, body } = build();
+    try {
+      res = await send(p, () => http(url, { method: "POST", headers: headersFor(p, conf.key), body: JSON.stringify(body), signal }));
+      break;
+    } catch (e) {
+      if (e.category !== "param" || tries >= 5) throw e;
+      if (e.param === "maxtok" && !useCompletionTokens) { useCompletionTokens = true; continue; }
+      if (e.param === "temperature" && cLv && temperature == null) {
+        cLv = 0; adjusted.push("这个模型不接受「创意度」，这次按模型默认发了");
+        await noteUnsupported(providerId, model, "temperature");
+        continue;
+      }
+      if (e.param === "think" && tLv) {
+        // 报错里点名了现在这一档的取值：往中间挪一档再试；没点名就是整个参数不认
+        const val = String(proto === "gemini" ? BUDGET[tLv - 1] : EFFORT[proto][tLv - 1]);
+        if (tLv !== 3 && e.detail && e.detail.includes(val)) {
+          tLv += tLv > 3 ? -1 : 1;
+          adjusted.push(`这个模型不接受这一档思考程度，这次按「${THINKING[tLv].name}」发了`);
+          continue;
+        }
+        tLv = 0; adjusted.push("这个模型不接受「思考程度」，这次按模型默认发了");
+        await noteUnsupported(providerId, model, "think");
+        continue;
+      }
+      throw e;
+    }
   }
-  const res = await send(p, () => http(url, { method: "POST", headers: headersFor(p, conf.key), body: JSON.stringify(body), signal }));
   let text = "";
   const usage = { input: 0, output: 0 };
   await readSSE(res, (data) => {
@@ -138,14 +212,15 @@ export async function chat({ providerId, conf, model, system = "", messages, max
     try { j = JSON.parse(data); } catch (_) { return; }
     let piece = "";
     if (p.protocol === "anthropic") {
-      if (j.type === "content_block_delta" && j.delta && j.delta.text) piece = j.delta.text;
+      // 思考的内容（thinking_delta）不显示，只取正文
+      if (j.type === "content_block_delta" && j.delta && j.delta.type !== "thinking_delta" && j.delta.text) piece = j.delta.text;
       if (j.type === "message_start" && j.message && j.message.usage) usage.input = (j.message.usage.input_tokens || 0) + (j.message.usage.cache_read_input_tokens || 0) + (j.message.usage.cache_creation_input_tokens || 0);
       if (j.type === "message_delta" && j.usage) usage.output = j.usage.output_tokens || usage.output;
       if (j.type === "error") throw aiError("request", { what: "接口返回了错误。", detail: data });
     } else if (p.protocol === "gemini") {
       const parts = (j.candidates && j.candidates[0] && j.candidates[0].content && j.candidates[0].content.parts) || [];
-      piece = parts.map((x) => x.text || "").join("");
-      if (j.usageMetadata) { usage.input = j.usageMetadata.promptTokenCount || usage.input; usage.output = j.usageMetadata.candidatesTokenCount || usage.output; }
+      piece = parts.filter((x) => !x.thought).map((x) => x.text || "").join("");
+      if (j.usageMetadata) { usage.input = j.usageMetadata.promptTokenCount || usage.input; usage.output = (j.usageMetadata.candidatesTokenCount || 0) + (j.usageMetadata.thoughtsTokenCount || 0) || usage.output; }
     } else {
       const c = j.choices && j.choices[0];
       if (c && c.delta && c.delta.content) piece = c.delta.content;
@@ -153,10 +228,10 @@ export async function chat({ providerId, conf, model, system = "", messages, max
     }
     if (piece) { text += piece; onDelta && onDelta(piece, text); }
   }, signal);
-  if (!text.trim()) throw aiError("content", { what: "模型没有返回内容。", why: "可能是内容被模型拒绝生成，或者输出长度上限设得太小。" });
+  if (!text.trim()) throw aiError("content", { what: "模型没有返回内容。", why: tLv >= 3 ? "思考程度调得高时，输出额度可能都花在想上了。调大输出上限，或者降一档思考程度再试。" : "可能是内容被模型拒绝生成，或者输出长度上限设得太小。" });
   if (!usage.input) usage.input = estimateTokens(system + messages.map((m) => m.content).join(""));
   if (!usage.output) usage.output = estimateTokens(text);
-  return { text, usage };
+  return { text, usage, adjusted };
 }
 
 /** 发一条极短的消息测试 Key 和模型能不能用 */
@@ -166,7 +241,7 @@ export async function testModel(providerId, conf, model) {
 }
 
 /** 假接口：把最后一条消息里的文字原样改写一下（加「（改）」），一段段吐出来 */
-async function mockChat({ system, messages, maxTokens, onDelta, signal, conf }) {
+async function mockChat({ system, messages, maxTokens, creativity = 0, thinking = 0, onDelta, signal, conf }) {
   if (conf && conf.key === "bad") throw aiError("auth", { what: "测试用假接口不认这个 Key。", why: "Key 填的是 bad。" });
   const last = messages[messages.length - 1].content;
   if (/【报错】/.test(last)) throw aiError("server", { what: "测试用假接口故意出错。", why: "消息里带了【报错】。" });
@@ -180,7 +255,9 @@ async function mockChat({ system, messages, maxTokens, onDelta, signal, conf }) 
     text += piece;
     onDelta && onDelta(piece, text);
   }
-  return { text, usage: { input: estimateTokens(system + messages.map((m) => m.content).join("")), output: estimateTokens(text) } };
+  // 消息里带【拒绝创意度】时假装不接受创意度（测试降档提示用）
+  const adjusted = creativity && /【拒绝创意度】/.test(last) ? ["这个模型不接受「创意度」，这次按模型默认发了"] : [];
+  return { text, usage: { input: estimateTokens(system + messages.map((m) => m.content).join("")), output: estimateTokens(text) }, adjusted, levels: { creativity, thinking } };
 }
 
 // 读 Server-Sent Events：一行行的 "data: {...}"
@@ -212,9 +289,9 @@ async function readSSE(res, onData, signal) {
 }
 
 // ---------------- 出错：分成连接 / 账号 / 请求 / 内容 几类，给中文说明 ----------------
-export function aiError(category, { what, why = "", detail = "", status = 0 } = {}) {
+export function aiError(category, { what, why = "", detail = "", status = 0, param = "" } = {}) {
   const e = new Error(what);
-  Object.assign(e, { ai: true, category, what, why, detail, status });
+  Object.assign(e, { ai: true, category, what, why, detail, status, param });
   return e;
 }
 
@@ -240,6 +317,12 @@ async function send(p, doFetch) {
   }
   if (s === 402 || /insufficient|quota|balance|credit|余额/.test(low)) {
     throw aiError("balance", { what: `${p.name} 的余额或额度不够了。`, why: "账户余额不足，或者这个月的额度用完了。", status: s, detail: raw });
+  }
+  // 参数不被接受：创意度、思考程度、输出上限的字段名（chat 里会自动调整后重发）
+  if (s === 400 || s === 422) {
+    if (/max_completion_tokens/.test(low)) throw aiError("param", { what: "这个模型要换一种输出上限的写法。", param: "maxtok", status: s, detail: raw });
+    if (/temperature|top_p/.test(low)) throw aiError("param", { what: "这个模型不接受「创意度」。", param: "temperature", status: s, detail: raw });
+    if (/reasoning|effort|thinking/.test(low) && !/context|too long/.test(low)) throw aiError("param", { what: "这个模型不接受这一档「思考程度」。", param: "think", status: s, detail: raw });
   }
   if (/context|too long|maximum.{0,20}tokens|max_tokens|token limit|超出|过长/.test(low) && s === 400) {
     throw aiError("too_long", { what: "发送的内容太长，超出了这个模型的上限。", why: "选中的文字、附带的设定和前文摘要加起来太多。", status: s, detail: raw });
