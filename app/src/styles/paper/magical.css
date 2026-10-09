@@ -120,7 +120,7 @@
   box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px color-mix(in srgb, #ff5fa2 50%, transparent), 0 4px 0 3px color-mix(in srgb, var(--accent-soft) 80%, transparent); }
 .demon[data-style="magical"] .demon-badge::before { content: ""; position: absolute; left: 50%; top: -7px; width: 14px; height: 12px; margin-left: -7px; background: #ff5fa2;
   clip-path: polygon(14.29% 0, 42.86% 0, 42.86% 16.67%, 57.14% 16.67%, 57.14% 0, 85.71% 0, 85.71% 16.67%, 100% 16.67%, 100% 50%, 85.71% 50%, 85.71% 66.67%, 71.43% 66.67%, 71.43% 83.33%, 57.14% 83.33%, 57.14% 100%, 42.86% 100%, 42.86% 83.33%, 28.57% 83.33%, 28.57% 66.67%, 14.29% 66.67%, 14.29% 50%, 0 50%, 0 16.67%, 14.29% 16.67%); }
-.demon[data-style="magical"] .db-label { color: var(--accent); letter-spacing: .04em; }
+.demon[data-style="magical"] .db-label { color: var(--accent-text); letter-spacing: .04em; }
 .demon[data-style="magical"] .demon-badge.done { border-color: #f2b51c; box-shadow: 0 0 0 2px var(--surface), 0 0 0 3px rgba(242, 181, 28, .55), 0 4px 0 3px rgba(242, 181, 28, .25); }
 .demon[data-style="magical"] .demon-badge.done::before { background: #f2b51c; }
 [data-motion="full"] .demon[data-style="magical"] .demon-badge::before { animation: mg-beat 2.4s ease-in-out infinite; }

@@ -6,24 +6,24 @@
   --bar: #f7eef3;
   --surface: #fffbfd;
   --ink: #36302f;
-  --muted: #8f7d88;
-  --faint: #c5b6bf;
+  --muted: #776870;
+  --faint: #8f8388;
   --line: #f1e5eb;
   --line-strong: #e4d3dc;
-  --accent: #d0699b;
-  --accent-2: #a98ee0;
+  --accent: #c86394;
+  --accent-2: #a087d6;
   --accent-ink: #ffffff;
   --accent-soft: #fbe7f0;
   --hover: #f8edf3;
-  --ok: #3b9a74;
+  --ok: #3a8466;
   --ok-soft: #e1f3ea;
-  --warn: #c3832f;
+  --warn: #9e6e2f;
   --warn-soft: #fcefdd;
-  --danger: #d25a6e;
+  --danger: #c34b5f;
   --danger-soft: #fce6ea;
   --sel: #f9d8e7;            /* 选中文字的底色 */
   --sel-ink: inherit;
-  --caret: #d0699b;
+  --caret: #c86394;
   --mark: #ffe58a;
   --mark-cur: #ffb35c;
   --shadow: 0 14px 38px -10px rgba(120, 60, 100, 0.22);
@@ -41,14 +41,15 @@
   --text-width: 720px;
   --radius: 10px;
   /* 渐变、柔光、淡色底：跟着各套配色的 --accent / --accent-2 走 */
-  --grad: linear-gradient(120deg, color-mix(in srgb, var(--accent) 78%, #fff) 0%, var(--accent) 42%, var(--accent-2) 100%);
+  --grad: linear-gradient(120deg, color-mix(in srgb, var(--accent) 88%, #fff) 0%, var(--accent) 42%, var(--accent-2) 100%);
   --glow: color-mix(in srgb, var(--accent) 40%, transparent);
   --tint: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  --accent-text: color-mix(in srgb, var(--accent) 80%, var(--ink));
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #141415; --paper: #1b1b1d; --side: #18181a; --bar: #1f1f22; --surface: #202023;
-    --ink: #ebebed; --muted: #a0a0a6; --faint: #67676d; --line: #2b2b2f; --line-strong: #3b3b40;
+    --ink: #ebebed; --muted: #a0a0a6; --faint: #737379; --line: #2b2b2f; --line-strong: #3b3b40;
     --accent: #eaa3c9; --accent-2: #b3b0ee; --accent-ink: #2b1a2c; --accent-soft: #382b33; --hover: #262629;
     --ok: #86d6b2; --ok-soft: #22302b; --warn: #f2c27e; --warn-soft: #33302a; --danger: #ff9fb1; --danger-soft: #3a2a2d;
     --mark: #6b5a17; --mark-cur: #8a4f12;
@@ -59,7 +60,7 @@
 }
 :root[data-theme="dark"] {
   --bg: #141415; --paper: #1b1b1d; --side: #18181a; --bar: #1f1f22; --surface: #202023;
-  --ink: #ebebed; --muted: #a0a0a6; --faint: #67676d; --line: #2b2b2f; --line-strong: #3b3b40;
+  --ink: #ebebed; --muted: #a0a0a6; --faint: #737379; --line: #2b2b2f; --line-strong: #3b3b40;
   --accent: #eaa3c9; --accent-2: #b3b0ee; --accent-ink: #2b1a2c; --accent-soft: #382b33; --hover: #262629;
   --ok: #86d6b2; --ok-soft: #22302b; --warn: #f2c27e; --warn-soft: #33302a; --danger: #ff9fb1; --danger-soft: #3a2a2d;
   --mark: #6b5a17; --mark-cur: #8a4f12;
@@ -88,7 +89,7 @@ canvas { image-rendering: crisp-edges; image-rendering: pixelated; display: bloc
   background: linear-gradient(105deg, transparent 38%, rgba(255, 255, 255, .55) 50%, transparent 62%) no-repeat, var(--grad);
   background-size: 260% 100%, 100% 100%; background-position: 140% 0, 0 0;
   box-shadow: 0 6px 16px -7px var(--glow), inset 0 1px 0 rgba(255, 255, 255, .35);
-  text-shadow: 0 1px 1px color-mix(in srgb, var(--accent) 45%, transparent); }
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--accent) 55%, rgb(0 0 0 / .5)); }
 :root[data-dark] .btn.primary, :root[data-theme="dark"] .btn.primary { text-shadow: none; }
 .btn.primary:hover { background-color: transparent; box-shadow: 0 9px 22px -8px var(--glow), inset 0 1px 0 rgba(255, 255, 255, .4); }
 .btn.danger { background: linear-gradient(120deg, color-mix(in srgb, var(--danger) 80%, #fff), var(--danger)); border-color: transparent; color: #fff;
@@ -96,18 +97,18 @@ canvas { image-rendering: crisp-edges; image-rendering: pixelated; display: bloc
 .btn.ghost { border-color: transparent; background: transparent; }
 .btn.ghost:hover { background: var(--hover); }
 .btn.small { padding: 3px 8px; font-size: 12.5px; }
-.btn:disabled { opacity: 0.5; cursor: default; }
+.btn:disabled { opacity: .55; cursor: default; }
 [data-motion="full"] .btn:not(:disabled):hover { transform: translateY(-1px); }
 [data-motion="full"] .btn:not(:disabled):active { transform: translateY(0) scale(.96); transition-duration: .08s; }
 [data-motion="full"] .btn.primary:not(:disabled):hover { background-position: -40% 0, 0 0; transition: background-position .75s ease, transform .22s cubic-bezier(.3, 1.6, .5, 1), box-shadow .22s; }
 .icon-btn { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border: 0; border-radius: 10px;
   background: transparent; cursor: pointer; color: var(--muted); transition: background-color .18s, color .18s, transform .22s cubic-bezier(.3, 1.6, .5, 1); }
-.icon-btn:hover { background: var(--tint); color: var(--accent); }
-.icon-btn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+.icon-btn:hover { background: var(--tint); color: var(--accent-text); }
+.icon-btn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-text); }
 .tool-btn { display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border: 0; border-radius: 999px; background: transparent;
   cursor: pointer; color: var(--muted); font-size: 13px; transition: background-color .18s, color .18s, transform .22s cubic-bezier(.3, 1.6, .5, 1); }
-.tool-btn:hover { background: var(--tint); color: var(--accent); }
-.tool-btn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+.tool-btn:hover { background: var(--tint); color: var(--accent-text); }
+.tool-btn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-text); }
 /* 图标按钮：鼠标放上去图标跳一下，按下去缩一下 */
 [data-motion="full"] .tool-btn:hover .ico, [data-motion="full"] .icon-btn:hover .ico { animation: ico-hop .45s cubic-bezier(.3, 1.6, .5, 1); }
 [data-motion="full"] .tool-btn:active, [data-motion="full"] .icon-btn:active { transform: scale(.9); transition-duration: .08s; }

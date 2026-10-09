@@ -12,7 +12,7 @@
 .fmt-seg button { border: 0; background: transparent; padding: 4px 10px; cursor: pointer; font-size: 13px; color: var(--muted); white-space: nowrap; }
 .fmt-seg button + button { border-left: 1px solid var(--line-strong); }
 .fmt-seg button:hover { background: var(--hover); color: var(--ink); }
-.fmt-seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.fmt-seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-text); font-weight: 600; }
 .fmt-scheme { width: auto; min-width: 0; max-width: 100%; padding: 4px 8px; }
 .fmt-del-scheme[hidden] { display: none; }
 
@@ -32,7 +32,7 @@
 
 .fmt-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 14px; border-bottom: 1px solid var(--line); background: var(--surface); flex: 0 0 auto; }
 .fmt-sum { flex: 1 1 180px; min-width: 0; font-size: 13.5px; overflow-wrap: anywhere; }
-.fmt-sum b { color: var(--accent); font-variant-numeric: tabular-nums; }
+.fmt-sum b { color: var(--accent-text); font-variant-numeric: tabular-nums; }
 .fmt-sum-t { font-weight: 500; }
 .fmt-btns { display: flex; gap: 8px; margin-left: auto; }
 

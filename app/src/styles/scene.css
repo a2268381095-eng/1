@@ -24,6 +24,9 @@ body.has-scene .side-left .input, body.has-scene .side-left .textarea, body.has-
 body.has-scene .pt-item, body.has-scene .ch-item.cur {
   background-color: color-mix(in srgb, var(--paper) calc(var(--a-side) + 16%), transparent); }
 body.has-scene .ch-title::placeholder { color: color-mix(in srgb, var(--muted) 80%, var(--faint)); }
+/* 首页顶栏压在画上：按钮字比平时深一档，画亮的地方也看得清 */
+body.has-scene .topbar .tool-btn:not(:hover):not([aria-pressed="true"]) { color: color-mix(in srgb, var(--ink) 70%, var(--muted)); }
+body.has-scene .topbar .brand { color: color-mix(in srgb, var(--accent) 62%, var(--ink)); }
 
 /* 写字页：中间一张透光的纸。.center::before 是纸本身，.center::after 留给纸上的装饰（夹子、标签、印章……）。
    每套风格的纸在 styles/paper/<风格>.css 里画，选择器用 :root[data-paper="<风格>"]。打字时纸浓一点，停笔几秒又变清。 */

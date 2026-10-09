@@ -68,7 +68,7 @@
 .ch-title:hover { border-bottom-color: var(--line-strong); }
 .ch-title:focus { outline: none; border-bottom-color: var(--accent); }
 .ch-title::placeholder { color: var(--faint); font-weight: 400; }
-.ch-name-ai { width: auto; padding: 0 8px; font-size: 12px; font-weight: 700; letter-spacing: .04em; opacity: .55; }
+.ch-name-ai { width: auto; padding: 0 8px; font-size: 12px; font-weight: 700; letter-spacing: .04em; opacity: .75; }
 .ch-head:hover .ch-name-ai, .ch-name-ai:focus-visible { opacity: 1; }
 .ed-host { flex: 1; min-height: 0; }
 .ed-host .cm-editor { height: 100%; background: transparent; color: var(--ink); }

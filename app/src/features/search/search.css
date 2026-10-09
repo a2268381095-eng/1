@@ -10,7 +10,7 @@
 .sr-seg { border: 1px solid var(--line-strong); background: var(--surface); color: var(--muted); border-radius: 999px; padding: 2px 10px;
   font-size: 12.5px; cursor: pointer; white-space: nowrap; }
 .sr-seg:hover { background: var(--hover); color: var(--ink); }
-.sr-seg[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.sr-seg[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
 .sr-vol { width: auto; max-width: 100%; min-width: 0; flex: 1 1 140px; padding: 3px 8px; font-size: 12.5px; }
 
 /* 查找框 */
@@ -22,7 +22,7 @@
 .sr-opt, .sr-fold { height: 26px; padding: 0 7px; font-size: 12.5px; }
 .sr-fold .ico svg { width: 14px; height: 14px; transition: transform .15s; }
 .sr-fold[aria-expanded="true"] .ico svg { transform: rotate(180deg); }
-.sr-fold.on { color: var(--accent); }
+.sr-fold.on { color: var(--accent-text); }
 .sr-adv { gap: 8px; }
 .sr-err { margin: 0; padding: 6px 9px; border-radius: 6px; background: var(--danger-soft); color: var(--danger); font-size: 12.5px; line-height: 1.6; }
 .sr-err b { font-weight: 600; }
@@ -35,7 +35,7 @@
 /* 常用筛选 */
 .sr-presets { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .sr-lab { font-size: 12px; margin-right: 2px; }
-.sr-chip { display: inline-flex; align-items: center; max-width: 100%; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.sr-chip { display: inline-flex; align-items: center; max-width: 100%; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text); }
 .sr-chip-b { border: 0; background: transparent; color: inherit; cursor: pointer; padding: 2px 4px 2px 10px; font-size: 12.5px; max-width: 160px;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sr-chip-x { border: 0; background: transparent; color: inherit; cursor: pointer; width: 20px; height: 20px; border-radius: 50%; display: inline-grid;

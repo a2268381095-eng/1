@@ -15,14 +15,16 @@
 .demon-tools { position: absolute; top: 4px; right: -6px; display: grid; gap: 4px; }
 .demon-btn { width: 24px; height: 24px; border-radius: 50%; border: 1px solid var(--line-strong); background: var(--surface); color: var(--muted);
   cursor: pointer; display: grid; place-items: center; font-weight: 700; font-size: 14px; line-height: 1; padding: 0; opacity: 0; transition: opacity .15s; }
-.demon-btn.help, .demon-btn.pocket { opacity: .85; }
+.demon-btn.help { opacity: .85; }
 /* 口袋：渐变底，一闪一闪 */
-.demon-btn.pocket { background: var(--grad); color: var(--accent-ink); border-color: transparent; font-size: 12px; box-shadow: 0 3px 8px -3px var(--glow); }
+.demon-btn.pocket { background: var(--grad); color: var(--accent-ink); border-color: transparent; font-size: 12px; box-shadow: 0 3px 8px -3px var(--glow);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--accent) 55%, rgb(0 0 0 / .5)); }
+:root[data-dark] .demon-btn.pocket, :root[data-theme="dark"] .demon-btn.pocket { text-shadow: none; }
 [data-motion="full"] .demon-btn.pocket { animation: pocket-glint 3.2s ease-in-out infinite; }
 @keyframes pocket-glint { 0%, 80%, 100% { transform: none; } 86% { transform: scale(1.18) rotate(18deg); } 92% { transform: scale(.96) rotate(-6deg); } }
 .demon-btn .ico svg { width: 12px; height: 12px; }
 .demon-body:hover .demon-btn, .demon-body:focus-within .demon-btn { opacity: .9; }
-.demon-btn:hover { opacity: 1 !important; color: var(--accent); border-color: var(--accent); }
+.demon-btn:hover { opacity: 1 !important; color: var(--accent-text); border-color: var(--accent); }
 .demon.dragging .demon-btn { opacity: 0 !important; }
 .demon-grip { position: absolute; left: -4px; top: -4px; width: 16px; height: 16px; cursor: nwse-resize; opacity: 0; transition: opacity .15s;
   border-left: 3px solid var(--accent); border-top: 3px solid var(--accent); border-radius: 4px 0 0 0; touch-action: none; }
@@ -43,7 +45,7 @@
 .demon.near-left .demon-bubble::after { right: auto; left: 28px; }
 .demon.dragging .demon-bubble { opacity: 0; }
 
-.demon-show { border: 1px solid var(--line-strong); background: var(--surface); color: var(--accent); border-radius: 999px; padding: 4px 12px; cursor: pointer;
+.demon-show { border: 1px solid var(--line-strong); background: var(--surface); color: var(--accent-text); border-radius: 999px; padding: 4px 12px; cursor: pointer;
   font-size: 12.5px; box-shadow: var(--shadow-s); }
 
 /* 找功能面板 */
@@ -75,7 +77,7 @@
 
 /* 连击计数：打字时在她身边跳，越高越热闹，停下来就飘走 */
 .demon-combo { position: absolute; left: -70px; top: 16%; display: grid; justify-items: center; gap: 0; pointer-events: none; opacity: 0; transform: translateY(6px);
-  transition: opacity .2s ease, transform .2s ease; font-family: var(--f-pixel); color: var(--accent); z-index: 2; }
+  transition: opacity .2s ease, transform .2s ease; font-family: var(--f-pixel); color: var(--accent-text); z-index: 2; }
 .demon.near-left .demon-combo { left: auto; right: -70px; }
 .demon-combo.on { opacity: 1; transform: none; }
 .dc-label, .dc-unit { text-shadow: 1px 0 0 var(--surface), -1px 0 0 var(--surface), 0 1px 0 var(--surface), 0 -1px 0 var(--surface), 1px 1px 0 var(--surface), -1px -1px 0 var(--surface); }

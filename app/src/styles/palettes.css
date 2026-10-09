@@ -3,60 +3,60 @@
 
 /* 水手服 · 教室：藏青、白、领巾珊瑚红到蜜桃 */
 :root[data-palette="sailor"] {
-  --bg: #f2f5fa; --paper: #fbfaf6; --side: #f4f7fb; --bar: #ebf0f7; --surface: #fbfcfe; --ink: #2e3442; --muted: #6c788e; --faint: #aab3c3;
-  --line: #e2e8f1; --line-strong: #cfd8e6; --accent: #e06f7e; --accent-2: #f2a585; --accent-ink: #ffffff; --accent-soft: #fbe5e8; --hover: #edf1f8;
+  --bg: #f2f5fa; --paper: #fbfaf6; --side: #f4f7fb; --bar: #ebf0f7; --surface: #fbfcfe; --ink: #2e3442; --muted: #616c80; --faint: #7f8796;
+  --line: #e2e8f1; --line-strong: #cfd8e6; --accent: #d65e6e; --accent-2: #e38e6b; --accent-ink: #ffffff; --accent-soft: #fbe5e8; --hover: #edf1f8;
   --bubble: #ffffff; --bubble-ink: #27334a; --bubble-line: #27334a; --pattern: #5b77b0;
 }
 :root[data-palette="sailor"][data-dark] {
-  --bg: #141415; --paper: #1b1b1d; --side: #18181a; --bar: #1f1f22; --surface: #202023; --ink: #ebebed; --muted: #a0a0a6; --faint: #67676d;
+  --bg: #141415; --paper: #1b1b1d; --side: #18181a; --bar: #1f1f22; --surface: #202023; --ink: #ebebed; --muted: #a0a0a6; --faint: #737379;
   --line: #2b2b2f; --line-strong: #3b3b40; --accent: #ffa0ab; --accent-2: #ffc59e; --accent-ink: #2a1418; --accent-soft: #3a2a2d; --hover: #262629;
   --bubble: #222225; --bubble-ink: #ebebed; --bubble-line: #ffa0ab; --pattern: #8fb0e0; color-scheme: dark;
 }
 
 /* 古风 · 宣纸墨色：米黄宣纸、墨、朱砂到杏色 */
 :root[data-palette="hanfu"] {
-  --bg: #f6f1e9; --paper: #faf5ea; --side: #f4efe6; --bar: #ede6da; --surface: #fdfbf7; --ink: #2f2924; --muted: #807567; --faint: #b9ae9f;
-  --line: #e9e0d3; --line-strong: #d9cdbb; --accent: #cf6b53; --accent-2: #e3a06f; --accent-ink: #ffffff; --accent-soft: #f7e3da; --hover: #efe8dc;
+  --bg: #f6f1e9; --paper: #faf5ea; --side: #f4efe6; --bar: #ede6da; --surface: #fdfbf7; --ink: #2f2924; --muted: #6e6458; --faint: #897f74;
+  --line: #e9e0d3; --line-strong: #d9cdbb; --accent: #c86550; --accent-2: #d69667; --accent-ink: #ffffff; --accent-soft: #f7e3da; --hover: #efe8dc;
   --bubble: #fffdf8; --bubble-ink: #2f2924; --bubble-line: #2f2924; --pattern: #8a6d4a;
 }
 :root[data-palette="hanfu"][data-dark] {
-  --bg: #151514; --paper: #1c1c1b; --side: #191918; --bar: #20201f; --surface: #212120; --ink: #edebe8; --muted: #a3a19c; --faint: #6a6864;
+  --bg: #151514; --paper: #1c1c1b; --side: #191918; --bar: #20201f; --surface: #212120; --ink: #edebe8; --muted: #a3a19c; --faint: #75736f;
   --line: #2c2c2a; --line-strong: #3d3c39; --accent: #ef9a80; --accent-2: #f2c08f; --accent-ink: #2b150d; --accent-soft: #3a2c26; --hover: #272725;
   --bubble: #232322; --bubble-ink: #edebe8; --bubble-line: #ef9a80; --pattern: #c9b48f; color-scheme: dark;
 }
 
 /* 哥特 · 暗夜魔典：黑紫、玫瑰到薰衣草（浅色是暮色紫） */
 :root[data-palette="gothic"] {
-  --bg: #f3eff6; --paper: #fbf8f4; --side: #f4f0f7; --bar: #ebe5f0; --surface: #fcfbfd; --ink: #312c33; --muted: #776a82; --faint: #b0a6b9;
+  --bg: #f3eff6; --paper: #fbf8f4; --side: #f4f0f7; --bar: #ebe5f0; --surface: #fcfbfd; --ink: #312c33; --muted: #6e6278; --faint: #867e8d;
   --line: #e6dfec; --line-strong: #d4cadd; --accent: #a8679a; --accent-2: #8c88d6; --accent-ink: #ffffff; --accent-soft: #f1e4ef; --hover: #eee8f3;
   --bubble: #ffffff; --bubble-ink: #2f2636; --bubble-line: #2f2636; --pattern: #6a4a8e;
 }
 :root[data-palette="gothic"][data-dark] {
-  --bg: #141415; --paper: #1b1b1d; --side: #18181a; --bar: #1f1f22; --surface: #202023; --ink: #ebebed; --muted: #a0a0a6; --faint: #67676d;
+  --bg: #141415; --paper: #1b1b1d; --side: #18181a; --bar: #1f1f22; --surface: #202023; --ink: #ebebed; --muted: #a0a0a6; --faint: #737379;
   --line: #2b2b2f; --line-strong: #3b3b40; --accent: #e597b6; --accent-2: #b796e6; --accent-ink: #2a1222; --accent-soft: #382a33; --hover: #262629;
   --bubble: #222225; --bubble-ink: #ebebed; --bubble-line: #e597b6; --pattern: #b07ac8; color-scheme: dark;
 }
 
 /* 侦探 · 旧书房：牛皮纸、青绿到雾蓝 */
 :root[data-palette="detective"] {
-  --bg: #f4f2ec; --paper: #faf6ec; --side: #f2efe8; --bar: #ebe7dd; --surface: #fcfbf7; --ink: #2c2a26; --muted: #7a7366; --faint: #b4ad9f;
-  --line: #e5e0d5; --line-strong: #d5cdbf; --accent: #3e9f94; --accent-2: #5f9fd2; --accent-ink: #ffffff; --accent-soft: #dcefec; --hover: #ede9e0;
+  --bg: #f4f2ec; --paper: #faf6ec; --side: #f2efe8; --bar: #ebe7dd; --surface: #fcfbf7; --ink: #2c2a26; --muted: #6c665a; --faint: #868076;
+  --line: #e5e0d5; --line-strong: #d5cdbf; --accent: #3e9288; --accent-2: #6095be; --accent-ink: #ffffff; --accent-soft: #dcefec; --hover: #ede9e0;
   --bubble: #fffdf8; --bubble-ink: #2c2a26; --bubble-line: #2c2a26; --pattern: #6b5236;
 }
 :root[data-palette="detective"][data-dark] {
-  --bg: #151514; --paper: #1c1c1b; --side: #191918; --bar: #20201f; --surface: #212120; --ink: #edebe8; --muted: #a3a19c; --faint: #6a6864;
+  --bg: #151514; --paper: #1c1c1b; --side: #191918; --bar: #20201f; --surface: #212120; --ink: #edebe8; --muted: #a3a19c; --faint: #75736f;
   --line: #2c2c2a; --line-strong: #3d3c39; --accent: #76d2c5; --accent-2: #8dbcec; --accent-ink: #0d2522; --accent-soft: #25332f; --hover: #272725;
   --bubble: #232322; --bubble-ink: #edebe8; --bubble-line: #76d2c5; --pattern: #c4a87e; color-scheme: dark;
 }
 
 /* 异世界 · 冒险者公会：草绿、夕阳橙到麦金 */
 :root[data-palette="adventurer"] {
-  --bg: #f4f3ea; --paper: #faf6ea; --side: #f2f2e6; --bar: #eae9da; --surface: #fcfcf5; --ink: #2d2b25; --muted: #727561; --faint: #adb09a;
-  --line: #e2e3d2; --line-strong: #d0d2ba; --accent: #de8650; --accent-2: #e6b452; --accent-ink: #ffffff; --accent-soft: #f8e6d6; --hover: #ecebdd;
+  --bg: #f4f3ea; --paper: #faf6ea; --side: #f2f2e6; --bar: #eae9da; --surface: #fcfcf5; --ink: #2d2b25; --muted: #666857; --faint: #818372;
+  --line: #e2e3d2; --line-strong: #d0d2ba; --accent: #c77e52; --accent-2: #c48d34; --accent-ink: #ffffff; --accent-soft: #f8e6d6; --hover: #ecebdd;
   --bubble: #fffef6; --bubble-ink: #2a2c21; --bubble-line: #2a2c21; --pattern: #5f7f3a;
 }
 :root[data-palette="adventurer"][data-dark] {
-  --bg: #151514; --paper: #1c1c1b; --side: #191918; --bar: #20201f; --surface: #212120; --ink: #edebe8; --muted: #a3a19c; --faint: #6a6864;
+  --bg: #151514; --paper: #1c1c1b; --side: #191918; --bar: #20201f; --surface: #212120; --ink: #edebe8; --muted: #a3a19c; --faint: #75736f;
   --line: #2c2c2a; --line-strong: #3d3c39; --accent: #f3a771; --accent-2: #f0d07c; --accent-ink: #2a160a; --accent-soft: #3a2e22; --hover: #272725;
   --bubble: #232322; --bubble-ink: #edebe8; --bubble-line: #f3a771; --pattern: #a8c27a; color-scheme: dark;
 }

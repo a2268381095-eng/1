@@ -18,7 +18,7 @@
 .chat-list-btn { flex: 0 0 auto; display: inline-flex; align-items: center; gap: 4px; height: 30px; padding: 0 9px; border: 1px solid var(--line-strong); border-radius: 6px;
   background: var(--paper); color: var(--muted); cursor: pointer; font-size: 12.5px; white-space: nowrap; }
 .chat-list-btn:hover { color: var(--ink); background: var(--hover); }
-.chat-list-btn[aria-expanded="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.chat-list-btn[aria-expanded="true"] { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent); }
 .chat-title { flex: 1 1 0; min-width: 48px; display: flex; align-items: center; gap: 7px; border: 0; background: transparent; padding: 4px 6px; border-radius: 6px;
   cursor: pointer; font-weight: 600; font-size: 13.5px; text-align: left; color: var(--ink); }
 .chat-title::before { content: ""; flex: 0 0 auto; width: 7px; height: 7px; background: var(--mark-img) center / 7px 7px no-repeat; image-rendering: pixelated; }
@@ -97,7 +97,7 @@
 .chat-empty { margin: auto 0; display: grid; justify-items: center; gap: 8px; padding: 22px 8px; text-align: center; }
 .chat-empty p { margin: 0; line-height: 1.7; }
 .chat-empty-t { font-size: 15px; font-weight: 600; }
-.chat-empty-keep { color: var(--accent); font-size: 12.5px; }
+.chat-empty-keep { color: var(--accent-text); font-size: 12.5px; }
 .chat-recent { display: grid; gap: 6px; width: 100%; max-width: 300px; margin-top: 6px; }
 .chat-recent-h { font-size: 12px; color: var(--muted); justify-self: start; }
 .chat-recent-i { display: grid; gap: 1px; text-align: left; padding: 7px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); cursor: pointer; color: var(--ink); min-width: 0; }
@@ -105,7 +105,7 @@
 .chat-forknote { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 6px 10px; border-radius: 8px; border: 1px dashed var(--line-strong);
   background: var(--side); font-size: 12.5px; color: var(--muted); min-width: 0; }
 .chat-forknote .ico svg { width: 14px; height: 14px; }
-.chat-forknote .btn { margin-left: auto; color: var(--accent); }
+.chat-forknote .btn { margin-left: auto; color: var(--accent-text); }
 
 /* 底部：上下文长度、输入框、两个常驻按钮 */
 .chat-foot { flex: 0 0 auto; display: grid; gap: 6px; padding: 8px 10px 10px; border-top: 1px solid var(--line); background: var(--side); min-width: 0; }

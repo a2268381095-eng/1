@@ -32,7 +32,7 @@
 .st-seg button { border: 1px solid var(--line-strong); background: var(--paper); color: var(--ink); border-radius: 6px; padding: 4px 12px; cursor: pointer;
   font-size: 13px; line-height: 1.5; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .st-seg button:hover { background: var(--hover); }
-.st-seg button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+.st-seg button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
 
 .st-check { font-size: 13.5px; min-height: 28px; }
 .st-range-wrap { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 380px; }
@@ -86,7 +86,7 @@
 .st-key-k { justify-self: end; }
 .st-kbd { font-size: 12px; padding: 1px 6px; white-space: nowrap; }
 .st-nokey { font-size: 12px; }
-.st-rec { font-size: 12.5px; color: var(--accent); font-weight: 600; white-space: nowrap; }
+.st-rec { font-size: 12.5px; color: var(--accent-text); font-weight: 600; white-space: nowrap; }
 .st-key-acts { display: flex; gap: 4px; justify-content: flex-end; }
 
 /* 报错记录 */
@@ -127,7 +127,7 @@ body:has(.view.st) .toast-act { white-space: nowrap; flex: 0 0 auto; }
 .st-pal .st-sw { grid-row: 1 / 3; display: grid; grid-template-columns: repeat(3, 8px); width: 24px; height: 24px; border-radius: 4px; overflow: hidden;
   border: 1px solid var(--line-strong); image-rendering: pixelated; }
 .st-pal .st-sw i { display: block; height: 24px; }
-.st-sw-follow { place-items: center; display: grid !important; grid-template-columns: 1fr !important; color: var(--accent); font-size: 14px; background: var(--accent-soft); }
+.st-sw-follow { place-items: center; display: grid !important; grid-template-columns: 1fr !important; color: var(--accent-text); font-size: 14px; background: var(--accent-soft); }
 .st-pal-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .st-pal-sub { font-size: 11.5px; color: var(--muted); }
 .st-lock { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 8px; color: var(--warn); }

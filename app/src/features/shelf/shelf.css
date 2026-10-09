@@ -1,5 +1,5 @@
 /* 书架 */
-.brand { font-family: var(--f-title); font-size: 19px; color: var(--accent); letter-spacing: .04em; padding-left: 4px; }
+.brand { font-family: var(--f-title); font-size: 19px; color: var(--accent-text); letter-spacing: .04em; padding-left: 4px; }
 .shelf-main { flex: 1; overflow: auto; padding: 24px; }
 .shelf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; max-width: 1280px; margin: 0 auto; }
 .book-card { position: relative; display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 14px; padding: 12px; border: 1px solid var(--line);
@@ -9,7 +9,7 @@
 .book-meta { display: grid; align-content: start; gap: 6px; min-width: 0; padding-right: 26px; }
 .book-title { margin: 0; font-size: 16px; font-weight: 600; line-height: 1.4; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .book-intro { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.65; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.book-time { margin: 0; color: var(--faint); font-size: 12px; }
+.book-time { margin: 0; color: var(--muted); font-size: 12px; }
 .book-more { position: absolute; top: 8px; right: 8px; }
 .shelf-empty { display: grid; justify-items: center; gap: 10px; padding: 80px 16px; text-align: center; }
 .shelf-empty p { margin: 0; }

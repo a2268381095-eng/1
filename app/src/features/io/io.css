@@ -12,7 +12,7 @@
 .io-start { display: grid; gap: 12px; }
 .io-drop { display: grid; justify-items: center; gap: 4px; padding: 26px 16px; border: 2px dashed var(--line-strong); border-radius: 10px;
   background: var(--paper); color: var(--ink); cursor: pointer; text-align: center; }
-.io-drop .ico { color: var(--accent); }
+.io-drop .ico { color: var(--accent-text); }
 .io-drop .ico svg { width: 26px; height: 26px; }
 .io-drop b { font-size: 15px; font-weight: 600; }
 .io-drop span:last-child { font-size: 12.5px; color: var(--muted); }
@@ -28,7 +28,7 @@
   background: rgba(40, 18, 30, 0.2); background: color-mix(in srgb, var(--bg) 70%, transparent); }
 .io-dropmask-in { display: grid; justify-items: center; gap: 6px; width: min(420px, 100%); padding: 40px 20px; border: 2px dashed var(--accent);
   border-radius: 14px; background: var(--surface); color: var(--ink); box-shadow: var(--shadow); text-align: center; }
-.io-dropmask-in .ico { color: var(--accent); }
+.io-dropmask-in .ico { color: var(--accent-text); }
 .io-dropmask-in .ico svg { width: 30px; height: 30px; }
 .io-dropmask-in b { font-size: 17px; }
 .io-dropmask-in span:last-child { color: var(--muted); font-size: 13px; }
@@ -58,7 +58,7 @@
   padding: 5px 8px; border-bottom: 1px solid var(--line); min-width: 0; }
 .io-row:last-child { border-bottom: 0; }
 .io-row.vol { background: var(--side); }
-.io-row.vol .io-no { color: var(--accent); }
+.io-row.vol .io-no { color: var(--accent-text); }
 .io-no { grid-column: 1; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .io-title { grid-column: 2; min-width: 0; width: 100%; padding: 3px 7px; font-size: 13.5px; }
 .io-fixed { padding: 3px 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -77,7 +77,7 @@
 .io-seg button { border: 0; background: transparent; padding: 4px 11px; cursor: pointer; font-size: 13px; color: var(--muted); white-space: nowrap; }
 .io-seg button + button { border-left: 1px solid var(--line-strong); }
 .io-seg button:hover { background: var(--hover); color: var(--ink); }
-.io-seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.io-seg button[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-text); font-weight: 600; }
 .io-pick { display: grid; gap: 6px; }
 .io-pick .row .spacer { flex: 1; }
 .io-pick-list { display: grid; max-height: 220px; overflow: auto; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); padding: 4px 0; }

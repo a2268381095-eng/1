@@ -57,7 +57,7 @@ export function applyLook() {
   root.style.setProperty("--a-paper-typing", pct(Math.min(96, 94 - 0.5 * v + 14)));
   root.style.setProperty("--b-paper", Math.round(22 - 0.17 * v) + "px");
   root.style.setProperty("--a-side", pct(88 - 0.45 * v));
-  root.style.setProperty("--a-bar", pct(84 - 0.45 * v));
+  root.style.setProperty("--a-bar", pct(94 - 0.3 * v));   // 顶栏上有字，比书卡更实一些
   root.style.setProperty("--a-card", pct(92 - 0.3 * v));
   root.style.setProperty("--halo", pct(50 + 0.4 * v));
   root.style.setProperty("--f-ui", fontStack(s.uiFont));
