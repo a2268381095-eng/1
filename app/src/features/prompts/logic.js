@@ -147,3 +147,47 @@ export function exportName(d = new Date()) {
   const p = (n) => String(n).padStart(2, "0");
   return `提示词库-${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}.json`;
 }
+
+/** 用得多少分 0–5 档（和库里用得最多的那条比） */
+export function heatLevel(uses, max) {
+  uses = Number(uses) || 0;
+  if (uses <= 0 || !max) return 0;
+  return Math.max(1, Math.min(5, Math.ceil((uses / max) * 5)));
+}
+
+/** 列表里显示的一小段正文：搜索时从命中的地方附近开始 */
+export function excerptOf(text, q, len = 120) {
+  const s = str(text).replace(/\s+/g, " ").trim();
+  q = str(q).trim().toLowerCase();
+  let from = 0;
+  if (q) {
+    const i = s.toLowerCase().indexOf(q);
+    if (i > 40) from = i - 20;
+  }
+  const out = s.slice(from, from + len);
+  return (from > 0 ? "…" : "") + out + (from + len < s.length ? "…" : "");
+}
+
+/** 把一段字按搜索词切开，命中的部分 hit: true */
+export function splitHits(text, q) {
+  const s = str(text);
+  q = str(q).trim().toLowerCase();
+  if (!q) return [{ t: s }];
+  const low = s.toLowerCase(), out = [];
+  let i = 0;
+  while (i < s.length) {
+    const j = low.indexOf(q, i);
+    if (j < 0) { out.push({ t: s.slice(i) }); break; }
+    if (j > i) out.push({ t: s.slice(i, j) });
+    out.push({ t: s.slice(j, j + q.length), hit: true });
+    i = j + q.length;
+  }
+  return out;
+}
+
+/** 复制出来的那条放在原来那条紧后面（固定的顺序里） */
+export function orderAfter(list, p) {
+  const after = list.filter((x) => x.pinned && x.id !== p.id && (Number(x.order) || 0) > (Number(p.order) || 0)).map((x) => Number(x.order) || 0);
+  const next = after.length ? Math.min(...after) : null;
+  return next == null ? (Number(p.order) || 0) + 1 : ((Number(p.order) || 0) + next) / 2;
+}

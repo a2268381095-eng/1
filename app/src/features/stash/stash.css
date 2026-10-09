@@ -1,0 +1,311 @@
+/* 暂存盒：抽屉（右侧栏 / 弹窗）和总暂存盒（#/stash）共用卡片。
+   六套风格的卡片形态各不一样（见文件后半）：魔法少女是圆润的魔法卡片、角上一颗星；水手服是贴了胶带的便签；古风是双线框的诗笺；
+   哥特是切角的魔典残页；侦探是带编号标签的案卷；冒险者是钉在委托板上的羊皮纸。出场、退场、采用时的反馈也各按各的来。 */
+
+/* ---------------- 共用：工具条、筛选、多选条 ---------------- */
+.stash-drawer { display: grid; gap: 8px; min-width: 0; align-content: start; }
+.panel-body.stash-body { padding: 0 12px 28px 10px; }
+.stash-drawer .stash-acts { gap: 2px; }
+.stash-drawer .stash-acts .btn.small { padding: 3px 6px; }
+.stash-tools { display: flex; align-items: center; gap: 6px; min-width: 0; padding-right: 2px; }
+.stash-n { flex: 0 0 auto; }
+.stash-drawer .stash-tools { position: sticky; top: 0; z-index: 3; padding: 8px 4px 6px 0; background: var(--side); }
+.stash-modal .stash-drawer .stash-tools { background: var(--surface); top: -8px; }
+.stash-q { flex: 1 1 auto; min-width: 0; }
+.stash-n { font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.stash-sel-btn { flex: 0 0 auto; }
+.stash-sel-btn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
+.stash-hint { margin: 2px 2px 0; font-size: 12px; color: var(--faint); line-height: 1.6; }
+
+.stash-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; min-width: 0; }
+.stash-chips[hidden], .stash-selbar[hidden] { display: none; }
+.stash-seg { display: inline-flex; flex-wrap: wrap; gap: 4px; max-width: 100%; min-width: 0; }
+.stash-seg button, .stash-toggle, .stash-tag-on { border: 1px solid var(--line-strong); background: var(--paper); color: var(--muted); padding: 2px 10px; font-size: 12.5px;
+  line-height: 1.6; border-radius: 6px; cursor: pointer; white-space: nowrap; max-width: 220px; overflow: hidden; text-overflow: ellipsis; }
+.stash-seg button:hover, .stash-toggle:hover { background: var(--hover); color: var(--ink); }
+.stash-seg button[aria-pressed="true"], .stash-toggle[aria-pressed="true"], .stash-tag-on { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); font-weight: 600; }
+.stash-seg-n { margin-left: 5px; font-size: 11px; opacity: .7; font-weight: 400; font-variant-numeric: tabular-nums; }
+
+.stash-selbar { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 6px 10px; border-radius: 8px; background: var(--accent-soft); font-size: 12.5px; min-width: 0; }
+.stash-selbar .spacer { flex: 1; }
+.stash-sel-n { font-weight: 600; color: var(--accent); }
+.stash-del-sel { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, transparent); }
+.stash-del-sel:not(:disabled):hover { background: var(--danger-soft); }
+
+/* ---------------- 卡片 ---------------- */
+.stash-list { display: grid; gap: 12px; min-width: 0; counter-reset: stash-case; }
+.stash-card { position: relative; display: grid; gap: 6px; min-width: 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.stash-card.sel { box-shadow: 0 0 0 2px var(--accent); }
+.stash-card[draggable="true"] { cursor: grab; }
+.stash-card[draggable="true"]:active { cursor: grabbing; }
+.stash-card.dragging { opacity: .45; }
+.stash-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 10px; font-size: 12px; color: var(--muted); min-width: 0; font-variant-numeric: tabular-nums; }
+.stash-meta > span { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stash-pick { display: inline-flex; cursor: pointer; }
+.stash-pick input { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; cursor: pointer; }
+.stash-pin-mark { color: var(--accent); font-weight: 600; }
+.stash-feat { padding: 0 7px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+.stash-model { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11.5px; }
+.stash-book { color: var(--ink); }
+.stash-grip { margin-left: auto; color: var(--faint); line-height: 0; }
+.stash-card:hover .stash-grip { color: var(--accent); }
+.stash-title { margin: 0; font-size: 13.5px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.stash-text { white-space: pre-wrap; overflow-wrap: anywhere; font-family: var(--f-text); font-size: 14.5px; line-height: 1.85; color: var(--ink); min-width: 0; }
+.stash-text.folded { display: -webkit-box; -webkit-line-clamp: 5; -webkit-box-orient: vertical; overflow: hidden; }
+.stash-img { display: block; max-width: 100%; max-height: 260px; border-radius: 6px; justify-self: start; }
+.stash-fold { justify-self: start; border: 0; background: none; padding: 0; color: var(--accent); font-size: 12.5px; cursor: pointer; }
+.stash-fold:hover { text-decoration: underline; text-underline-offset: 3px; }
+.stash-tags { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.stash-tag-w { display: inline-flex; align-items: center; max-width: 100%; border-radius: 999px; background: var(--side); border: 1px solid var(--line-strong); overflow: hidden; }
+.stash-tag-w .stash-tag { border: 0; background: transparent; padding: 1px 2px 1px 9px; font-size: 12px; color: var(--ink); cursor: pointer; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stash-tag-x { border: 0; background: transparent; width: 22px; height: 22px; display: grid; place-items: center; cursor: pointer; color: var(--muted); padding: 0; flex: 0 0 auto; }
+.stash-tag-x:hover { color: var(--danger); }
+.stash-tag-x .ico svg { width: 12px; height: 12px; }
+.stash-acts { display: flex; flex-wrap: wrap; gap: 4px; min-width: 0; }
+.stash-acts .btn.ghost { color: var(--muted); }
+.stash-acts .btn.ghost:hover { color: var(--ink); }
+.stash-acts .stash-pin[aria-pressed="true"] { color: var(--accent); }
+.stash-acts .stash-del { margin-left: auto; padding: 2px 6px; }
+.stash-acts .stash-del .ico svg { width: 16px; height: 16px; }
+.stash-acts .stash-del:hover { color: var(--danger); background: var(--danger-soft); }
+
+.stash-none { display: grid; justify-items: center; gap: 6px; padding: 40px 12px; text-align: center; }
+.stash-none p { margin: 0; line-height: 1.7; }
+.stash-none-t { font-size: 15px; font-weight: 600; }
+
+/* 拖着一条时，正文区亮一圈虚线 */
+body.stash-dragging .ws .ed-host { outline: 2px dashed color-mix(in srgb, var(--accent) 60%, transparent); outline-offset: -6px; border-radius: 10px; }
+
+/* ---------------- 总暂存盒 ---------------- */
+.stash-main { flex: 1; overflow: auto; padding: 16px 16px 200px; }
+.stash-wrap { max-width: 780px; margin: 0 auto; display: grid; gap: 12px; min-width: 0; }
+.stash-title-bar { min-width: 0; flex: 0 1 auto; }
+.stash-view .icon-btn:disabled, .stash-cond-btn:disabled { opacity: .4; cursor: default; background: transparent; color: var(--muted); }
+.stash-filters { display: grid; gap: 10px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); min-width: 0; }
+.stash-bar { display: flex; flex-wrap: wrap; gap: 8px 10px; align-items: center; min-width: 0; }
+.stash-book-sel { width: auto; max-width: 100%; padding: 3px 8px; font-size: 12.5px; }
+.stash-tagbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12.5px; min-width: 0; }
+.stash-tagbar .stash-tag { border: 1px solid var(--line-strong); background: var(--paper); border-radius: 999px; padding: 1px 9px; font-size: 12px; cursor: pointer; color: var(--ink);
+  max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stash-tagbar .stash-tag[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); font-weight: 600; }
+.stash-groups { gap: 18px; }
+.stash-group { display: grid; gap: 10px; min-width: 0; }
+.stash-group-h { margin: 0 2px; display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: .06em; justify-self: start; }
+.stash-group-h::before { content: ""; flex: 0 0 auto; }
+.stash-group-n { font-weight: 400; font-size: 12px; color: var(--faint); letter-spacing: 0; }
+.stash-group-list { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); min-width: 0; }
+
+/* 按条件删 */
+.stash-cond { display: grid; gap: 12px; }
+.stash-cond .row > span { font-size: 13.5px; }
+.stash-cond-days { width: 84px; }
+.stash-cond-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; }
+.stash-cond-n { margin: 0; padding: 8px 12px; border-radius: 8px; background: var(--danger-soft); color: var(--danger); display: flex; flex-wrap: wrap; gap: 4px; line-height: 1.6; }
+.stash-cond-n.zero { background: var(--side); color: var(--muted); }
+
+/* ---------------- 背景插画开着时：玻璃卡片，画透过来，字有底 ---------------- */
+body.has-scene .view.stash-view { background: transparent; }
+body.has-scene .stash-main { background-color: color-mix(in srgb, var(--bg) 42%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+body.has-scene .stash-filters, body.has-scene .stash-view .stash-card, body.has-scene .stash-view .stash-none, body.has-scene .stash-view .stash-selbar {
+  background-color: color-mix(in srgb, var(--surface) calc(var(--a-card) + 10%), transparent); -webkit-backdrop-filter: blur(14px) saturate(1.2); backdrop-filter: blur(14px) saturate(1.2);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, .12); }
+body.has-scene .stash-view .stash-none { border-radius: 12px; max-width: 520px; width: 100%; margin: 24px auto 0; }
+body.has-scene .stash-group-h { padding: 2px 12px; border-radius: 999px; background-color: color-mix(in srgb, var(--surface) 82%, transparent);
+  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+body.has-scene .side-right .stash-card { background-color: color-mix(in srgb, var(--surface) calc(var(--a-side) + 26%), transparent); }
+body.has-scene .stash-drawer .stash-tools { background-color: color-mix(in srgb, var(--side) calc(var(--a-side) + 24%), transparent);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+body.has-scene .side-right .stash-q { background-color: color-mix(in srgb, var(--paper) calc(var(--a-side) + 16%), transparent); }
+
+/* ================= 六套风格：形态各不相同 ================= */
+
+/* ---------- 魔法少女：圆润的魔法卡片，角上一颗四角星，胶囊按钮；从口袋里蹦出来，删掉时缩回口袋 ---------- */
+:root[data-paper="magical"] .stash-card { border-radius: 18px; border: 1.5px solid color-mix(in srgb, var(--accent) 26%, var(--line)); box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 14%, transparent); }
+:root[data-paper="magical"] .stash-card::after { content: ""; position: absolute; right: 14px; top: -6px; width: 12px; height: 12px; background: var(--accent);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); opacity: .75; }
+:root[data-paper="magical"] .stash-card.pinned { background-image: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--accent) 16%, transparent), transparent 42%); }
+:root[data-paper="magical"] .stash-card.pinned::after { width: 16px; height: 16px; top: -8px; opacity: 1; }
+:root[data-paper="magical"] .stash-acts .btn, :root[data-paper="magical"] .stash-seg button, :root[data-paper="magical"] .stash-toggle, :root[data-paper="magical"] .stash-sel-btn,
+:root[data-paper="magical"] .stash-selbar .btn, :root[data-paper="magical"] .stash-tag-on { border-radius: 999px; }
+:root[data-paper="magical"] .stash-acts .btn.primary { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 82%, #fff), var(--accent)); }
+:root[data-paper="magical"] .stash-filters { border-radius: 20px; border: 1.5px dashed color-mix(in srgb, var(--accent) 35%, var(--line)); }
+:root[data-paper="magical"] .stash-selbar { border-radius: 999px; }
+:root[data-paper="magical"] .stash-group-h::before { width: 11px; height: 11px; background: var(--accent);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); }
+
+/* ---------- 水手服：横格便签，顶上贴一条蓝胶带，左边一道红页边；贴纸按钮带硬阴影；啪地贴上，删掉时被撕走 ---------- */
+:root[data-paper="sailor"] .stash-card { border-radius: 3px; border: 1px solid var(--line-strong); border-left: 4px solid var(--accent); margin-top: 6px;
+  background-image: repeating-linear-gradient(transparent 0 25px, color-mix(in srgb, #5b7fd6 13%, transparent) 25px 26px); background-position: 0 8px;
+  box-shadow: 2px 3px 0 color-mix(in srgb, var(--ink) 16%, transparent); }
+:root[data-paper="sailor"] .stash-card::after { content: ""; position: absolute; left: 50%; top: -8px; width: 58px; height: 15px; margin-left: -29px; rotate: -3deg;
+  background: repeating-linear-gradient(90deg, rgba(91, 127, 214, .5) 0 6px, rgba(91, 127, 214, .32) 6px 12px); }
+:root[data-paper="sailor"] .stash-card:nth-child(even)::after { rotate: 4deg; margin-left: -10px; }
+:root[data-paper="sailor"] .stash-card.pinned::after { background: repeating-linear-gradient(90deg, rgba(200, 51, 63, .55) 0 6px, rgba(200, 51, 63, .35) 6px 12px); }
+:root[data-paper="sailor"] .stash-acts .btn, :root[data-paper="sailor"] .stash-seg button, :root[data-paper="sailor"] .stash-toggle, :root[data-paper="sailor"] .stash-sel-btn,
+:root[data-paper="sailor"] .stash-selbar .btn, :root[data-paper="sailor"] .stash-tag-on { border-radius: 3px; }
+:root[data-paper="sailor"] .stash-acts .btn.primary, :root[data-paper="sailor"] .stash-seg button[aria-pressed="true"], :root[data-paper="sailor"] .stash-toggle[aria-pressed="true"] {
+  box-shadow: 2px 2px 0 var(--ink); }
+:root[data-paper="sailor"] .stash-acts .btn.primary:active { box-shadow: 0 0 0 var(--ink); transform: translate(2px, 2px); }
+:root[data-paper="sailor"] .stash-filters { border-radius: 3px; border-top: 4px double color-mix(in srgb, var(--ink) 60%, transparent); }
+:root[data-paper="sailor"] .stash-selbar { border-radius: 3px; border-left: 4px solid var(--accent); }
+:root[data-paper="sailor"] .stash-group-h::before { width: 14px; height: 0; border-top: 5px double var(--ink); }
+
+/* ---------- 古风：诗笺，方角双线内框，标题前一枚朱砂小印；按钮方正、字距拉开；像卷轴一样横着展开，删掉时卷起来 ---------- */
+:root[data-paper="hanfu"] .stash-card { border-radius: 1px; border-color: var(--line-strong); outline: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line)); outline-offset: -5px;
+  padding: 12px 14px; }
+:root[data-paper="hanfu"] .stash-card .stash-title, :root[data-paper="hanfu"] .stash-group-h { font-family: "LXGW WenKai TC", "KaiTi", "STKaiti", serif; }
+:root[data-paper="hanfu"] .stash-card.pinned::after { content: "顶"; position: absolute; right: 8px; top: 8px; width: 18px; height: 18px; display: grid; place-items: center;
+  font-size: 11px; line-height: 1; color: #fff; background: var(--accent); border-radius: 2px 1px 3px 1px; rotate: 6deg; }
+:root[data-paper="hanfu"] .stash-card.pinned .stash-pin-mark { display: none; }
+:root[data-paper="hanfu"] .stash-card.pinned .stash-grip { margin-right: 24px; }
+:root[data-paper="hanfu"] .stash-acts .btn, :root[data-paper="hanfu"] .stash-seg button, :root[data-paper="hanfu"] .stash-toggle, :root[data-paper="hanfu"] .stash-sel-btn,
+:root[data-paper="hanfu"] .stash-selbar .btn, :root[data-paper="hanfu"] .stash-tag-on { border-radius: 1px; letter-spacing: .1em; }
+:root[data-paper="hanfu"] .stash-acts .btn.primary { border-radius: 3px 1px 4px 2px; box-shadow: inset 0 0 0 2px color-mix(in srgb, #fff 25%, transparent); }
+:root[data-paper="hanfu"] .stash-seg button[aria-pressed="true"], :root[data-paper="hanfu"] .stash-toggle[aria-pressed="true"] { background: transparent; border-color: var(--line-strong);
+  box-shadow: inset 0 -2px 0 var(--accent); }
+:root[data-paper="hanfu"] .stash-filters { border-radius: 1px; outline: 1px solid var(--line-strong); outline-offset: -5px; padding: 14px 16px; }
+:root[data-paper="hanfu"] .stash-selbar { border-radius: 1px; border-top: 1px solid var(--accent); border-bottom: 1px solid var(--accent); }
+:root[data-paper="hanfu"] .stash-group-h::before { content: "存"; width: 16px; height: 16px; display: grid; place-items: center; font-size: 10px; line-height: 1; letter-spacing: 0;
+  color: #fff; background: var(--accent); border-radius: 2px 1px 3px 1px; }
+
+/* ---------- 哥特：切角的魔典残页，酒红虚线内框，菱形标记；按钮切角；从暗处浮出来，删掉时烧成黑 ---------- */
+:root[data-paper="gothic"] .stash-card { border-radius: 0; border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 10px, 100% calc(100% - 10px), calc(100% - 10px) 100%, 10px 100%, 0 calc(100% - 10px), 0 10px);
+  outline: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: -6px; padding: 12px 14px; }
+:root[data-paper="gothic"] .stash-card.pinned { background-image: radial-gradient(ellipse at 50% 0, color-mix(in srgb, var(--accent) 18%, transparent), transparent 60%); }
+:root[data-paper="gothic"] .stash-card .stash-title { letter-spacing: .08em; font-family: "Noto Serif SC", serif; }
+:root[data-paper="gothic"] .stash-acts .btn, :root[data-paper="gothic"] .stash-seg button, :root[data-paper="gothic"] .stash-toggle, :root[data-paper="gothic"] .stash-sel-btn,
+:root[data-paper="gothic"] .stash-selbar .btn, :root[data-paper="gothic"] .stash-tag-on, :root[data-paper="gothic"] .stash-feat {
+  border-radius: 0; clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px); }
+:root[data-paper="gothic"] .stash-acts .btn.primary:hover { filter: brightness(1.15); }
+:root[data-paper="gothic"] .stash-card.sel { box-shadow: none; outline: 2px solid var(--accent); }
+:root[data-paper="gothic"] .stash-filters { border-radius: 0; outline: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: -6px;
+  clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px); }
+:root[data-paper="gothic"] .stash-selbar { border-radius: 0; border: 1px dashed var(--accent); }
+:root[data-paper="gothic"] .stash-group-h { letter-spacing: .14em; }
+:root[data-paper="gothic"] .stash-group-h::before { width: 7px; height: 7px; margin: 0 2px; background: var(--accent); rotate: 45deg; box-shadow: 0 0 6px var(--accent); }
+
+/* ---------- 侦探：案卷文件夹，左上角一枚编号标签，证物虚线框，打字机字体；像归档一样从左边滑进来，删掉时收回档案柜 ---------- */
+:root[data-paper="detective"] .stash-card { counter-increment: stash-case; margin-top: 14px; border-radius: 0 6px 6px 6px; border: 1px dashed var(--line-strong);
+  background-image: linear-gradient(90deg, transparent 6px, color-mix(in srgb, #c8333f 30%, transparent) 6px 7px, transparent 7px); }
+:root[data-paper="detective"] .stash-card::before { content: "No." counter(stash-case, decimal-leading-zero); position: absolute; left: -1px; top: -15px; height: 15px; padding: 0 10px;
+  border: 1px dashed var(--line-strong); border-bottom: 0; border-radius: 5px 5px 0 0; background: var(--surface);
+  font: 600 10px/14px "Courier New", Courier, ui-monospace, monospace; letter-spacing: .14em; color: var(--muted); }
+:root[data-paper="detective"] .stash-card.pinned::before { color: #fff; background-color: #c8333f; border-color: #c8333f; }
+:root[data-paper="detective"] .stash-meta, :root[data-paper="detective"] .stash-n, :root[data-paper="detective"] .stash-seg-n, :root[data-paper="detective"] .stash-group-n {
+  font-family: "Courier New", Courier, ui-monospace, monospace; }
+:root[data-paper="detective"] .stash-acts .btn, :root[data-paper="detective"] .stash-seg button, :root[data-paper="detective"] .stash-toggle, :root[data-paper="detective"] .stash-sel-btn,
+:root[data-paper="detective"] .stash-selbar .btn, :root[data-paper="detective"] .stash-tag-on { border-radius: 1px; letter-spacing: .06em; }
+:root[data-paper="detective"] .stash-seg button[aria-pressed="true"], :root[data-paper="detective"] .stash-toggle[aria-pressed="true"] { border-style: double; border-width: 3px; padding: 0 8px; }
+:root[data-paper="detective"] .stash-filters { border-radius: 2px; border: 1px dashed var(--line-strong);
+  background-image: linear-gradient(90deg, transparent 8px, color-mix(in srgb, #c8333f 35%, transparent) 8px 9px, transparent 9px); padding-left: 20px; }
+:root[data-paper="detective"] .stash-selbar { border-radius: 1px; border: 1px dashed var(--accent); }
+:root[data-paper="detective"] .stash-group-h::before { content: "#"; font: 700 14px/1 "Courier New", Courier, monospace; color: var(--accent); }
+
+/* ---------- 冒险者：钉在委托板上的羊皮纸，木框粗边，顶上一颗图钉，标题前一个任务叹号；从上面掉下来弹一下，删掉时被揭走 ---------- */
+:root[data-paper="adventurer"] { --st-wood: #8a5a32; --st-parch: color-mix(in srgb, #e9d3a1 30%, var(--surface)); --st-quest: #e0a72e; }
+:root[data-paper="adventurer"][data-dark] { --st-wood: #b78452; --st-parch: color-mix(in srgb, #b78452 10%, var(--surface)); --st-quest: #f0c25a; }
+:root[data-paper="adventurer"] .stash-card { border-radius: 6px; border: 2px solid var(--st-wood); background-color: var(--st-parch); margin-top: 6px;
+  box-shadow: 3px 3px 0 color-mix(in srgb, var(--st-wood) 30%, transparent); }
+:root[data-paper="adventurer"] .stash-card::after { content: ""; position: absolute; left: 50%; top: -6px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%;
+  background: var(--accent); box-shadow: inset -2px -2px 0 rgba(0, 0, 0, .25), 0 1px 2px rgba(0, 0, 0, .3); }
+:root[data-paper="adventurer"] .stash-card.pinned::after { background: var(--st-quest); width: 14px; height: 14px; margin-left: -7px; top: -8px; }
+:root[data-paper="adventurer"] .stash-acts .btn, :root[data-paper="adventurer"] .stash-seg button, :root[data-paper="adventurer"] .stash-toggle, :root[data-paper="adventurer"] .stash-sel-btn,
+:root[data-paper="adventurer"] .stash-selbar .btn, :root[data-paper="adventurer"] .stash-tag-on { border-radius: 5px; }
+:root[data-paper="adventurer"] .stash-acts .btn.primary, :root[data-paper="adventurer"] .stash-seg button[aria-pressed="true"], :root[data-paper="adventurer"] .stash-toggle[aria-pressed="true"] {
+  border: 2px solid var(--st-wood); box-shadow: inset 0 2px 0 rgba(255, 255, 255, .25); }
+:root[data-paper="adventurer"] .stash-filters { border-radius: 6px; border: 2px solid var(--st-wood); background-color: var(--st-parch); }
+:root[data-paper="adventurer"] .stash-selbar { border-radius: 6px; border: 2px solid var(--st-wood); }
+:root[data-paper="adventurer"] .stash-group-h::before { content: "!"; width: 16px; height: 16px; display: grid; place-items: center; border-radius: 50%; background: var(--st-quest);
+  color: #3a2a18; font: 800 11px/1 var(--f-ui); letter-spacing: 0; box-shadow: 0 0 0 2px var(--st-wood); }
+:root[data-paper="adventurer"] body.has-scene .stash-card { background-color: color-mix(in srgb, var(--st-parch) calc(var(--a-card) + 10%), transparent); }
+
+/* ================= 动效：只在完整动效下播 ================= */
+/* 出场：新进来的卡片按顺序一张张出来 */
+[data-motion="full"] .stash-card.stash-in { animation-duration: .45s; animation-fill-mode: backwards; animation-delay: calc(var(--i, 0) * 45ms); }
+:root[data-paper="magical"][data-motion="full"] .stash-card.stash-in { animation-name: stash-in-magic; animation-timing-function: cubic-bezier(.2, 1.5, .4, 1); }
+@keyframes stash-in-magic { from { opacity: 0; transform: translateY(16px) scale(.7) rotate(-5deg); } 60% { opacity: 1; } }
+:root[data-paper="sailor"][data-motion="full"] .stash-card.stash-in { animation-name: stash-in-stick; animation-duration: .38s; animation-timing-function: cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes stash-in-stick { from { opacity: 0; transform: translateY(-16px) rotate(4deg) scale(1.06); } 70% { opacity: 1; } }
+:root[data-paper="hanfu"][data-motion="full"] .stash-card.stash-in { animation-name: stash-in-unroll; animation-duration: .6s; animation-timing-function: ease-out; }
+@keyframes stash-in-unroll { from { clip-path: inset(0 50% 0 50%); opacity: .3; } to { clip-path: inset(0 0 0 0); opacity: 1; } }
+:root[data-paper="gothic"][data-motion="full"] .stash-card.stash-in { animation-name: stash-in-dark; animation-duration: .7s; animation-timing-function: ease-out; }
+@keyframes stash-in-dark { from { opacity: 0; filter: brightness(0) blur(3px); transform: translateY(8px); } }
+:root[data-paper="detective"][data-motion="full"] .stash-card.stash-in { animation-name: stash-in-file; animation-duration: .42s; animation-timing-function: cubic-bezier(.2, 1.1, .4, 1); }
+@keyframes stash-in-file { from { opacity: 0; transform: translateX(-32px) rotate(-1.5deg); } }
+:root[data-paper="adventurer"][data-motion="full"] .stash-card.stash-in { animation-name: stash-in-drop; animation-duration: .55s; animation-timing-function: cubic-bezier(.3, 1.4, .5, 1); }
+@keyframes stash-in-drop { from { opacity: 0; transform: translateY(-38px); } 55% { opacity: 1; transform: translateY(5px); } 80% { transform: translateY(-2px); } }
+[data-motion="simple"] .stash-card.stash-in { animation: fade-in .2s ease backwards; }
+/* 总暂存盒的筛选卡片跟卡片用同一种出场 */
+:root[data-paper="magical"][data-motion="full"] .stash-filters { animation: stash-in-magic .45s cubic-bezier(.2, 1.5, .4, 1); }
+:root[data-paper="sailor"][data-motion="full"] .stash-filters { animation: stash-in-stick .38s cubic-bezier(.3, 1.6, .5, 1); }
+:root[data-paper="hanfu"][data-motion="full"] .stash-filters { animation: stash-in-unroll .6s ease-out; }
+:root[data-paper="gothic"][data-motion="full"] .stash-filters { animation: stash-in-dark .7s ease-out; }
+:root[data-paper="detective"][data-motion="full"] .stash-filters { animation: stash-in-file .42s cubic-bezier(.2, 1.1, .4, 1); }
+:root[data-paper="adventurer"][data-motion="full"] .stash-filters { animation: stash-in-drop .55s cubic-bezier(.3, 1.4, .5, 1); }
+[data-motion="simple"] .stash-filters { animation: fade-in .2s ease; }
+
+/* 采用：卡片亮一下，各套亮法不同 */
+:root[data-paper="magical"][data-motion="full"] .stash-card.used { animation: stash-used-magic .8s ease; }
+@keyframes stash-used-magic { 25% { transform: scale(1.03); box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 35%, transparent), 0 0 22px color-mix(in srgb, var(--accent) 45%, transparent); } }
+:root[data-paper="magical"][data-motion="full"] .stash-card.used::after { animation: stash-star-spin .8s ease; }
+@keyframes stash-star-spin { to { transform: rotate(180deg) scale(1.6); } }
+:root[data-paper="sailor"][data-motion="full"] .stash-card.used { animation: stash-used-sailor .5s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes stash-used-sailor { 30% { transform: translate(-2px, -2px); box-shadow: 5px 6px 0 var(--accent); } }
+:root[data-paper="hanfu"][data-motion="full"] .stash-card.used { animation: stash-used-ink 1s ease; }
+@keyframes stash-used-ink { 20% { background-color: color-mix(in srgb, var(--accent) 16%, var(--surface)); outline-color: var(--accent); } }
+:root[data-paper="gothic"][data-motion="full"] .stash-card.used { animation: stash-used-glow 1s ease; }
+@keyframes stash-used-glow { 30% { outline-color: var(--accent); outline-style: solid; background-color: color-mix(in srgb, var(--accent) 22%, var(--surface)); } }
+:root[data-paper="detective"][data-motion="full"] .stash-card.used { animation: stash-used-mark .9s ease; }
+@keyframes stash-used-mark { 0% { box-shadow: inset 0 0 0 0 color-mix(in srgb, #f7e58c 70%, transparent); } 40% { box-shadow: inset 600px 0 0 0 color-mix(in srgb, #f7e58c 40%, transparent); } }
+:root[data-paper="adventurer"][data-motion="full"] .stash-card.used { animation: stash-used-quest .6s cubic-bezier(.3, 1.5, .5, 1); }
+@keyframes stash-used-quest { 30% { transform: translateY(-5px); border-color: var(--st-quest); } }
+.stash-card.used .stash-use { background: var(--ok); border-color: var(--ok); color: #fff; }
+
+/* 退场：删掉时按风格离开（整条 animation 重写，盖掉出场的时长和缓动） */
+[data-motion="full"] .stash-card.stash-out { pointer-events: none; }
+:root[data-paper="magical"][data-motion="full"] .stash-card.stash-out { animation: stash-out-pocket .3s ease-in calc(var(--o, 0) * 30ms) forwards; }
+@keyframes stash-out-pocket { to { opacity: 0; transform: translateY(20px) scale(.25) rotate(14deg); } }
+:root[data-paper="sailor"][data-motion="full"] .stash-card.stash-out { animation: stash-out-peel .3s ease-in calc(var(--o, 0) * 30ms) forwards; }
+@keyframes stash-out-peel { 30% { transform: rotate(-2deg); } to { opacity: 0; transform: translate(46px, -12px) rotate(11deg); } }
+:root[data-paper="hanfu"][data-motion="full"] .stash-card.stash-out { animation: stash-out-roll .3s ease-in calc(var(--o, 0) * 30ms) forwards; }
+@keyframes stash-out-roll { to { clip-path: inset(0 50% 0 50%); opacity: .2; } }
+:root[data-paper="gothic"][data-motion="full"] .stash-card.stash-out { animation: stash-out-burn .3s ease-in calc(var(--o, 0) * 30ms) forwards; }
+@keyframes stash-out-burn { 40% { filter: brightness(1.4) sepia(.6) hue-rotate(-30deg); } to { opacity: 0; filter: brightness(0) blur(4px); transform: scale(.95); } }
+:root[data-paper="detective"][data-motion="full"] .stash-card.stash-out { animation: stash-out-file .3s ease-in calc(var(--o, 0) * 30ms) forwards; }
+@keyframes stash-out-file { to { opacity: 0; transform: translateX(-46px); } }
+:root[data-paper="adventurer"][data-motion="full"] .stash-card.stash-out { animation: stash-out-tear .3s ease-in calc(var(--o, 0) * 30ms) forwards; }
+@keyframes stash-out-tear { 30% { transform: translateY(4px) rotate(2deg); } to { opacity: 0; transform: translateY(-42px) rotate(-6deg); } }
+
+/* 悬停：各有各的小动作（写字时不打扰：只在指针移上去时动一点） */
+[data-motion="full"] .stash-card { transition: transform .18s ease, box-shadow .2s ease, filter .2s ease; }
+:root[data-paper="magical"][data-motion="full"] .stash-card:hover { transform: translateY(-2px); }
+:root[data-paper="magical"][data-motion="full"] .stash-card:hover::after { animation: stash-twinkle 1.2s ease-in-out infinite; }
+@keyframes stash-twinkle { 50% { transform: scale(1.35) rotate(45deg); opacity: 1; } }
+:root[data-paper="sailor"][data-motion="full"] .stash-card:hover { transform: rotate(-.5deg); box-shadow: 4px 5px 0 color-mix(in srgb, var(--ink) 18%, transparent); }
+:root[data-paper="hanfu"][data-motion="full"] .stash-card:hover { outline-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+:root[data-paper="gothic"][data-motion="full"] .stash-card:hover { outline-color: var(--accent);
+  background-image: radial-gradient(ellipse at 50% 100%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 70%); }
+:root[data-paper="detective"][data-motion="full"] .stash-card:hover { transform: translateX(3px); }
+:root[data-paper="adventurer"][data-motion="full"] .stash-card:hover { transform: translateY(-2px) rotate(.4deg); }
+:root[data-paper="adventurer"][data-motion="full"] .stash-card:hover::after { animation: stash-pin-wobble .5s ease; }
+@keyframes stash-pin-wobble { 40% { transform: translateY(-3px); } 70% { transform: translateY(1px); } }
+
+/* 置顶标记弹一下 */
+[data-motion="full"] .stash-pin-mark { display: inline-block; animation: stash-pin-pop .4s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes stash-pin-pop { from { transform: scale(.4); opacity: 0; } }
+
+/* ================= 手机 ================= */
+@media (max-width: 640px) {
+  /* 抽屉：上半屏正文，下半屏抽屉，可以直接拖进去 */
+  .ws.wide-right.has-stash .ws-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 62%); grid-template-areas: "center" "right"; }
+  .ws.wide-right.has-stash .side-left { display: none; }
+  .ws.wide-right.has-stash .side-right { display: flex; border-left: 0; border-top: 1px solid var(--line); min-height: 0; }
+  body.stash-open .demon { display: none; }
+  .stash-main { padding: 12px 16px 200px; }
+  .stash-filters { padding: 10px 12px; }
+  :root[data-paper="hanfu"] .stash-filters { padding: 12px 14px; }
+  :root[data-paper="detective"] .stash-filters { padding-left: 18px; }
+  .stash-cond-2 { grid-template-columns: minmax(0, 1fr); }
+  .stash-seg button { max-width: 160px; }
+}
