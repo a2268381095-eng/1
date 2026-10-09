@@ -249,6 +249,7 @@ function kvToggle(text, key) {
   cb.addEventListener("change", async () => {
     await db.setKV(key, cb.checked);
     bus.emit("rewrite:prefs", {});
+    bus.emit("kv:changed", { key });
     toast(text + (cb.checked ? "：开" : "：关"));
   });
   return h("label.check.st-check", {}, cb, h("span", {}, text));
@@ -572,6 +573,8 @@ function renderDemon(body) {
       toggle("鼠标停在功能上时讲一句", () => s().demonGuide !== "off", (v) => change({ demonGuide: v ? "on" : "off" }, v ? "小恶魔会讲解功能" : "小恶魔不再讲解功能"), "demonGuide")),
     row("选中文字时", "在正文里选中一段，旁边浮出 AI 工具栏，列出你的提示词。关掉以后用 Ctrl+Shift+A 手动叫出来。AI 改过的段落可以留一层淡色底，方便回看。",
       kvToggle("选中文字时自动弹出 AI 工具栏", "rewrite:auto"), kvToggle("AI 改过的段落留淡色标记", "rewrite:marks")),
+    row("正文标色", "设定库里的人名、地名、物品、节日在正文里按分类的颜色标出来，点一下能看、能改。疑似新名字用虚线标出，点一下收进设定库。",
+      kvToggle("正文里标出设定库的名字", "names:marks"), kvToggle("疑似新名字用虚线标出", "names:cands")),
     row("停笔多久算久", "停笔这么久，她会打瞌睡，等你回来。",
       numberBox("停笔多久算久", () => s().idleMinutes, (v) => change({ idleMinutes: v }, "改停笔时间", { merge: true }), { min: 1, max: 120 }, "分钟")),
     row("功能说明", "第一次用某个功能时她会说一句说明，看过就不再说。点这里让说明重新出现。",

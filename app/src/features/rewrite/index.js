@@ -93,11 +93,14 @@ async function showBar({ manual = false } = {}) {
     main.append(btn(".rw-chip.rw-temp", "临时写一个", "这次临时写几句话给 AI", () => run(sel, null, true)));
   }
   const stashB = btn(".rw-ico.rw-bar-stash", label("暂存盒"), "这一章选中调用的结果", () => { hideBar(); openStash(sel); });
+  // 选中的像个名字（一行之内、不长、没有标点）：多一个「收入设定库」
+  const shortName = commands.get("names.archive") && sel.input.trim().length >= 2 && sel.input.trim().length <= 12 && !/[\n，。！？：；、“”「」]/.test(sel.input.trim());
+  const loreB = shortName ? btn(".rw-ico.rw-bar-lore", "收入设定库", "把「" + sel.input.trim() + "」建成设定卡", () => { hideBar(); commands.run("names.archive", { text: sel.input }); }) : null;
   const moreB = h("button.icon-btn.rw-ico.rw-bar-opts", { type: "button", title: "更多设置", "aria-label": "更多设置", "aria-haspopup": "menu" }, icon("more"));
   moreB.addEventListener("click", () => openMenu(optionItems(), moreB));
   const x = h("button.icon-btn.rw-ico.rw-bar-x", { type: "button", title: "收起（Esc）", "aria-label": "收起" }, icon("close"));
   x.addEventListener("click", () => hideBar());
-  el.append(h("span.rw-bar-mark", { "aria-hidden": "true" }), main, h("span.rw-bar-sep"), stashB, moreB, x, menu);
+  el.append(h("span.rw-bar-mark", { "aria-hidden": "true" }), main, h("span.rw-bar-sep"), ...(loreB ? [loreB] : []), stashB, moreB, x, menu);
   // 点工具栏不抢走正文里的选区
   el.addEventListener("mousedown", (e) => { if (!e.target.closest("input, label")) e.preventDefault(); });
   el.addEventListener("keydown", (e) => {
@@ -160,6 +163,7 @@ function optionItems() {
     check("AI 改过的段落留淡色标记", prefs.marks, (on) => setMarks(on)),
     item("清除 AI 标记……", () => { hideBar(); clearMarks(); }),
     commands.get("samples.fromSelection") ? item("存为文风样本……", () => { hideBar(); commands.run("samples.fromSelection"); }) : null,
+    commands.get("names.archive") ? item("收入设定库……", () => { hideBar(); commands.run("names.archive"); }) : null,
     commands.get("prompts.manage") ? item("管理提示词……", () => { hideBar(); commands.run("prompts.manage", { feature: "rewrite" }); }) : null,
     h("p.rw-menu-note", {}, `手动弹出：${prettyKey(keyOf(commands.get("rewrite.open")) || "Mod-Shift-a")}`),
   ].filter(Boolean);
