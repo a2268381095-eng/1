@@ -12,6 +12,24 @@ import detective from "./paper-art/detective.js";
 import adventurer from "./paper-art/adventurer.js";
 
 const ART = { magical, sailor, hanfu, gothic, detective, adventurer };
+// 用户不要纸上的细丝（纤维）和网点（颗粒、星屑、斑点、点线），看着难受：这几层纹理不画，CSS 里那一层留空。
+// 纸的质感只靠干净的颜色、柔和的明暗和纸边的点缀。
+const QUIET = new Set(["magical:grain", "magical:dust", "magical:laceL", "magical:laceR", "sailor:grain", "sailor:erase", "hanfu:fiber", "hanfu:mottle",
+  "gothic:vellum", "gothic:fox", "gothic:edgeL", "gothic:edgeR", "gothic:edgeT", "gothic:edgeB",
+  "detective:fiber", "detective:rule", "adventurer:grain", "adventurer:blot", "adventurer:map", "adventurer:scorchL", "adventurer:scorchR"]);
+// 毛边是遮罩画的：换成实心的一块，纸边变成干净的直边
+const SOLID = new Set(["hanfu:edgeL", "hanfu:edgeR", "hanfu:edgeT", "hanfu:edgeB"]);
+function solidURL(w, hgt) {
+  const key = "solid:" + w + "x" + hgt;
+  if (cache.has(key)) return cache.get(key);
+  const c = document.createElement("canvas");
+  c.width = w; c.height = hgt;
+  const g = c.getContext("2d");
+  g.fillStyle = "#000"; g.fillRect(0, 0, w, hgt);
+  const url = c.toDataURL("image/png");
+  cache.set(key, url);
+  return url;
+}
 
 // ---------------- 纸上的像素装饰 ----------------
 const cache = new Map();
@@ -65,7 +83,8 @@ export function applyPaper(style) {
     if (!a || (!a.rows && !a.texture)) continue;
     const k = "--pa-" + name, s = a.scale || (a.texture ? 1 : 3);
     const [w, hgt] = a.texture ? a.size || [64, 64] : [Math.max(...a.rows.map((r) => r.length)), a.rows.length];
-    root.style.setProperty(k, `url(${a.texture ? textureURL(style + name, a, theme) : artURL(a, theme)})`);
+    const id = style + ":" + name;
+    root.style.setProperty(k, QUIET.has(id) ? "none" : `url(${SOLID.has(id) ? solidURL(w, hgt) : a.texture ? textureURL(style + name, a, theme) : artURL(a, theme)})`);
     root.style.setProperty(k + "-w", w * s + "px");
     root.style.setProperty(k + "-h", hgt * s + "px");
     shownKeys.push(k);

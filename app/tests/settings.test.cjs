@@ -215,7 +215,7 @@ async function flows(dist, fails) {
   await page.click('.modal-foot .btn:has-text("恢复默认")');
   await lastToast(page, '已恢复默认').waitFor();
   let s = await settings(page);
-  check(s.textFont === 'serif' && s.uiFont === 'system' && s.lineHeight === 1.9 && s.textWidth === 720, '外观全部回到默认', fails);
+  check(s.textFont === 'kai' && s.uiFont === 'system' && s.lineHeight === 1.9 && s.textWidth === 720, '外观全部回到默认', fails);
   await lastToast(page, '已恢复默认').locator('.toast-act').click();
   await until(page, async () => (await settings(page)).textFont === 'kai');
   s = await settings(page);
@@ -248,7 +248,7 @@ async function flows(dist, fails) {
     await page.click('.st-font-item .st-font-del');
     await lastToast(page, '已删除字体').waitFor();
     s = await settings(page);
-    check(!s.customFonts.length && s.textFont === 'serif' && !(await idb(page, 'get', 'kv', 'font:' + fontId)), '删除：列表、文件都去掉，正文换回默认字体', fails);
+    check(!s.customFonts.length && s.textFont === 'kai' && !(await idb(page, 'get', 'kv', 'font:' + fontId)), '删除：列表、文件都去掉，正文换回默认字体', fails);
     await lastToast(page, '已删除字体').locator('.toast-act').click();
     await until(page, async () => (await settings(page)).customFonts.length === 1);
     s = await settings(page);
@@ -272,7 +272,7 @@ async function flows(dist, fails) {
     check(await page.$eval('.st-font-item .st-use-text', (b) => b.disabled), '坏的字体不能选用', fails);
     await page.click('.st-font-item .st-font-del');
     await lastToast(page, '已删除字体').waitFor();
-    check(!(await settings(page)).customFonts.length && (await settings(page)).textFont === 'serif', '删掉坏的，正文换回默认字体', fails);
+    check(!(await settings(page)).customFonts.length && (await settings(page)).textFont === 'kai', '删掉坏的，正文换回默认字体', fails);
     await page.setInputFiles('[data-role="font-file"]', fontFile);
     await page.waitForSelector('.st-font-item:not(:has(.st-bad))');
   }

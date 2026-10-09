@@ -5,7 +5,7 @@ import { bus } from "./bus.js";
 export const DEFAULT_SETTINGS = {
   theme: "auto",              // 明暗：auto 跟随系统 / light / dark / time 随时间（晚 8 点到早 6 点深色）
   palette: "follow",          // 配色：follow 跟随小恶魔 / time 随时间 / season 随季节 / magical / sailor / hanfu / gothic / detective / adventurer
-  pixelBg: true,              // 空白处铺像素底纹
+  pixelBg: false,             // 空白处铺像素底纹（默认不铺：用户不要网点）
   sceneBg: true,              // 背景插画（每套风格一张外景、一张内景）
   sceneArt: "",               // 背景画法：orig 原图（默认）/ pixel 像素 / dot 像素网点；空着时看旧的 sceneDither
   sceneDither: false,         // 旧设置：背景插画用网点版
