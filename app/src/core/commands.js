@@ -64,7 +64,8 @@ export function keyOf(cmd) { return cmd.id in custom ? custom[cmd.id] || "" : cm
 window.addEventListener("keydown", (e) => {
   if (e.isComposing || e.keyCode === 229) return;
   const k = keyName(e);
-  for (const c of commands.available()) {
+  // 同一个键有几条命令时，后登记的先试：各功能自己的撤销（只在它的界面里生效）排在正文撤销前面
+  for (const c of commands.available().reverse()) {
     if (keyOf(c) && keyOf(c) === k) {
       e.preventDefault();
       c.run();
