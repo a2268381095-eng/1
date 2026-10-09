@@ -13,8 +13,19 @@ async function unit(fails) {
   const T = await load('logic.js');
   console.log('字体');
   const opts = T.fontOptions([{ id: 'uf1', name: '我的楷书' }]);
-  check(opts.length === 6 && opts[5].id === 'uf1' && opts[5].custom && opts[5].stack.startsWith('"uf1"'), '内置 5 种 + 上传的，上传的用 id 当字体名', fails);
-  check(opts.map((o) => o.id).slice(0, 5).join() === 'system,serif,sans,kai,kuaile', '内置字体 id 和 applyLook 一致', fails);
+  check(opts.length === 9 && opts[8].id === 'uf1' && opts[8].custom && opts[8].stack.startsWith('"uf1"'), '内置 8 种 + 上传的，上传的用 id 当字体名', fails);
+  check(opts.map((o) => o.id).slice(0, 8).join() === 'system,serif,sans,kai,yozai,xiaolai,xiaowei,kuaile', '内置字体 id（原来的 system/serif/sans/kai/kuaile 都还在）', fails);
+  const names = Object.fromEntries(T.FONT_CHOICES.map((o) => [o.id, o.name]));
+  check(names.kai === '霞鹜文楷' && names.yozai === '悠哉字体' && names.xiaolai === '小赖字体' && names.xiaowei === '站酷小薇', '新加霞鹜文楷、悠哉、小赖、站酷小薇（「kai」换成打包的霞鹜文楷）', fails);
+  const bundled = T.FONT_CHOICES.filter((o) => o.file);
+  const fontDir = path.join(__dirname, '../assets/fonts');
+  check(bundled.length === 4 && bundled.every((o) => o.stack.startsWith('"' + o.family + '"') && fs.existsSync(path.join(fontDir, o.file))),
+    '打包的四个字体：字体栈第一个就是它，woff2 在 assets/fonts/', fails);
+  check(bundled.every((o) => fs.existsSync(path.join(fontDir, o.file.replace(/\.woff2$/, '-OFL.txt')))), '每个字体旁边放着 OFL 许可证', fails);
+  const css = fs.readFileSync(path.join(__dirname, '../src/styles/fonts.css'), 'utf8');
+  check(bundled.every((o) => css.includes(`font-family: "${o.family}"; src: url("fonts/${o.file}") format("woff2")`)) && (css.match(/font-display: swap/g) || []).length === 4,
+    'fonts.css 给每个字体写了 @font-face（fonts/ 相对路径、font-display: swap）', fails);
+  check(T.fontStack('kai').startsWith('"LXGW WenKai"') && T.fontStack('system') === T.FONT_CHOICES[0].stack && T.fontStack('uf1').startsWith('"uf1", '), 'fontStack：内置的取字体栈，不认识的当作上传的字体名', fails);
   const fi = T.fontFileInfo('霞鹜_文楷.TTF');
   check(fi.ok && fi.ext === 'ttf' && fi.name === '霞鹜 文楷', '文件名：扩展名不分大小写，名字去掉扩展名', fails);
   check(T.fontFileInfo('a.woff2').ok && T.fontFileInfo('b.otf').ok && !T.fontFileInfo('c.txt').ok && !T.fontFileInfo('无扩展名').ok, '只认 ttf/otf/woff/woff2', fails);
@@ -111,6 +122,9 @@ const findFont = () => ['/usr/share/fonts/truetype/liberation/LiberationMono-Reg
 
 async function flows(dist, fails) {
   const { browser, page, errors } = await launch(dist);
+  // 打包的字体从哪里读的
+  const fontFiles = [];
+  page.on('response', (r) => { if (/\/fonts\/[^/]+\.woff2$/.test(r.url())) fontFiles.push({ url: r.url(), status: r.status() }); });
 
   console.log('打开设置');
   await pause(page, 1500);   // 等她说完开场白
@@ -131,7 +145,7 @@ async function flows(dist, fails) {
   await page.click('#st-look [aria-label="主题"] button[data-v="dark"]');
   await until(page, () => page.evaluate(() => document.documentElement.dataset.theme === 'dark'));
   const bgDark = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-  check(bgDark === 'rgb(21, 16, 23)', '换成深色：界面马上变深 ' + bgDark, fails);
+  check(bgDark === 'rgb(20, 20, 21)', '换成深色：界面马上变深 ' + bgDark, fails);
   check((await settings(page)).theme === 'dark', '马上存好', fails);
   check(await page.$eval('#st-look [aria-label="主题"] button[data-v="dark"]', (b) => b.getAttribute('aria-pressed') === 'true'), '按钮显示选中', fails);
   await page.click('.st .topbar [aria-label="撤销"]');
@@ -146,6 +160,36 @@ async function flows(dist, fails) {
   check((await settings(page)).theme === 'auto', 'Ctrl+Z 也能撤销', fails);
 
   console.log('字体、字号');
+  const want = { kai: ['霞鹜文楷', 'LXGW WenKai'], yozai: ['悠哉字体', 'Yozai'], xiaolai: ['小赖字体', 'Xiaolai SC'], xiaowei: ['站酷小薇', 'ZCOOL XiaoWei'] };
+  const firstFam = (f) => f.split(',')[0].replace(/"/g, '').trim();
+  const cards = await page.$$eval('#st-look [data-key="textFont"] .st-fcard', (bs) => bs.map((b) => ({ id: b.dataset.v, name: b.querySelector('.st-fcard-n').textContent,
+    sample: b.querySelector('.st-fcard-sample').textContent, fam: getComputedStyle(b.querySelector('.st-fcard-sample')).fontFamily })));
+  check(cards.length === 8 && cards.every((c) => c.sample === '林小满把药篓往肩上提了提。'), '正文字体是一排卡片，每张写同一句样句 ' + cards.length, fails);
+  check(Object.entries(want).every(([id, [name, fam]]) => cards.some((c) => c.id === id && c.name === name && firstFam(c.fam) === fam)),
+    '霞鹜文楷、悠哉、小赖、站酷小薇都有卡片：样句用它自己的字体，下面一行是名字', fails);
+  const pills = await page.$$eval('#st-look [data-key="uiFont"] .st-fpill', (bs) => bs.map((b) => ({ id: b.dataset.v, text: b.textContent, fam: getComputedStyle(b).fontFamily })));
+  check(pills.length === 8 && Object.entries(want).every(([id, [name, fam]]) => pills.some((p) => p.id === id && p.text === name && firstFam(p.fam) === fam)),
+    '界面字体是一排圆按钮，名字用它自己的字体写', fails);
+  const famStatus = () => page.evaluate((fams) => fams.map((fam) => [...document.fonts].filter((f) => f.family.replace(/"/g, '') === fam).map((f) => f.status).join()),
+    Object.values(want).map((w) => w[1]));
+  await until(page, async () => (await famStatus()).every((st) => st === 'loaded'), 10000);
+  check((await famStatus()).every((st) => st === 'loaded'), '设置页用到的四个打包字体都加载好了 ' + (await famStatus()).join('|'), fails);
+  const fontBase = 'file://' + path.resolve(dist) + '/fonts/';
+  check(['lxgw-wenkai', 'yozai', 'xiaolai-sc', 'zcool-xiaowei'].every((f) => fontFiles.some((r) => r.url === fontBase + f + '.woff2' && r.status === 200)),
+    '字体文件从 dist/fonts/ 读的，不联网 ' + fontFiles.map((r) => r.url.split('/').pop() + ' ' + r.status).join(','), fails);
+  check(await page.evaluate(() => document.fonts.check('18px "Yozai"', '林小满把药篓往肩上提了提。') && document.fonts.check('18px "Xiaolai SC"', '霞鹜文楷')), '样句里的字字体里都有', fails);
+  await page.click('#st-look [data-key="textFont"] .st-fcard[data-v="yozai"]');
+  await until(page, async () => (await settings(page)).textFont === 'yozai');
+  check(firstFam(await cssVar(page, '--f-text')) === 'Yozai' && firstFam(await page.$eval('.st-preview', (e) => getComputedStyle(e).fontFamily)) === 'Yozai', '点卡片：正文字体换成悠哉，预览跟着变', fails);
+  check(await page.$eval('#st-look [data-key="textFont"] .st-fcard[data-v="yozai"]', (b) => b.getAttribute('aria-pressed') === 'true')
+    && await page.$$eval('#st-look [data-key="textFont"] .st-fcard[aria-pressed="true"]', (bs) => bs.length === 1), '只有点的那张卡片是选中的', fails);
+  await page.click('#st-look [data-key="uiFont"] .st-fpill[data-v="xiaolai"]');
+  await until(page, async () => (await settings(page)).uiFont === 'xiaolai');
+  check(firstFam(await page.evaluate(() => getComputedStyle(document.body).fontFamily)) === 'Xiaolai SC' && firstFam(await page.$eval('.st-name', (e) => getComputedStyle(e).fontFamily)) === 'Xiaolai SC',
+    '点按钮：界面字体换成小赖，界面上的字跟着换', fails);
+  await page.click('.st .topbar [aria-label="撤销"]');
+  await until(page, async () => (await settings(page)).uiFont === 'system');
+  check((await settings(page)).uiFont === 'system' && (await settings(page)).textFont === 'yozai', '撤销一步：界面字体回去，正文字体还是悠哉', fails);
   await page.click('#st-look [data-key="textFont"] button[data-v="kai"]');
   await until(page, async () => (await cssVar(page, '--f-text')).includes('WenKai'));
   check((await cssVar(page, '--f-text')).includes('WenKai'), '正文字体换成楷体', fails);
@@ -193,7 +237,10 @@ async function flows(dist, fails) {
     check(s.customFonts.length === 1 && s.customFonts[0].name === path.basename(fontFile).replace(/\.ttf$/, '').replace(/_/g, ' '), '记下字体名字', fails);
     check(rec && rec.value.data > 10000 && rec.value.size === fs.statSync(fontFile).size, '文件存进 kv font:<id>', fails);
     check(await page.evaluate((id) => [...document.fonts].some((f) => f.family.replace(/"/g, '') === id && f.status === 'loaded'), fontId), '用 FontFace 加载好了', fails);
-    check(await page.$$eval('#st-look [data-key="textFont"] button', (bs) => bs.length) === 6, '字体选项里多了一个', fails);
+    check(await page.$$eval('#st-look [data-key="textFont"] .st-fcard', (bs) => bs.length) === 9 && await page.$$eval('#st-look [data-key="uiFont"] .st-fpill', (bs) => bs.length) === 9,
+      '正文、界面字体里都多了一个', fails);
+    check(await page.$eval(`#st-look [data-key="textFont"] .st-fcard[data-v="${fontId}"]`, (b) => b.querySelector('.st-ftag').textContent === '上传'
+      && getComputedStyle(b.querySelector('.st-fcard-sample')).fontFamily.includes(b.dataset.v)), '上传的字体也有样句卡片，标着「上传」', fails);
     await lastToast(page, '已添加字体').waitFor();
     await page.click('.st-font-item .st-use-text');
     await until(page, async () => (await settings(page)).textFont === fontId);
@@ -396,10 +443,16 @@ async function flows(dist, fails) {
   await until(page, async () => (await idb(page, 'get', 'books', bookId)).demonStyle === 'hanfu');
   book = await idb(page, 'get', 'books', bookId);
   check(book.autoIndent === false && book.paraGap === 1 && book.dailyGoal === 5000 && book.demonStyle === 'hanfu', '自动空两格、段间空行、每日目标、小恶魔风格都存进这本书', fails);
+  await page.click('#st-look [data-key="textFont"] .st-fcard[data-v="xiaowei"]');
+  await until(page, async () => (await settings(page)).textFont === 'xiaowei');
   check(await page.$eval('#st-book .st-style[data-v="auto"] .st-style-sub', (e) => e.textContent.startsWith('现在会穿')), '「按作品类型」说明现在会穿哪套', fails);
   await page.click('.st .topbar [aria-label="返回"]');
   await page.waitForSelector('.cm-content');
   check((await hash(page)).startsWith('#/book/' + bookId), '返回写作界面', fails);
+  const edFont = await page.$eval('.cm-content', (e) => getComputedStyle(e).fontFamily);
+  check(edFont.split(',')[0].replace(/"/g, '') === 'ZCOOL XiaoWei', '正文字体换成站酷小薇：编辑器跟着换 ' + edFont, fails);
+  await until(page, () => page.evaluate(() => [...document.fonts].some((f) => f.family.replace(/"/g, '') === 'ZCOOL XiaoWei' && f.status === 'loaded')));
+  check(await page.evaluate(() => document.fonts.check('20px "ZCOOL XiaoWei"', '第一段')), '编辑器里的字用打包的站酷小薇显示', fails);
   const list = await chapterList(page);
   check(list[0].startsWith('第1章'), '章节列表用「第1章」' + list[0], fails);
   check((await page.textContent('.statusbar')).includes('5,000'), '状态栏用新的字数目标', fails);
@@ -465,14 +518,20 @@ async function flows(dist, fails) {
   await page.emulateMedia({ colorScheme: 'dark' });
   await pause(page, 200);
   const dark = await page.evaluate(() => {
-    const lum = (c) => { const m = c.match(/\d+(\.\d+)?/g).map(Number); return (0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]) / 255; };
+    // rgb(…) 是 0–255；color-mix 算出来的是 color(srgb 0–1 …)
+    const lum = (c) => { const m = c.match(/\d*\.?\d+/g).map(Number); return (0.2126 * m[0] + 0.7152 * m[1] + 0.0722 * m[2]) / (c.startsWith('color(') ? 1 : 255); };
     const g = getComputedStyle(document.querySelector('.st-group'));
     const n = getComputedStyle(document.querySelector('.st-name'));
     const b = getComputedStyle(document.querySelector('.st-seg button'));
     const st = getComputedStyle(document.querySelector('.st-style'));
-    return { bg: lum(g.backgroundColor), ink: lum(n.color), btn: lum(b.backgroundColor), btnInk: lum(b.color), card: lum(st.backgroundColor) };
+    const fc = getComputedStyle(document.querySelector('.st-fcard'));
+    const fs = getComputedStyle(document.querySelector('.st-fcard-sample'));
+    const fp = getComputedStyle(document.querySelector('.st-fpill[aria-pressed="true"]'));
+    return { bg: lum(g.backgroundColor), ink: lum(n.color), btn: lum(b.backgroundColor), btnInk: lum(b.color), card: lum(st.backgroundColor),
+      fcard: lum(fc.backgroundColor), fink: lum(fs.color), fpill: lum(fp.backgroundColor), fpillInk: lum(fp.color) };
   });
   check(dark.bg < 0.2 && dark.btn < 0.2 && dark.card < 0.2 && dark.ink > 0.7 && dark.btnInk > 0.5, '深色模式：底色深、字浅 ' + JSON.stringify(dark), fails);
+  check(dark.fcard < 0.2 && dark.fpill < 0.25 && dark.fink > 0.7 && dark.fpillInk > 0.5, '深色模式：字体卡片、按钮也是深底浅字', fails);
 
   check(errors.length === 0, '没有报错 ' + errors.join(' | '), fails);
   await browser.close();

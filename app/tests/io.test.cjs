@@ -592,7 +592,7 @@ async function flows(dist, fails) {
   let sz = await over();
   check(sz.doc <= 390 && sz.left >= 0 && sz.right <= 390 && sz.bw <= sz.bcw, '390px：导入预览不横向溢出 ' + JSON.stringify(sz), fails);
   const bg = await mp.$eval('.io-list', (e) => getComputedStyle(e).backgroundColor);
-  check(bg === 'rgb(27, 21, 29)', '深色模式：列表用深色纸色 ' + bg, fails);
+  check(bg === 'rgb(27, 27, 29)', '深色模式：列表用深色纸色 ' + bg, fails);
   if (shot) await mp.screenshot({ path: path.join(shot, 'io-preview-mobile-dark.png') });
   await mp.click('.modal-foot .btn.primary');
   await mp.waitForSelector('.cm-content');

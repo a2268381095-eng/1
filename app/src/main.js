@@ -17,6 +17,7 @@ import { resolvePalette, resolveDark, lookButton } from "./core/look.js";
 import { registerShelf } from "./features/shelf/shelf.js";
 import { registerWorkspace } from "./features/editor/workspace.js";
 import { registerFeatures } from "./features/index.js";
+import { fontStack } from "./features/settings/logic.js";
 
 /** 主题、字体这些跟着设置走的东西 */
 export function applyLook() {
@@ -58,16 +59,8 @@ export function applyLook() {
   root.style.setProperty("--a-bar", pct(84 - 0.45 * v));
   root.style.setProperty("--a-card", pct(92 - 0.3 * v));
   root.style.setProperty("--halo", pct(50 + 0.4 * v));
-  const fonts = {
-    system: '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif',
-    serif: '"Noto Serif SC", "Songti SC", "SimSun", serif',
-    sans: '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif',
-    kai: '"LXGW WenKai TC", "KaiTi", "STKaiti", serif',
-    kuaile: '"ZCOOL KuaiLe", "Noto Sans SC", sans-serif',
-  };
-  const pick = (id) => fonts[id] || `"${id}", ${fonts.serif}`;
-  root.style.setProperty("--f-ui", s.uiFont === "system" ? fonts.system : pick(s.uiFont));
-  root.style.setProperty("--f-text", pick(s.textFont));
+  root.style.setProperty("--f-ui", fontStack(s.uiFont));
+  root.style.setProperty("--f-text", fontStack(s.textFont));
   root.style.setProperty("--text-size", s.textSize + "px");
   root.style.setProperty("--text-lh", String(s.lineHeight));
   root.style.setProperty("--text-width", s.textWidth + "px");

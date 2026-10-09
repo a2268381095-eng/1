@@ -11,13 +11,13 @@
 
 /* ---------- 水手服 · 教室：笔记本横格、贴纸按钮、水手领双线 ---------- */
 :root[data-palette="sailor"] { --radius: 4px; --f-head: "ZCOOL KuaiLe", var(--f-ui); }
-:root[data-palette="sailor"] .topbar { border-bottom: 3px double color-mix(in srgb, var(--ink) 55%, transparent); }
+:root[data-palette="sailor"] .topbar { border-bottom: 3px double color-mix(in srgb, var(--ink) 30%, transparent); }
 :root[data-palette="sailor"] .side-left, :root[data-palette="sailor"] .side-right {
   background-image: repeating-linear-gradient(transparent 0 27px, color-mix(in srgb, #5b7fd6 14%, transparent) 27px 28px); }
-:root[data-palette="sailor"] .btn.primary { box-shadow: 2px 2px 0 var(--ink); border-radius: 3px; }
-:root[data-palette="sailor"] .btn.primary:active { box-shadow: 0 0 0 var(--ink); transform: translate(2px, 2px); }
+:root[data-palette="sailor"] .btn.primary { box-shadow: 2px 3px 0 color-mix(in srgb, var(--ink) 40%, transparent); border-radius: 8px; }
+:root[data-palette="sailor"] .btn.primary:active { box-shadow: 0 0 0 transparent; transform: translate(2px, 3px); }
 :root[data-palette="sailor"] .book-card { border-radius: 4px; border-left: 4px solid var(--accent); }
-:root[data-palette="sailor"] .modal { border-radius: 4px; border-top: 4px solid var(--ink); }
+:root[data-palette="sailor"] .modal { border-radius: 10px; border-top: 4px solid color-mix(in srgb, var(--ink) 60%, transparent); }
 
 /* ---------- 古风 · 宣纸墨色：方角、双线内框、朱砂印章按钮、楷体标题 ---------- */
 :root[data-palette="hanfu"] { --radius: 2px; --f-head: "LXGW WenKai TC", "KaiTi", "STKaiti", serif; }
@@ -66,23 +66,23 @@
 /* ---------- 小恶魔的对话框：跟她穿的风格走 ---------- */
 /* 水手服：作业纸，带横线 */
 .demon[data-style="sailor"] .demon-bubble { border-radius: 3px; border-color: #1f2a3d; background-color: #fdfdfb; color: #1f2a3d;
-  background-image: repeating-linear-gradient(transparent 0 20px, rgba(91, 127, 214, .22) 20px 21px); box-shadow: 3px 3px 0 #c8333f; }
+  background-image: repeating-linear-gradient(transparent 0 20px, rgba(91, 127, 214, .22) 20px 21px); box-shadow: 3px 3px 0 #e06f7e; }
 .demon[data-style="sailor"] .demon-bubble::after { background: #fdfdfb; border-color: #1f2a3d; }
 /* 古风：卷轴双线框，角上一枚朱砂印 */
 .demon[data-style="hanfu"] .demon-bubble { border-radius: 2px; border: 1px solid #2b2622; outline: 1px solid #2b2622; outline-offset: 2px; background: #fbf8f1; color: #2b2622;
   box-shadow: none; font-family: "LXGW WenKai TC", "KaiTi", serif; padding-right: 22px; }
 .demon[data-style="hanfu"] .demon-bubble::before { content: "墨"; position: absolute; right: 4px; bottom: 4px; width: 14px; height: 14px; display: grid; place-items: center;
-  font-size: 10px; line-height: 1; color: #fff; background: #b8432f; border-radius: 2px; }
+  font-size: 10px; line-height: 1; color: #fff; background: #cf6b53; border-radius: 2px; }
 .demon[data-style="hanfu"] .demon-bubble::after { background: #fbf8f1; border-color: #2b2622; border-width: 1px; }
 /* 哥特：深色切角框，酒红虚线 */
-.demon[data-style="gothic"] .demon-bubble { border-radius: 0; background: #19121b; color: #eadfee; border: 2px solid #8e2a4f; box-shadow: 0 0 12px rgba(224, 87, 127, .35);
-  outline: 1px dashed rgba(224, 87, 127, .5); outline-offset: -5px; }
-.demon[data-style="gothic"] .demon-bubble::after { background: #19121b; border-color: #8e2a4f; }
+.demon[data-style="gothic"] .demon-bubble { border-radius: 0; background: #19121b; color: #eadfee; border: 2px solid #a8679a; box-shadow: 0 0 12px rgba(229, 151, 182, .35);
+  outline: 1px dashed rgba(229, 151, 182, .5); outline-offset: -5px; }
+.demon[data-style="gothic"] .demon-bubble::after { background: #19121b; border-color: #a8679a; }
 /* 侦探：便签纸，红图钉 */
 .demon[data-style="detective"] .demon-bubble { border-radius: 1px; background: #fdf5d8; color: #2e2620; border: 1px solid #c9b78a; box-shadow: 2px 3px 0 rgba(0, 0, 0, .12);
   transform-origin: top center; rotate: -1.2deg; }
 .demon[data-style="detective"] .demon-bubble::before { content: ""; position: absolute; left: 50%; top: -5px; width: 9px; height: 9px; margin-left: -4px; border-radius: 50%;
-  background: #c8333f; box-shadow: inset -2px -2px 0 rgba(0, 0, 0, .25); }
+  background: #e06f7e; box-shadow: inset -2px -2px 0 rgba(0, 0, 0, .25); }
 .demon[data-style="detective"] .demon-bubble::after { background: #fdf5d8; border-color: #c9b78a; border-width: 1px; }
 /* 冒险者：羊皮纸，木色粗边 */
 .demon[data-style="adventurer"] .demon-bubble { border-radius: 6px; background: #f3e6c4; color: #3a2a18; border: 2px solid #8a5a32; box-shadow: 3px 3px 0 rgba(138, 90, 50, .35); }
@@ -90,10 +90,10 @@
 
 /* 字数牌子也跟着风格换边框 */
 .demon[data-style="hanfu"] .demon-badge { border-radius: 1px; border-width: 1px; outline: 1px solid var(--bubble-line); outline-offset: 1px; }
-.demon[data-style="gothic"] .demon-badge { border-radius: 0; background: #19121b; color: #eadfee; border-color: #8e2a4f; }
+.demon[data-style="gothic"] .demon-badge { border-radius: 0; background: #19121b; color: #eadfee; border-color: #a8679a; }
 .demon[data-style="detective"] .demon-badge { background: #fdf5d8; color: #2e2620; border-color: #c9b78a; font-family: "Courier New", monospace; }
 .demon[data-style="adventurer"] .demon-badge { background: #f3e6c4; color: #3a2a18; border-color: #8a5a32; border-radius: 5px; }
-.demon[data-style="sailor"] .demon-badge { box-shadow: 2px 2px 0 #c8333f; }
+.demon[data-style="sailor"] .demon-badge { box-shadow: 2px 2px 0 #e06f7e; }
 
 /* ---------- 正文区底部的像素风景（静）：跟配色走，铺在纸面最下面，不挡字 ---------- */
 body.pixel-bg .center::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 144px; pointer-events: none; z-index: 0;
@@ -108,7 +108,7 @@ body.pixel-bg .center > * { position: relative; z-index: 1; }
   background-size: 100% calc(var(--text-size) * var(--text-lh)); background-position: 0 28px; background-repeat: repeat-y; background-origin: border-box; }
 /* 侦探：打字稿纸，左边一道红色页边线 */
 :root[data-palette="detective"] .ed-host .cm-content {
-  background-image: linear-gradient(90deg, transparent 14px, color-mix(in srgb, #c8333f 40%, transparent) 14px 15px, transparent 15px); }
+  background-image: linear-gradient(90deg, transparent 14px, color-mix(in srgb, #e06f7e 40%, transparent) 14px 15px, transparent 15px); }
 /* 古风：纸面上下各一道淡淡的界栏 */
 :root[data-palette="hanfu"] .ed-host .cm-content { border-top: 1px solid color-mix(in srgb, var(--accent) 22%, transparent); margin-top: 12px; }
 /* 哥特：四角压暗 */
@@ -117,14 +117,14 @@ body.pixel-bg .center > * { position: relative; z-index: 1; }
 :root[data-palette="adventurer"] .center { background-image: radial-gradient(ellipse at center, transparent 60%, color-mix(in srgb, #b78452 14%, transparent) 100%); }
 
 /* ---------- 选中文字、光标的颜色：每套不一样 ---------- */
-:root[data-dark] { --sel: #5a2a44; --caret: #ec82b1; }
-:root[data-palette="sailor"] { --sel: #c9d8f5; --caret: #c8333f; }
+:root[data-dark] { --sel: #45404a; --caret: var(--accent); }
+:root[data-palette="sailor"] { --sel: #c9d8f5; --caret: #e06f7e; }
 :root[data-palette="sailor"][data-dark] { --sel: #24406e; --caret: #ff7a85; }
 :root[data-palette="hanfu"] { --sel: #d3e6d6; --caret: #2b2622; }
 :root[data-palette="hanfu"][data-dark] { --sel: #2d4a3a; --caret: #e8836c; }
-:root[data-palette="gothic"] { --sel: #e7c5d4; --caret: #8e2a4f; }
+:root[data-palette="gothic"] { --sel: #e7c5d4; --caret: #a8679a; }
 :root[data-palette="gothic"][data-dark] { --sel: #6a1f3d; --sel-ink: #fff2f6; --caret: #ff6f98; }
-:root[data-palette="detective"] { --sel: #f7e58c; --caret: #2f6b5a; }
+:root[data-palette="detective"] { --sel: #f7e58c; --caret: #33887e; }
 :root[data-palette="detective"][data-dark] { --sel: #5c5220; --caret: #6fc2a6; }
 :root[data-palette="adventurer"] { --sel: #f0dc9a; --caret: #8a5a32; }
 :root[data-palette="adventurer"][data-dark] { --sel: #5a4a1e; --caret: #e3876f; }

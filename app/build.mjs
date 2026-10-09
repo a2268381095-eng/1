@@ -1,5 +1,5 @@
 // 打包：把 src/ 里的代码和样式塞进一个 dist/index.html，双击就能在浏览器里打开用；
-// 小恶魔的像素动画放在 dist/sprites/ 里。
+// 小恶魔的像素动画放在 dist/sprites/ 里，背景插画在 dist/bg/，打包的字体在 dist/fonts/。
 //
 //   npm run build
 import * as esbuild from "esbuild";
@@ -83,6 +83,24 @@ function buildScenes() {
   return n;
 }
 
+// 打包的字体：assets/fonts/ 里的 woff2 和许可证拷到 dist/fonts/（@font-face 在 src/styles/fonts.css）。
+// 文件大，没变过就不重拷。返回字体个数。
+function copyFonts() {
+  const src = path.join(ROOT, "assets", "fonts");
+  const out = path.join(DIST, "fonts");
+  fs.mkdirSync(out, { recursive: true });
+  let n = 0;
+  if (!fs.existsSync(src)) return n;
+  for (const f of fs.readdirSync(src).sort()) {
+    if (!/\.(woff2|txt)$/.test(f)) continue;
+    const from = path.join(src, f), to = path.join(out, f);
+    const a = fs.statSync(from), b = fs.existsSync(to) ? fs.statSync(to) : null;
+    if (!b || b.size !== a.size || b.mtimeMs < a.mtimeMs) fs.copyFileSync(from, to);
+    if (f.endsWith(".woff2")) n++;
+  }
+  return n;
+}
+
 function collectCss(dir) {
   const files = [];
   const walk = (d) => {
@@ -102,6 +120,7 @@ async function build() {
   fs.mkdirSync(DIST, { recursive: true });
   const n = buildSprites();
   const nb = buildScenes();
+  const nf = copyFonts();
   const js = await esbuild.build({
     entryPoints: [path.join(SRC, "main.js")],
     bundle: true,
@@ -118,7 +137,7 @@ async function build() {
   const html = tpl.replace("/*__CSS__*/", () => css).replace("/*__JS__*/", () => code);
   fs.writeFileSync(path.join(DIST, "index.html"), html);
   const kb = (s) => Math.round(Buffer.byteLength(s) / 1024);
-  console.log(`${path.relative(process.cwd(), path.join(DIST, "index.html"))}  js ${kb(code)}KB  css ${kb(css)}KB  sprites ${n} 套  背景 ${nb} 张`);
+  console.log(`${path.relative(process.cwd(), path.join(DIST, "index.html"))}  js ${kb(code)}KB  css ${kb(css)}KB  sprites ${n} 套  背景 ${nb} 张  字体 ${nf} 个`);
 }
 
 build().catch((e) => { console.error(e); process.exit(1); });

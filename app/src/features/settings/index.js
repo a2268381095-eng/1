@@ -273,13 +273,29 @@ function numberBox(name, get, set, { min, max, step = 1 }, unit) {
 }
 
 // ---------------- 外观 ----------------
-function fontPicker(name, key) {
-  const box = h("div.st-seg.st-fonts", { role: "group", "aria-label": name, "data-key": key });
+const FONT_SAMPLE = "林小满把药篓往肩上提了提。";
+
+/**
+ * 选字体。kind "cards"：每张卡片用这个字体写一句样句，下面一行小字是字体名（正文字体）；
+ * kind "pills"：一排圆按钮，字体名用它自己的字体写（界面字体）。上传的字体排在后面。
+ * 卡片、按钮的样子跟着风格走（settings.css 里 :root[data-paper=…]）。
+ */
+function fontPicker(name, key, kind) {
+  const cards = kind === "cards";
+  const box = h(cards ? "div.st-fcards" : "div.st-fpills", { role: "group", "aria-label": name, "data-key": key });
   let sig = null, btns = [];
   const build = (opts) => {
     box.textContent = "";
-    btns = opts.map((o) => {
-      const b = h("button", { type: "button", "data-v": o.id, style: { fontFamily: o.stack } }, o.name);
+    btns = opts.map((o, i) => {
+      const bad = o.custom && broken.has(o.id);
+      const tag = o.custom ? h("span.st-ftag", {}, bad ? "没加载出来" : "上传") : null;
+      const b = cards
+        ? h("button.st-fcard", { type: "button", "data-v": o.id, title: o.name, "aria-label": o.name },
+          h("span.st-fcard-sample", { style: { fontFamily: o.stack }, "aria-hidden": "true" }, FONT_SAMPLE),
+          h("span.st-fcard-name", {}, h("span.st-fcard-n", {}, o.name), tag))
+        : h("button.st-fpill", { type: "button", "data-v": o.id, title: o.name, style: { fontFamily: o.stack } }, o.name, tag);
+      if (bad) b.classList.add("bad");
+      b.style.setProperty("--i", String(i));
       b.addEventListener("click", () => {
         if (getSettings()[key] !== o.id) change({ [key]: o.id }, name + "改成" + o.name);
       });
@@ -289,7 +305,7 @@ function fontPicker(name, key) {
   };
   S.syncers.push(() => {
     const opts = fontOptions(getSettings().customFonts);
-    const now = opts.map((o) => o.id + ":" + o.name).join("|");
+    const now = opts.map((o) => o.id + ":" + o.name + (broken.has(o.id) ? "!" : "")).join("|");
     if (now !== sig) { sig = now; build(opts); }
     const v = getSettings()[key];
     btns.forEach(([id, b]) => b.setAttribute("aria-pressed", String(id === v)));
@@ -344,9 +360,9 @@ function renderLook(body) {
     row("点击特效", "点按钮、点空白处时冒出来的小特效。在正文里点击、打字不会冒。",
       seg("点击特效", [["style", "跟随小恶魔"], ["hearts", "像素爱心"], ["ripple", "魔法波纹"], ["ink", "墨点"], ["off", "关闭"]], () => s().clickFx,
         (v) => change({ clickFx: v }, "点击特效改成" + { style: "跟随小恶魔", hearts: "像素爱心", ripple: "魔法波纹", ink: "墨点", off: "关闭" }[v]))),
-    row("界面字体", "按钮、菜单、章节列表用的字体。", fontPicker("界面字体", "uiFont")),
-    row("正文字体", "写正文用的字体。下面一行是预览，字号、行高也按现在的设置。",
-      fontPicker("正文字体", "textFont"),
+    row("界面字体", "按钮、菜单、章节列表用的字体。每个按钮上的名字就是用那种字体写的。", fontPicker("界面字体", "uiFont", "pills")),
+    row("正文字体", "写正文用的字体。每张卡片用那种字体写一句；霞鹜文楷、悠哉、小赖、站酷小薇跟软件打包在一起，不联网也能用。最下面一行按现在的字号、行高预览。",
+      fontPicker("正文字体", "textFont", "cards"),
       h("p.st-preview", { "aria-label": "正文预览" }, "　　雨下到第三天。林栀没有抬头，把窗关小了一点。")),
     row("自己的字体", "上传 ttf、otf、woff、woff2 字体文件。文件存在这台电脑上，换电脑要重新上传。", fontBox()),
     row("正文字号", "正文文字的大小。", slider("正文字号", "textSize", { min: 14, max: 30, step: 1 }, (v) => v + " px", "改正文字号")),

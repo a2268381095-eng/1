@@ -7,8 +7,8 @@
   --dt-shade: rgba(70, 46, 20, .1); --dt-board: #c9a063; --dt-board-e: #8f6a3a; --dt-edge: rgba(120, 88, 50, .28); --dt-lip: rgba(255, 255, 255, .55);
   --dt-ink: #2e2620; --dt-red: #b3262e; }
 :root[data-paper="detective"][data-dark] {
-  --dt-tint: rgba(120, 90, 50, .1); --dt-age: rgba(0, 0, 0, .4); --dt-lamp: rgba(255, 200, 120, .09);
-  --dt-shade: rgba(0, 0, 0, .26); --dt-board: #4a3824; --dt-board-e: #241a10; --dt-edge: rgba(214, 186, 140, .14); --dt-lip: rgba(255, 230, 190, .06); }
+  --dt-tint: rgba(90, 86, 80, .08); --dt-age: rgba(0, 0, 0, .4); --dt-lamp: rgba(255, 200, 120, .09);
+  --dt-shade: rgba(0, 0, 0, .26); --dt-board: #3a3835; --dt-board-e: #232220; --dt-edge: rgba(214, 186, 140, .14); --dt-lip: rgba(255, 230, 190, .06); }
 
 /* 纸：上沿往下让出标签耳的高度，下沿留出档案夹的边 */
 :root[data-paper="detective"] body.has-scene .ws-body > .center::before {
@@ -40,7 +40,7 @@
 
 /* 打字机格线：只在正文底下，一行一道点线，跟着字一起走；左边那道红色页边线留着 */
 :root[data-paper="detective"] body.has-scene .ed-host .cm-content {
-  background-image: linear-gradient(90deg, transparent 14px, color-mix(in srgb, #c8333f 40%, transparent) 14px 15px, transparent 15px), var(--pa-rule);
+  background-image: linear-gradient(90deg, transparent 14px, color-mix(in srgb, #e06f7e 40%, transparent) 14px 15px, transparent 15px), var(--pa-rule);
   background-size: 100% 100%, 4px calc(var(--text-size) * var(--text-lh)); background-position: 0 0, 0 28px; background-repeat: no-repeat, repeat;
   background-origin: border-box; image-rendering: pixelated; }
 
@@ -120,7 +120,7 @@
 
 /* ---------- 字数牌子：案卷卡片，顶上按一枚红图钉；写满了右上角盖「结案」 ---------- */
 .demon[data-style="detective"] .demon-badge { border-radius: 1px; rotate: -1.2deg; padding-top: 6px;
-  background: linear-gradient(transparent 13px, color-mix(in srgb, #c8333f 30%, transparent) 13px 14px, transparent 14px), #fdf5d8;
+  background: linear-gradient(transparent 13px, color-mix(in srgb, #e06f7e 30%, transparent) 13px 14px, transparent 14px), #fdf5d8;
   box-shadow: 2px 3px 0 rgba(46, 38, 32, .2); }
 .demon[data-style="detective"] .demon-badge::before { content: ""; position: absolute; left: 50%; top: -5px; width: 8px; height: 8px; margin-left: -4px; border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, #ff9a9a 0 18%, #d0303a 22% 70%, #8e1a22 74%); box-shadow: 1px 2px 0 rgba(0, 0, 0, .25); }

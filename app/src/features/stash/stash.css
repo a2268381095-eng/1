@@ -140,7 +140,7 @@ body.has-scene .side-right .stash-q { background-color: color-mix(in srgb, var(-
 :root[data-paper="sailor"] .stash-card::after { content: ""; position: absolute; left: 50%; top: -8px; width: 58px; height: 15px; margin-left: -29px; rotate: -3deg;
   background: repeating-linear-gradient(90deg, rgba(91, 127, 214, .5) 0 6px, rgba(91, 127, 214, .32) 6px 12px); }
 :root[data-paper="sailor"] .stash-card:nth-child(even)::after { rotate: 4deg; margin-left: -10px; }
-:root[data-paper="sailor"] .stash-card.pinned::after { background: repeating-linear-gradient(90deg, rgba(200, 51, 63, .55) 0 6px, rgba(200, 51, 63, .35) 6px 12px); }
+:root[data-paper="sailor"] .stash-card.pinned::after { background: repeating-linear-gradient(90deg, rgba(224, 111, 126, .55) 0 6px, rgba(224, 111, 126, .35) 6px 12px); }
 :root[data-paper="sailor"] .stash-acts .btn, :root[data-paper="sailor"] .stash-seg button, :root[data-paper="sailor"] .stash-toggle, :root[data-paper="sailor"] .stash-sel-btn,
 :root[data-paper="sailor"] .stash-selbar .btn, :root[data-paper="sailor"] .stash-tag-on { border-radius: 3px; }
 :root[data-paper="sailor"] .stash-acts .btn.primary, :root[data-paper="sailor"] .stash-seg button[aria-pressed="true"], :root[data-paper="sailor"] .stash-toggle[aria-pressed="true"] {
@@ -187,18 +187,18 @@ body.has-scene .side-right .stash-q { background-color: color-mix(in srgb, var(-
 
 /* ---------- 侦探：案卷文件夹，左上角一枚编号标签，证物虚线框，打字机字体；像归档一样从左边滑进来，删掉时收回档案柜 ---------- */
 :root[data-paper="detective"] .stash-card { counter-increment: stash-case; margin-top: 14px; border-radius: 0 6px 6px 6px; border: 1px dashed var(--line-strong);
-  background-image: linear-gradient(90deg, transparent 6px, color-mix(in srgb, #c8333f 30%, transparent) 6px 7px, transparent 7px); }
+  background-image: linear-gradient(90deg, transparent 6px, color-mix(in srgb, #e06f7e 30%, transparent) 6px 7px, transparent 7px); }
 :root[data-paper="detective"] .stash-card::before { content: "No." counter(stash-case, decimal-leading-zero); position: absolute; left: -1px; top: -15px; height: 15px; padding: 0 10px;
   border: 1px dashed var(--line-strong); border-bottom: 0; border-radius: 5px 5px 0 0; background: var(--surface);
   font: 600 10px/14px "Courier New", Courier, ui-monospace, monospace; letter-spacing: .14em; color: var(--muted); }
-:root[data-paper="detective"] .stash-card.pinned::before { color: #fff; background-color: #c8333f; border-color: #c8333f; }
+:root[data-paper="detective"] .stash-card.pinned::before { color: #fff; background-color: #e06f7e; border-color: #e06f7e; }
 :root[data-paper="detective"] .stash-meta, :root[data-paper="detective"] .stash-n, :root[data-paper="detective"] .stash-seg-n, :root[data-paper="detective"] .stash-group-n {
   font-family: "Courier New", Courier, ui-monospace, monospace; }
 :root[data-paper="detective"] .stash-acts .btn, :root[data-paper="detective"] .stash-seg button, :root[data-paper="detective"] .stash-toggle, :root[data-paper="detective"] .stash-sel-btn,
 :root[data-paper="detective"] .stash-selbar .btn, :root[data-paper="detective"] .stash-tag-on { border-radius: 1px; letter-spacing: .06em; }
 :root[data-paper="detective"] .stash-seg button[aria-pressed="true"], :root[data-paper="detective"] .stash-toggle[aria-pressed="true"] { border-style: double; border-width: 3px; padding: 0 8px; }
 :root[data-paper="detective"] .stash-filters { border-radius: 2px; border: 1px dashed var(--line-strong);
-  background-image: linear-gradient(90deg, transparent 8px, color-mix(in srgb, #c8333f 35%, transparent) 8px 9px, transparent 9px); padding-left: 20px; }
+  background-image: linear-gradient(90deg, transparent 8px, color-mix(in srgb, #e06f7e 35%, transparent) 8px 9px, transparent 9px); padding-left: 20px; }
 :root[data-paper="detective"] .stash-selbar { border-radius: 1px; border: 1px dashed var(--accent); }
 :root[data-paper="detective"] .stash-group-h::before { content: "#"; font: 700 14px/1 "Courier New", Courier, monospace; color: var(--accent); }
 

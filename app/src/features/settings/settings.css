@@ -33,7 +33,6 @@
   font-size: 13px; line-height: 1.5; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .st-seg button:hover { background: var(--hover); }
 .st-seg button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); font-weight: 600; }
-.st-fonts button { font-size: 14px; }
 
 .st-check { font-size: 13.5px; min-height: 28px; }
 .st-range-wrap { display: flex; align-items: center; gap: 12px; width: 100%; max-width: 380px; }
@@ -133,5 +132,189 @@ body:has(.view.st) .toast-act { white-space: nowrap; flex: 0 0 auto; }
 .st-pal-sub { font-size: 11.5px; color: var(--muted); }
 .st-lock { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 8px; color: var(--warn); }
 .st-lock[hidden] { display: none; }
-.st-lock { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 8px; color: var(--warn); }
-.st-lock[hidden] { display: none; }
+
+/* ---------- 选字体：正文字体是样句卡片，界面字体是一排圆按钮 ----------
+   颜色都压得很淡：奶油底、细边，选中的那个铺一层淡淡的主色。形状、选中标记、进场和悬停的扫光跟着风格换。
+   --sf-* 是这块自己的颜色，各套风格只改变量和形状，玻璃底（有背景插画时）统一在下面套。 */
+.st-fcards, .st-fpills {
+  --sf-bg: color-mix(in srgb, var(--accent) 4%, var(--paper));
+  --sf-line: color-mix(in srgb, var(--accent) 15%, var(--line));
+  --sf-on: color-mix(in srgb, var(--accent) 12%, var(--paper));
+  --sf-on-line: color-mix(in srgb, var(--accent) 38%, var(--line));
+  --sf-on-ink: color-mix(in srgb, var(--accent) 62%, var(--ink));
+  --sf-mark: color-mix(in srgb, var(--accent) 58%, var(--paper));
+  --sf-white: rgba(255, 255, 255, .6);
+  --sf-sheen: linear-gradient(105deg, transparent 30%, var(--sf-white) 50%, transparent 70%);
+  --sf-r: 14px;
+  --sf-bw: 1px;
+}
+:root[data-dark] :is(.st-fcards, .st-fpills) { --sf-on: color-mix(in srgb, var(--accent) 17%, var(--paper)); --sf-white: rgba(255, 255, 255, .1);
+  --sf-on-ink: color-mix(in srgb, var(--accent) 70%, var(--ink)); }
+
+.st-fcards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 228px), 1fr)); gap: 10px; width: 100%; counter-reset: sf-case; }
+.st-fcard { position: relative; isolation: isolate; overflow: hidden; display: grid; gap: 6px; align-content: start; min-width: 0; text-align: left;
+  padding: 12px 14px 10px; border: var(--sf-bw) solid var(--sf-line); border-radius: var(--sf-r); background: var(--sf-bg); color: var(--ink); cursor: pointer;
+  counter-increment: sf-case; transition: background-color .2s ease, border-color .2s ease, box-shadow .25s ease, transform .25s ease, rotate .3s ease; }
+.st-fcard-sample { display: block; font-size: 18px; line-height: 1.5; color: var(--ink); overflow-wrap: anywhere; }
+/* 第一行右边给选中标记让个位置，折行以后第二行照常排满 */
+.st-fcard-sample::before { content: ""; float: right; width: var(--sf-mark-w, 12px); height: 1em; }
+.st-fcard-name { display: flex; align-items: center; gap: 6px; min-width: 0; font-family: var(--f-ui); font-size: 12px; line-height: 1.5; color: var(--muted); transition: color .2s ease; }
+.st-fcard-n { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.st-fcard:hover { border-color: var(--sf-on-line); }
+.st-fcard[aria-pressed="true"] { background-color: var(--sf-on); border-color: var(--sf-on-line); }
+.st-fcard[aria-pressed="true"] .st-fcard-name { color: var(--sf-on-ink); font-weight: 600; }
+
+.st-fpills { display: flex; flex-wrap: wrap; gap: 8px; max-width: 100%; }
+.st-fpill { position: relative; isolation: isolate; overflow: hidden; display: inline-flex; align-items: center; gap: 6px; max-width: 100%; min-width: 0;
+  padding: 5px 15px; border: var(--sf-bw) solid var(--sf-line); border-radius: 999px; background: var(--sf-bg); color: var(--ink); cursor: pointer;
+  font-size: 14.5px; line-height: 1.5; white-space: nowrap; text-overflow: ellipsis;
+  transition: background-color .2s ease, border-color .2s ease, color .2s ease, box-shadow .25s ease, transform .25s ease, padding .25s ease; }
+.st-fpill:hover { border-color: var(--sf-on-line); }
+.st-fpill[aria-pressed="true"] { background-color: var(--sf-on); border-color: var(--sf-on-line); color: var(--sf-on-ink); }
+
+.st-ftag { flex: 0 0 auto; padding: 0 6px; border: 1px solid var(--line-strong); border-radius: 999px; font-family: var(--f-ui); font-size: 10.5px; font-weight: 400; line-height: 1.5; color: var(--muted); }
+.st-fcard.bad .st-ftag, .st-fpill.bad .st-ftag { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 40%, var(--line)); }
+
+/* 扫光：铺在底色上、字的下面 */
+.st-fcard::before, .st-fpill::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; background: var(--sf-sheen); opacity: 0; transform: translateX(-110%); }
+[data-motion="full"] .st-fcard:hover::before, [data-motion="full"] .st-fpill:hover::before { opacity: 1; transform: translateX(110%); transition: transform .8s ease, opacity .12s ease; }
+[data-motion="full"] .st-fcard:hover { transform: translateY(-2px); box-shadow: 0 6px 16px -6px color-mix(in srgb, var(--accent) 30%, transparent); }
+[data-motion="full"] .st-fpill:hover { transform: translateY(-1px); }
+[data-motion="full"] .st-fcard:active, [data-motion="full"] .st-fpill:active { transform: scale(.97); transition-duration: .08s; }
+
+/* 选中标记：默认是右上角一个小圆点，各套风格换成自己的 */
+.st-fcard::after { content: ""; position: absolute; top: 9px; right: 10px; width: 8px; height: 8px; border-radius: 50%; background: var(--sf-mark); opacity: 0; transform: scale(0);
+  transition: opacity .2s ease, transform .25s ease; pointer-events: none; }
+.st-fcard[aria-pressed="true"]::after { opacity: 1; transform: none; }
+.st-fpill::after { content: ""; position: absolute; left: 10px; top: 50%; width: 7px; height: 7px; margin-top: -3.5px; border-radius: 50%; background: var(--sf-mark);
+  opacity: 0; transform: scale(0); transition: opacity .2s ease, transform .25s ease; pointer-events: none; }
+.st-fpill[aria-pressed="true"] { padding-left: 24px; }
+.st-fpill[aria-pressed="true"]::after { opacity: 1; transform: none; }
+
+/* 进场：一张接一张 */
+[data-motion="full"] :is(.st-fcard, .st-fpill) { animation: sf-in .42s cubic-bezier(.3, 1.4, .5, 1) backwards; animation-delay: calc(var(--i, 0) * 35ms); }
+[data-motion="simple"] :is(.st-fcard, .st-fpill) { animation: fade-in .2s ease backwards; }
+[data-motion="full"] .st-fcard[aria-pressed="true"] .st-fcard-sample { animation: sf-hop .4s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes sf-in { from { opacity: 0; transform: translateY(8px) scale(.97); } }
+@keyframes sf-hop { 40% { transform: translateY(-3px); } }
+
+/* 有背景插画：卡片、按钮是玻璃片 */
+body.has-scene :is(.st-fcard, .st-fpill) { background-color: color-mix(in srgb, var(--sf-bg) 68%, transparent);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1); backdrop-filter: blur(10px) saturate(1.1); }
+body.has-scene :is(.st-fcard, .st-fpill)[aria-pressed="true"] { background-color: color-mix(in srgb, var(--sf-on) 84%, transparent); }
+
+/* ---------- 魔法少女：圆滚滚的糖果卡，选中时右上角亮起一颗星星，扫过一道粉紫的光；卡片蹦出来 ---------- */
+:root[data-paper="magical"] :is(.st-fcards, .st-fpills) { --sf-r: 18px; --sf-bw: 1.5px; --sf-mark-w: 22px;
+  --sf-sheen: linear-gradient(105deg, transparent 26%, var(--sf-white) 42%, color-mix(in srgb, var(--accent-2) 22%, transparent) 52%, var(--sf-white) 60%, transparent 76%); }
+:root[data-paper="magical"] .st-fcard[aria-pressed="true"] { background-image: radial-gradient(circle at calc(100% - 16px) calc(100% - 14px), color-mix(in srgb, var(--accent-2) 30%, transparent) 0 2.5px, transparent 3px),
+  radial-gradient(circle at calc(100% - 27px) calc(100% - 9px), color-mix(in srgb, var(--accent) 26%, transparent) 0 1.8px, transparent 2.3px),
+  radial-gradient(circle at calc(100% - 10px) calc(100% - 26px), color-mix(in srgb, var(--accent) 22%, transparent) 0 1.5px, transparent 2px); }
+:root[data-paper="magical"] .st-fcard::after, :root[data-paper="magical"] .st-fpill::after { content: "✦"; display: grid; place-items: center; color: var(--sf-on-ink); line-height: 1;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 22%, var(--paper)), color-mix(in srgb, var(--accent-2) 26%, var(--paper))); }
+:root[data-paper="magical"] .st-fcard::after { width: 20px; height: 20px; top: 8px; right: 9px; font-size: 11px; }
+:root[data-paper="magical"] .st-fpill::after { width: 14px; height: 14px; margin-top: -7px; left: 7px; font-size: 8px; }
+:root[data-paper="magical"] .st-fpill[aria-pressed="true"] { padding-left: 26px; }
+:root[data-paper="magical"][data-motion="full"] :is(.st-fcard, .st-fpill)[aria-pressed="true"]::after { animation: sf-star .55s cubic-bezier(.3, 1.6, .5, 1), sf-twinkle 2.6s ease-in-out .6s infinite; }
+:root[data-paper="magical"][data-motion="full"] :is(.st-fcard, .st-fpill) { animation-name: sf-bounce; }
+@keyframes sf-star { from { transform: scale(0) rotate(-180deg); } }
+@keyframes sf-twinkle { 50% { transform: scale(.82) rotate(20deg); opacity: .75; } }
+@keyframes sf-bounce { from { opacity: 0; transform: scale(.82); } 60% { transform: scale(1.03); } }
+
+/* ---------- 水手服：方一点的校园便签，样句下面一条虚线格；选中时盖一个花丸，底边两道领口条纹；像便签一样贴上来 ---------- */
+:root[data-paper="sailor"] :is(.st-fcards, .st-fpills) { --sf-r: 6px; --sf-mark-w: 24px; --sf-stripe: color-mix(in srgb, var(--accent) 42%, var(--paper));
+  --sf-sheen: linear-gradient(90deg, transparent 38%, var(--sf-white) 46%, var(--sf-white) 52%, transparent 60%); }
+:root[data-paper="sailor"] .st-fcard-sample { padding-bottom: 3px; border-bottom: 1px dashed color-mix(in srgb, var(--accent-2) 30%, var(--line)); }
+:root[data-paper="sailor"] .st-fcard[aria-pressed="true"] { box-shadow: inset 0 -3px 0 var(--sf-on), inset 0 -4.5px 0 var(--sf-stripe), inset 0 -7px 0 var(--sf-on), inset 0 -8.5px 0 var(--sf-stripe); }
+:root[data-paper="sailor"] .st-fcard::after { width: 24px; height: 24px; top: 6px; right: 7px; border-radius: 50%;
+  background: radial-gradient(circle, var(--sf-mark) 0 2px, transparent 2.5px 4.5px, var(--sf-mark) 5px 6.3px, transparent 6.8px 8.4px, var(--sf-mark) 8.9px 10.2px, transparent 10.7px); }
+:root[data-paper="sailor"] .st-fpill { border-radius: 6px; }
+:root[data-paper="sailor"] .st-fpill[aria-pressed="true"] { padding-left: 15px; box-shadow: inset 0 -1.5px 0 var(--sf-stripe), inset 0 -3.5px 0 var(--sf-on), inset 0 -5px 0 var(--sf-stripe); }
+:root[data-paper="sailor"] .st-fpill::after { display: none; }
+:root[data-paper="sailor"][data-motion="full"] .st-fcard[aria-pressed="true"]::after { animation: sf-hanamaru .5s cubic-bezier(.3, 1.5, .5, 1); }
+:root[data-paper="sailor"][data-motion="full"] :is(.st-fcard, .st-fpill) { animation-name: sf-stick; }
+:root[data-paper="sailor"][data-motion="full"] .st-fcard:nth-child(even):hover { transform: translateY(-2px) rotate(.6deg); }
+:root[data-paper="sailor"][data-motion="full"] .st-fcard:nth-child(odd):hover { transform: translateY(-2px) rotate(-.6deg); }
+@keyframes sf-hanamaru { from { transform: scale(.2) rotate(-200deg); opacity: 0; } }
+@keyframes sf-stick { from { opacity: 0; transform: translateY(10px) rotate(-3deg); } }
+
+/* ---------- 古风：窄边的宣纸笺，里面一道细框；选中时右下角落一枚「选」字小印；卷轴一样从左往右展开 ---------- */
+:root[data-paper="hanfu"] :is(.st-fcards, .st-fpills) { --sf-r: 2px; --sf-mark-w: 0px;
+  --sf-sheen: linear-gradient(100deg, transparent 30%, color-mix(in srgb, var(--accent) 9%, transparent) 46%, var(--sf-white) 52%, transparent 70%); }
+:root[data-paper="hanfu"] .st-fcard { outline: 1px solid color-mix(in srgb, var(--accent) 14%, var(--line)); outline-offset: -5px; padding: 13px 16px 11px; }
+:root[data-paper="hanfu"] .st-fcard-name { letter-spacing: .12em; }
+:root[data-paper="hanfu"] .st-fcard::after { content: "选"; display: grid; place-items: center; top: auto; bottom: 9px; right: 10px; width: 19px; height: 19px;
+  border: 1.5px solid var(--sf-mark); border-radius: 3px 2px 4px 2px; background: color-mix(in srgb, var(--accent) 10%, transparent); color: var(--sf-on-ink);
+  font: 600 11px/1 var(--f-kai); rotate: -6deg; }
+:root[data-paper="hanfu"] .st-fpill { border-radius: 2px; letter-spacing: .08em; }
+:root[data-paper="hanfu"] .st-fpill[aria-pressed="true"] { padding-left: 15px; box-shadow: inset 0 -2px 0 var(--sf-mark); }
+:root[data-paper="hanfu"] .st-fpill::after { display: none; }
+:root[data-paper="hanfu"][data-motion="full"] .st-fcard[aria-pressed="true"]::after { animation: sf-seal .45s cubic-bezier(.3, 1.3, .5, 1); }
+:root[data-paper="hanfu"][data-motion="full"] :is(.st-fcard, .st-fpill) { animation: sf-unroll .55s ease-out backwards; animation-delay: calc(var(--i, 0) * 45ms); }
+@keyframes sf-seal { from { transform: scale(1.9); opacity: 0; } 70% { transform: scale(.92); opacity: 1; } }
+@keyframes sf-unroll { from { clip-path: inset(0 100% 0 0); opacity: .3; } }
+
+/* ---------- 哥特：切角的魔典残页，里面一道虚线框；选中时点亮一颗菱形烛光，慢慢明灭；从暗处浮出来 ---------- */
+:root[data-paper="gothic"] :is(.st-fcards, .st-fpills) { --sf-r: 0; --sf-mark-w: 14px;
+  --sf-sheen: linear-gradient(105deg, transparent 30%, color-mix(in srgb, #f0b45a 16%, transparent) 50%, transparent 70%); }
+:root[data-paper="gothic"] .st-fcard { clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 9px, 100% calc(100% - 9px), calc(100% - 9px) 100%, 9px 100%, 0 calc(100% - 9px), 0 9px);
+  outline: 1px dashed color-mix(in srgb, var(--accent) 30%, transparent); outline-offset: -6px; padding: 13px 16px 11px; }
+:root[data-paper="gothic"] .st-fcard-name { letter-spacing: .1em; }
+:root[data-paper="gothic"] .st-fcard::after { width: 8px; height: 8px; top: 13px; right: 15px; border-radius: 0; rotate: 45deg; box-shadow: 0 0 8px var(--sf-mark); }
+:root[data-paper="gothic"] .st-fpill { border-radius: 0; padding: 5px 18px; clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 50%, calc(100% - 9px) 100%, 9px 100%, 0 50%); }
+:root[data-paper="gothic"] .st-fpill::after { border-radius: 0; rotate: 45deg; width: 6px; height: 6px; margin-top: -3px; left: 13px; box-shadow: 0 0 6px var(--sf-mark); }
+:root[data-paper="gothic"] .st-fpill[aria-pressed="true"] { padding-left: 26px; }
+:root[data-paper="gothic"] :is(.st-fcard, .st-fpill):focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+:root[data-paper="gothic"][data-motion="full"] :is(.st-fcard, .st-fpill)[aria-pressed="true"]::after { animation: sf-light .7s steps(6), sf-flicker 3.2s ease-in-out .8s infinite; }
+:root[data-paper="gothic"][data-motion="full"] :is(.st-fcard, .st-fpill) { animation: sf-dusk .6s ease-out backwards; animation-delay: calc(var(--i, 0) * 45ms); }
+@keyframes sf-light { 0% { opacity: 0; } 30% { opacity: .5; } 45% { opacity: .15; } 70% { opacity: .8; } }
+@keyframes sf-flicker { 50% { opacity: .55; box-shadow: 0 0 3px var(--sf-mark); } }
+@keyframes sf-dusk { from { opacity: 0; filter: brightness(.4) blur(1.5px); } }
+
+/* ---------- 侦探：卷宗索引卡，横格纸配一条红边线，名字前带案卷编号；选中时斜着盖一个「选定」章；像归档一样从左边插进来 ---------- */
+:root[data-paper="detective"] :is(.st-fcards, .st-fpills) { --sf-r: 3px; --sf-mark-w: 40px; --sf-red: color-mix(in srgb, #c8333f 55%, var(--paper));
+  --sf-sheen: radial-gradient(circle at 50% 50%, var(--sf-white) 0 13px, color-mix(in srgb, var(--ink) 14%, transparent) 14px 15.5px, transparent 16px); }
+:root[data-paper="detective"] .st-fcard { padding-left: 20px;
+  background-image: linear-gradient(90deg, transparent 9px, color-mix(in srgb, #c8333f 22%, transparent) 9px 10px, transparent 10px),
+    repeating-linear-gradient(180deg, transparent 0 23px, color-mix(in srgb, var(--accent-2) 11%, transparent) 23px 24px); }
+:root[data-paper="detective"] .st-fcard-n::before { content: "No." counter(sf-case, decimal-leading-zero) " "; font: 600 10.5px "Courier New", Courier, ui-monospace, monospace;
+  letter-spacing: .1em; color: var(--muted); }
+:root[data-paper="detective"] .st-fcard::after { content: "选定"; top: 8px; right: 8px; width: auto; height: auto; padding: 1px 6px; border-radius: 4px; background: none;
+  border: 1.5px dashed var(--sf-red); color: var(--sf-red); font: 700 11px/1.4 var(--f-ui); letter-spacing: .15em; rotate: -12deg; }
+:root[data-paper="detective"] .st-fpill { border-radius: 2px; border-style: dashed; padding-left: 20px;
+  clip-path: polygon(10px 0, 100% 0, 100% 100%, 10px 100%, 0 50%); }
+:root[data-paper="detective"] .st-fpill::after { left: 9px; width: 5px; height: 5px; margin-top: -2.5px; background: none; border: 1.5px solid var(--sf-line); opacity: 1; transform: none; }
+:root[data-paper="detective"] .st-fpill[aria-pressed="true"] { padding-left: 20px; border-style: solid; }
+:root[data-paper="detective"] .st-fpill[aria-pressed="true"]::after { border-color: var(--sf-red); background: var(--sf-red); }
+:root[data-paper="detective"] :is(.st-fcard, .st-fpill):focus-visible { outline: 2px solid var(--accent); outline-offset: -4px; }
+:root[data-paper="detective"][data-motion="full"] .st-fcard[aria-pressed="true"]::after { animation: sf-stamp .4s cubic-bezier(.3, 1.4, .5, 1); }
+:root[data-paper="detective"][data-motion="full"] :is(.st-fcard, .st-fpill) { animation: sf-file .4s cubic-bezier(.2, 1.1, .4, 1) backwards; animation-delay: calc(var(--i, 0) * 40ms); }
+@keyframes sf-stamp { from { transform: scale(2.2) rotate(-14deg); opacity: 0; } 70% { transform: scale(.94); opacity: 1; } }
+@keyframes sf-file { from { opacity: 0; transform: translateX(-14px); } }
+
+/* ---------- 冒险者：钉在委托板上的羊皮纸，木色细边；选中时顶上落下一颗图钉，纸微微歪一下；从上面掉下来弹一下 ---------- */
+:root[data-paper="adventurer"] :is(.st-fcards, .st-fpills) { --sf-r: 8px; --sf-mark-w: 0px; --sf-bw: 1.5px; --sf-wood: #8a5a32;
+  --sf-bg: color-mix(in srgb, #e9d3a1 20%, var(--paper)); --sf-line: color-mix(in srgb, var(--sf-wood) 26%, var(--line));
+  --sf-on: color-mix(in srgb, var(--accent-2) 20%, var(--paper)); --sf-on-line: color-mix(in srgb, var(--sf-wood) 45%, var(--line));
+  --sf-sheen: linear-gradient(105deg, transparent 32%, color-mix(in srgb, #f0d07c 30%, transparent) 48%, var(--sf-white) 52%, transparent 68%); }
+:root[data-paper="adventurer"][data-dark] :is(.st-fcards, .st-fpills) { --sf-wood: #b78452; --sf-bg: color-mix(in srgb, #b78452 8%, var(--paper)); --sf-on: color-mix(in srgb, var(--accent-2) 16%, var(--paper)); }
+:root[data-paper="adventurer"] .st-fcard { box-shadow: 2px 2px 0 color-mix(in srgb, var(--sf-wood) 14%, transparent); padding-top: 16px; }
+:root[data-paper="adventurer"] .st-fcard[aria-pressed="true"] { rotate: -.8deg; }
+:root[data-paper="adventurer"] .st-fcard::after { top: 5px; right: auto; left: 50%; width: 10px; height: 10px; margin-left: -5px;
+  background: radial-gradient(circle at 35% 35%, color-mix(in srgb, #fff 70%, var(--accent)) 0 2px, color-mix(in srgb, var(--accent) 70%, var(--paper)) 3px);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--sf-wood) 40%, transparent); }
+:root[data-paper="adventurer"] .st-fpill { border-radius: 8px; }
+:root[data-paper="adventurer"] .st-fpill::after { background: radial-gradient(circle at 35% 35%, color-mix(in srgb, #fff 70%, var(--accent)) 0 1.5px, color-mix(in srgb, var(--accent) 70%, var(--paper)) 2.5px); }
+:root[data-paper="adventurer"][data-motion="full"] :is(.st-fcard, .st-fpill)[aria-pressed="true"]::after { animation: sf-pin .5s cubic-bezier(.3, 1.6, .5, 1); }
+:root[data-paper="adventurer"][data-motion="full"] :is(.st-fcard, .st-fpill) { animation: sf-drop .5s cubic-bezier(.3, 1.4, .5, 1) backwards; animation-delay: calc(var(--i, 0) * 40ms); }
+@keyframes sf-pin { from { transform: translateY(-14px); opacity: 0; } }
+@keyframes sf-drop { from { opacity: 0; transform: translateY(-12px); } }
+
+@media (max-width: 640px) {
+  .st-fcards { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .st-fcard { padding: 10px 11px 8px; }
+  .st-fcard-sample { font-size: 15px; }
+  :root[data-paper="detective"] .st-fcard { padding-left: 17px; }
+  :root[data-paper="detective"] .st-fcard::after { top: 5px; right: 5px; }
+  .st-fpills { gap: 6px; }
+  .st-fpill { padding: 4px 12px; font-size: 14px; }
+}

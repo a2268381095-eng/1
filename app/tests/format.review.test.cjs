@@ -665,8 +665,8 @@ async function flows(dist, fails) {
         del: css('.fmt-del', 'color'), ins: css('.fmt-ins', 'color'), card: css('.fmt-ch', 'backgroundColor'), head: css('.fmt-head', 'backgroundColor') };
     });
     check(r.doc <= r.vw && !r.bad.length, `${w}px：长章名、长单词、长方案名都不撑破页面 ` + JSON.stringify(r.bad), fails);
-    check(r.bg === 'rgb(27, 21, 29)' && r.ink === 'rgb(234, 221, 228)' && r.del === 'rgb(255, 143, 162)' && r.ins === 'rgb(127, 209, 168)'
-      && r.card === 'rgb(30, 23, 32)' && r.head === 'rgb(34, 26, 37)', `${w}px 深色：底色、字色、红绿都是深色那套 ` + JSON.stringify(r), fails);
+    check(r.bg === 'rgb(27, 27, 29)' && r.ink === 'rgb(235, 235, 237)' && r.del === 'rgb(255, 159, 177)' && r.ins === 'rgb(134, 214, 178)'
+      && r.card === 'rgb(32, 32, 35)' && r.head === 'rgb(31, 31, 34)', `${w}px 深色：底色、字色、红绿都是深色那套 ` + JSON.stringify(r), fails);
     await closeToasts(page);
     await page.click('.fmt-ok');
     await page.waitForSelector('.toast:has-text("已排版")');

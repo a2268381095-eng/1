@@ -318,7 +318,7 @@ async function flows(dist, fails) {
       ok: document.querySelector('.fmt-ok').getBoundingClientRect().right };
   });
   check(sz.doc <= 390 && sz.left >= 0 && sz.right <= 390 && sz.ow <= sz.cw && sz.pw <= sz.pcw && sz.ok <= 390, '390px 宽不横向溢出 ' + JSON.stringify({ doc: sz.doc, ow: sz.ow, cw: sz.cw, pw: sz.pw }), fails);
-  check(sz.bg === 'rgb(27, 21, 29)' && sz.ins === 'rgb(127, 209, 168)', '深色模式用深色的纸色和绿色：' + sz.bg + ' / ' + sz.ins, fails);
+  check(sz.bg === 'rgb(27, 27, 29)' && sz.ins === 'rgb(134, 214, 178)', '深色模式用深色的纸色和绿色：' + sz.bg + ' / ' + sz.ins, fails);
   if (process.env.SHOT) {
     await m.page.screenshot({ path: path.join(process.env.SHOT, 'format-mobile-dark.png') });
     await m.page.click('.fmt-rules > summary');

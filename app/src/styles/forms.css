@@ -11,29 +11,29 @@
 :root[data-paper="sailor"] .toast { position: relative; border-radius: 2px; background: #fff6b3; color: #1f2a3d; rotate: -1deg; box-shadow: 2px 3px 0 rgba(31, 42, 61, .25); }
 :root[data-paper="sailor"] .toast::before { content: ""; position: absolute; left: 50%; top: -7px; width: 54px; height: 14px; margin-left: -27px; rotate: 3deg;
   background: repeating-linear-gradient(90deg, rgba(91, 127, 214, .55) 0 6px, rgba(91, 127, 214, .35) 6px 12px); }
-:root[data-paper="sailor"] .toast-act { color: #c8333f; }
+:root[data-paper="sailor"] .toast-act { color: #e06f7e; }
 :root[data-paper="sailor"] .toast-act:hover, :root[data-paper="sailor"] .toast-x:hover { background: rgba(31, 42, 61, .08); }
 
 :root[data-paper="hanfu"] .toast { border-radius: 1px; background: #f6efde; color: #2b2622; border-top: 1px solid #2b2622; border-bottom: 1px solid #2b2622;
   font-family: "LXGW WenKai TC", "KaiTi", serif; padding-left: 10px; box-shadow: 0 4px 14px rgba(43, 38, 34, .25); }
 :root[data-paper="hanfu"] .toast::before { content: "墨"; display: grid; place-items: center; width: 18px; height: 18px; flex: 0 0 auto; border-radius: 2px;
-  background: #b8432f; color: #fff; font-size: 11px; line-height: 1; }
-:root[data-paper="hanfu"] .toast-act { color: #b8432f; }
+  background: #cf6b53; color: #fff; font-size: 11px; line-height: 1; }
+:root[data-paper="hanfu"] .toast-act { color: #cf6b53; }
 :root[data-paper="hanfu"] .toast-act:hover, :root[data-paper="hanfu"] .toast-x:hover { background: rgba(43, 38, 34, .08); }
 
-:root[data-paper="gothic"] .toast { border-radius: 0; background: #19121b; color: #eadfee; border: 1px solid #8e2a4f;
-  box-shadow: 0 0 16px rgba(224, 87, 127, .35), inset 0 0 0 3px #19121b, inset 0 0 0 4px rgba(224, 87, 127, .35); }
+:root[data-paper="gothic"] .toast { border-radius: 0; background: #19121b; color: #eadfee; border: 1px solid #a8679a;
+  box-shadow: 0 0 16px rgba(229, 151, 182, .35), inset 0 0 0 3px #19121b, inset 0 0 0 4px rgba(229, 151, 182, .35); }
 :root[data-paper="gothic"] .toast-act { color: #ff8fb1; }
 
 :root[data-paper="detective"] .toast { position: relative; border-radius: 1px; background: #fdf5d8; color: #2e2620; font-family: "Courier New", "Noto Serif SC", monospace;
   padding-left: 22px; box-shadow: 2px 3px 0 rgba(0, 0, 0, .15); border: 1px solid #c9b78a; }
 :root[data-paper="detective"] .toast::before { content: ""; position: absolute; left: 7px; top: 50%; width: 9px; height: 9px; margin-top: -5px; border-radius: 50%;
-  background: #c8333f; box-shadow: inset -2px -2px 0 rgba(0, 0, 0, .25); }
-:root[data-paper="detective"] .toast-act { color: #2f6b5a; }
+  background: #e06f7e; box-shadow: inset -2px -2px 0 rgba(0, 0, 0, .25); }
+:root[data-paper="detective"] .toast-act { color: #33887e; }
 :root[data-paper="detective"] .toast-act:hover, :root[data-paper="detective"] .toast-x:hover { background: rgba(46, 38, 32, .08); }
 
 :root[data-paper="adventurer"] .toast { border-radius: 6px; background: #f3e6c4; color: #3a2a18; border: 2px solid #8a5a32; box-shadow: 3px 3px 0 rgba(138, 90, 50, .35); }
-:root[data-paper="adventurer"] .toast-act { color: #a63d2a; }
+:root[data-paper="adventurer"] .toast-act { color: #d07a48; }
 :root[data-paper="adventurer"] .toast-act:hover, :root[data-paper="adventurer"] .toast-x:hover { background: rgba(58, 42, 24, .08); }
 
 /* 提示条出场 */

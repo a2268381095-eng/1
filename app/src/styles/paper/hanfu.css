@@ -2,7 +2,7 @@
    宣纸：长纤维、纤维团、吸墨不匀的斑驳，四边是撕开的毛边；纸上一道朱砂双线框，线洇进纸里，右上角一方白文朱印，左下角一小枝墨梅。
    醒来：几滴墨落在纸上晕开，连成一整张；框和印随后显出来。 */
 :root[data-paper="hanfu"] {
-  --hf-verm: #b8432f; --hf-verm2: color-mix(in srgb, #b8432f 62%, transparent); --hf-bleed: rgba(184, 67, 47, .42);
+  --hf-verm: #cf6b53; --hf-verm2: color-mix(in srgb, #cf6b53 62%, transparent); --hf-bleed: rgba(184, 67, 47, .42);
   --hf-light: rgba(255, 252, 240, .5); --hf-shade: rgba(120, 88, 48, .09); --hf-core: color-mix(in srgb, var(--paper) 42%, transparent);
   --hf-ink: #2b2622; --hf-scroll: #f6efde; --hf-rod: #5a3d28; --hf-rod2: #8a6040; }
 :root[data-paper="hanfu"][data-dark] {
@@ -88,7 +88,7 @@
 
 /* ---------- 字数牌子：左上角压一方小朱印 ---------- */
 .demon[data-style="hanfu"] .demon-badge::before { content: "墨"; position: absolute; left: -7px; top: -7px; width: 13px; height: 13px; display: grid; place-items: center;
-  font: 9px/1 "LXGW WenKai TC", "KaiTi", "STKaiti", serif; color: #fff; background: #b8432f; border-radius: 2px; rotate: -6deg;
+  font: 9px/1 "LXGW WenKai TC", "KaiTi", "STKaiti", serif; color: #fff; background: #cf6b53; border-radius: 2px; rotate: -6deg;
   box-shadow: 0 0 1px rgba(184, 67, 47, .6); }
 .demon[data-style="hanfu"] .demon-badge.done::before { content: "成"; background: #c9302c; }
 [data-motion="full"] .demon[data-style="hanfu"] .demon-badge.done::before { animation: hf-seal-press .5s cubic-bezier(.3, 1.6, .5, 1) both; }
@@ -112,13 +112,13 @@
 .demon[data-style="hanfu"] .demon-combo .dc-num::after { content: ""; position: absolute; right: -6px; top: 4px; width: 3px; height: 3px; border-radius: 50%; opacity: 0;
   box-shadow: 0 0 0 1px #c0392b, 0 7px 0 0 transparent, 0 7px 0 1px #c0392b, 0 14px 0 1px #c0392b; }
 .demon[data-style="hanfu"] .demon-combo .dc-unit { display: grid; place-items: center; width: 17px; height: 17px; font-size: 11px; line-height: 1; color: #fff; text-shadow: none;
-  background: #b8432f; border-radius: 2px; rotate: -5deg; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .45), 0 0 1px #b8432f; }
+  background: #cf6b53; border-radius: 2px; rotate: -5deg; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .45), 0 0 1px #cf6b53; }
 /* 梅瓣：几片小红点挂在轴外，1000 起飘下来 */
 .demon[data-style="hanfu"] .demon-combo::before { content: ""; position: absolute; left: 50%; top: 0; width: 5px; height: 4px; border-radius: 60% 10% 60% 10%; opacity: 0; pointer-events: none;
   background: #e0707f; box-shadow: -20px 12px 0 #e98a9a, 18px 30px 0 #d9566c, -16px 52px 0 #e0707f, 22px 70px 0 #e98a9a, -6px 88px 0 #d9566c; }
 
 .demon[data-style="hanfu"] .demon-combo:not([data-level="0"]) .dc-num::after { opacity: 1; }
-.demon[data-style="hanfu"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"]) { --hf-c: #b8432f;
+.demon[data-style="hanfu"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"]) { --hf-c: #cf6b53;
   background: radial-gradient(circle at 20% 30%, #e2b84a 0 1px, transparent 1.5px) 0 0 / 23px 29px, radial-gradient(circle at 70% 60%, #d4a63a 0 .8px, transparent 1.3px) 5px 9px / 17px 21px, radial-gradient(circle at 40% 80%, #f0cc6a 0 1.2px, transparent 1.7px) 11px 3px / 31px 37px,
     var(--pa-fiber) 0 0 / var(--pa-fiber-w) var(--pa-fiber-h), var(--hf-scroll, #f6efde); }
 .demon[data-style="hanfu"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"]) .dc-unit { width: 19px; height: 19px; background: #c9302c; }

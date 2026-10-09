@@ -4,7 +4,8 @@
    古风：诗笺双线框，「问」「答」两枚朱砂小印，方正按钮，上下文是一道墨线，横着展开；
    哥特：切角的魔典残页，酒红虚线，菱形标记，上下文是一截烛光，从暗处浮出来；
    侦探：问讯笔录，Q.01 / A. 编号，打字机字体，上下文是黄黑警戒带，一个字一个字打出来；
-   冒险者：委托板上的羊皮纸，木框图钉，任务叹号，上下文是分段的经验条，从上面掉下来弹一下。 */
+   冒险者：委托板上的羊皮纸，木框图钉，任务叹号，上下文是分段的经验条，从上面掉下来弹一下。
+   颜色一律用主题变量调出来的淡色（color-mix 掺透明或底色），渐变要缓，不用大块艳色；主按钮悬停时有一道光扫过。 */
 
 /* ---------------- 共用 ---------------- */
 .panel-body.chat-body { display: flex; flex-direction: column; padding: 0; overflow: hidden; min-height: 0; }
@@ -18,7 +19,7 @@
   background: var(--paper); color: var(--muted); cursor: pointer; font-size: 12.5px; white-space: nowrap; }
 .chat-list-btn:hover { color: var(--ink); background: var(--hover); }
 .chat-list-btn[aria-expanded="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
-.chat-title { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 7px; border: 0; background: transparent; padding: 4px 6px; border-radius: 6px;
+.chat-title { flex: 1 1 0; min-width: 48px; display: flex; align-items: center; gap: 7px; border: 0; background: transparent; padding: 4px 6px; border-radius: 6px;
   cursor: pointer; font-weight: 600; font-size: 13.5px; text-align: left; color: var(--ink); }
 .chat-title::before { content: ""; flex: 0 0 auto; width: 7px; height: 7px; background: var(--mark-img) center / 7px 7px no-repeat; image-rendering: pixelated; }
 .chat-title-t { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -27,6 +28,33 @@
 .chat-title:hover { background: var(--hover); }
 .chat-title:hover .ico, .chat-title:focus-visible .ico { opacity: 1; }
 .chat-stash { flex: 0 0 auto; }
+.chat[data-mode="panel"] .chat-stash-t { display: none; }
+
+/* 模型小牌子：模型名 + 不是「默认」的档位，点开换 */
+.chat-pick { position: relative; flex: 0 0 auto; min-width: 0; max-width: 40%; display: inline-flex; align-items: center; gap: 5px; height: 28px; padding: 0 11px 0 9px;
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--line)); border-radius: 999px; cursor: pointer; color: var(--ink); font-size: 12px; white-space: nowrap;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 5%, var(--surface)), color-mix(in srgb, var(--accent) 11%, var(--surface))); }
+.chat-pick::before { content: ""; flex: 0 0 auto; width: 6px; height: 6px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 55%, transparent); }
+.chat-pick:hover { border-color: color-mix(in srgb, var(--accent) 38%, var(--line)); }
+.chat-pick[aria-expanded="true"] { border-color: color-mix(in srgb, var(--accent) 50%, transparent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent); }
+.chat-pick-m { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 11.5px; }
+.chat-pick-lv { flex: 0 0 auto; color: var(--muted); font-size: 11.5px; }
+.chat-pick-lv[hidden] { display: none; }
+.chat-pickpop { position: absolute; z-index: 7; right: 8px; top: 46px; width: min(360px, calc(100% - 16px)); max-height: calc(100% - 56px); overflow: auto; display: grid; gap: 10px;
+  align-content: start; padding: 10px 12px 12px; border: 1px solid var(--line-strong); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
+.chat-pickpop[hidden] { display: none; }
+.chat-pick-h { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--muted); }
+.chat-pick-note { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.6; }
+.chat-pickpop .ai-lvs { padding: 8px; }
+.chat-pickpop .ai-lv { grid-template-columns: 60px auto minmax(0, 1fr); }
+.chat-pickpop .ai-lv-say, .chat-pickpop .ai-lv-note { grid-column: 2 / -1; }
+
+/* 主按钮：缓渐变，悬停时一道光扫过（只在完整动效下） */
+.chat .chat-acts .btn.primary { position: relative; overflow: hidden; border-color: color-mix(in srgb, var(--accent) 80%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 86%, #fff), var(--accent)); }
+[data-motion="full"] .chat .chat-acts .btn.primary::after { content: ""; position: absolute; inset: 0; pointer-events: none; transform: translateX(-130%);
+  background: linear-gradient(105deg, transparent 30%, color-mix(in srgb, #fff 45%, transparent) 50%, transparent 70%); }
+[data-motion="full"] .chat .chat-acts .btn.primary:hover:not(:disabled)::after { transform: translateX(130%); transition: transform .75s ease; }
 
 .chat-msgs { flex: 1 1 auto; min-height: 0; overflow: auto; overscroll-behavior: contain; padding: 14px 12px 18px; display: flex; flex-direction: column; gap: 14px; }
 .chat[data-mode="modal"] .chat-msgs { padding: 16px 18px 20px; }
@@ -48,20 +76,20 @@
 .chat-macts .btn.small { padding: 2px 6px; color: var(--muted); gap: 4px; }
 .chat-macts .btn.small:hover { color: var(--ink); }
 .chat-macts .ico svg { width: 14px; height: 14px; }
-.chat-forkchip { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; min-width: 0; padding: 1px 8px; border: 1px dashed var(--accent); border-radius: 999px;
-  background: transparent; color: var(--accent); font-size: 12px; cursor: pointer; }
+.chat-forkchip { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; min-width: 0; padding: 1px 8px; border: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 999px; background: color-mix(in srgb, var(--accent) 5%, transparent); color: color-mix(in srgb, var(--accent) 80%, var(--ink)); font-size: 12px; cursor: pointer; }
 .chat-forkchip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .chat-forkchip .ico svg { width: 12px; height: 12px; }
 .chat-forkchip:hover { background: var(--accent-soft); }
 
 /* 等回复的三个点、流式时的光标 */
 .chat-wait { display: inline-flex; gap: 5px; padding: 6px 0 4px; }
-.chat-wait i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); opacity: .55; }
+.chat-wait i { width: 6px; height: 6px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 60%, transparent); opacity: .7; }
 [data-motion="full"] .chat-wait i { animation: chat-dot 1.1s ease-in-out infinite; }
 [data-motion="full"] .chat-wait i:nth-child(2) { animation-delay: .15s; }
 [data-motion="full"] .chat-wait i:nth-child(3) { animation-delay: .3s; }
 @keyframes chat-dot { 40% { transform: translateY(-4px); opacity: 1; } }
-.chat-msg.live .chat-text::after { content: ""; display: inline-block; width: 2px; height: 1.05em; margin-left: 2px; vertical-align: -.15em; background: var(--accent); }
+.chat-msg.live .chat-text::after { content: ""; display: inline-block; width: 2px; height: 1.05em; margin-left: 2px; vertical-align: -.15em; background: color-mix(in srgb, var(--accent) 70%, transparent); }
 [data-motion="full"] .chat-msg.live .chat-text::after { animation: chat-caret 1s steps(2, jump-none) infinite; }
 @keyframes chat-caret { 50% { opacity: 0; } }
 
@@ -86,7 +114,8 @@
 .chat-ctx-n, .chat-ctx-k { white-space: nowrap; }
 .chat-ctx-k { color: var(--faint); }
 .chat-gauge { position: relative; flex: 1 1 60px; min-width: 40px; height: 6px; border-radius: 999px; background: color-mix(in srgb, var(--line-strong) 70%, transparent); overflow: hidden; }
-.chat-gauge > i { position: absolute; left: 0; top: 0; bottom: 0; width: var(--fill, 0%); background: var(--accent); border-radius: inherit; transition: width .35s ease; }
+.chat-gauge > i { position: absolute; left: 0; top: 0; bottom: 0; width: var(--fill, 0%); border-radius: inherit; transition: width .35s ease;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 30%, transparent), color-mix(in srgb, var(--accent) 65%, transparent)); }
 .chat.ctx-big .chat-ctx-n { color: var(--warn); font-weight: 600; }
 .chat.ctx-big .chat-gauge > i { background: var(--warn); }
 .chat-in { min-height: 64px; max-height: 32vh; resize: vertical; }
@@ -125,6 +154,8 @@ body.has-scene .side-right .chat-forknote { background-color: color-mix(in srgb,
 body.has-scene .side-right .chat-bar, body.has-scene .side-right .chat-foot {
   background-color: color-mix(in srgb, var(--side) calc(var(--a-side) + 20%), transparent); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
 body.has-scene .side-right .chat-in, body.has-scene .side-right .chat-list-btn { background-color: color-mix(in srgb, var(--paper) calc(var(--a-side) + 24%), transparent); }
+body.has-scene .side-right .chat-pickpop { background-color: color-mix(in srgb, var(--surface) 90%, transparent); -webkit-backdrop-filter: blur(16px) saturate(1.2); backdrop-filter: blur(16px) saturate(1.2); }
+body.has-scene .side-right .chat-pick { background: color-mix(in srgb, var(--surface) calc(var(--a-side) + 20%), transparent); }
 body.has-scene .side-right .chat-list { background-color: color-mix(in srgb, var(--surface) 90%, transparent); -webkit-backdrop-filter: blur(16px) saturate(1.2); backdrop-filter: blur(16px) saturate(1.2); }
 
 /* ================= 六套风格：形态各不相同 ================= */
@@ -136,16 +167,22 @@ body.has-scene .side-right .chat-list { background-color: color-mix(in srgb, var
 :root[data-paper="magical"] .chat-msg { border-width: 1.5px; }
 :root[data-paper="magical"] .chat-msg.ai { border-radius: 18px 18px 18px 5px; box-shadow: 0 3px 0 color-mix(in srgb, var(--accent) 14%, transparent); }
 :root[data-paper="magical"] .chat-msg.user { border-radius: 18px 18px 5px 18px; }
-:root[data-paper="magical"] .chat-msg.ai::after { content: ""; position: absolute; right: 14px; top: -6px; width: 12px; height: 12px; background: var(--accent); clip-path: var(--chat-star); opacity: .8; }
-:root[data-paper="magical"] .chat-who-n::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 4px; background: var(--accent); clip-path: var(--chat-star); vertical-align: 0; }
-:root[data-paper="magical"] .chat-title::before { width: 11px; height: 11px; background: var(--accent); clip-path: var(--chat-star); }
+:root[data-paper="magical"] .chat-msg.ai::after { content: ""; position: absolute; right: 14px; top: -6px; width: 12px; height: 12px; clip-path: var(--chat-star);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 35%, #fff), color-mix(in srgb, var(--accent) 70%, transparent)); }
+:root[data-paper="magical"] .chat-who-n::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 4px; background: color-mix(in srgb, var(--accent) 65%, transparent); clip-path: var(--chat-star); vertical-align: 0; }
+:root[data-paper="magical"] .chat-title::before { width: 11px; height: 11px; background: color-mix(in srgb, var(--accent) 65%, transparent); clip-path: var(--chat-star); }
+:root[data-paper="magical"] .chat-pick::before { width: 9px; height: 9px; border-radius: 0; clip-path: var(--chat-star); background: color-mix(in srgb, var(--accent) 60%, transparent); }
+:root[data-paper="magical"] .chat-pick { background: linear-gradient(180deg, color-mix(in srgb, #fff 55%, var(--surface)), color-mix(in srgb, var(--accent) 12%, var(--surface)));
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--accent) 12%, transparent); }
 :root[data-paper="magical"] .chat-acts .btn, :root[data-paper="magical"] .chat-macts .btn, :root[data-paper="magical"] .chat-list-btn,
 :root[data-paper="magical"] .chat-stash, :root[data-paper="magical"] .chat-list-new { border-radius: 999px; }
-:root[data-paper="magical"] .chat-acts .btn.primary { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 80%, #fff), var(--accent)); padding-inline: 16px; }
+:root[data-paper="magical"] .chat .chat-acts .btn.primary { background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 76%, #fff), var(--accent)); padding-inline: 16px;
+  text-shadow: 0 1px 1px color-mix(in srgb, var(--accent) 60%, #000); }
 :root[data-paper="magical"] .chat-in { border-radius: 16px; border-color: color-mix(in srgb, var(--accent) 30%, var(--line-strong)); }
 :root[data-paper="magical"] .chat-gauge { height: 8px; overflow: visible; margin-inline: 6px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent); }
-:root[data-paper="magical"] .chat-gauge > i { background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 45%, #fff), var(--accent)); }
-:root[data-paper="magical"] .chat-gauge > i::after { content: ""; position: absolute; right: -6px; top: -3px; width: 14px; height: 14px; background: var(--accent); clip-path: var(--chat-star); }
+:root[data-paper="magical"] .chat-gauge > i { background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 18%, #fff), color-mix(in srgb, var(--accent) 60%, transparent)); }
+:root[data-paper="magical"] .chat-gauge > i::after { content: ""; position: absolute; right: -6px; top: -3px; width: 14px; height: 14px; background: color-mix(in srgb, var(--accent) 60%, #fff); clip-path: var(--chat-star); }
+:root[data-paper="magical"] .chat-pickpop { border-radius: 18px; border: 1.5px dashed color-mix(in srgb, var(--accent) 40%, var(--line)); }
 :root[data-paper="magical"] .chat-list { border-radius: 18px; border: 1.5px dashed color-mix(in srgb, var(--accent) 40%, var(--line)); }
 :root[data-paper="magical"] .chat-li, :root[data-paper="magical"] .chat-li-main { border-radius: 999px; }
 :root[data-paper="magical"] .chat-msg.live .chat-text::after { width: 10px; height: 10px; vertical-align: 0; clip-path: var(--chat-star); }
@@ -157,21 +194,25 @@ body.has-scene .side-right .chat-list { background-color: color-mix(in srgb, var
 :root[data-paper="sailor"] .chat-msg.ai { margin-top: 7px; rotate: -.4deg; }
 :root[data-paper="sailor"] .chat-msg.ai::after { content: ""; position: absolute; left: 50%; top: -8px; width: 54px; height: 14px; margin-left: -27px; rotate: -3deg;
   background: repeating-linear-gradient(90deg, rgba(91, 127, 214, .5) 0 6px, rgba(91, 127, 214, .32) 6px 12px); }
-:root[data-paper="sailor"] .chat-msg.user { border-left: 4px solid var(--accent); rotate: .3deg; }
+:root[data-paper="sailor"] .chat-msg.user { border-left: 4px solid color-mix(in srgb, var(--accent) 55%, transparent); rotate: .3deg; }
+:root[data-paper="sailor"] .chat-pick { border-radius: 999px; border-color: color-mix(in srgb, var(--ink) 22%, var(--line)); background: color-mix(in srgb, #fff3a8 22%, var(--surface));
+  box-shadow: 2px 2px 0 color-mix(in srgb, var(--ink) 14%, transparent); }
+:root[data-paper="sailor"] .chat-pick::before { width: 10px; height: 0; border-radius: 0; background: none; border-top: 4px double color-mix(in srgb, var(--ink) 50%, transparent); }
 :root[data-paper="sailor"] .chat-who-n { text-decoration: underline 2px color-mix(in srgb, var(--accent) 60%, transparent); text-underline-offset: 3px; }
 :root[data-paper="sailor"] .chat-title::before { width: 14px; height: 0; background: none; border-top: 5px double var(--ink); }
 :root[data-paper="sailor"] .chat-acts .btn, :root[data-paper="sailor"] .chat-macts .btn, :root[data-paper="sailor"] .chat-list-btn,
 :root[data-paper="sailor"] .chat-stash, :root[data-paper="sailor"] .chat-list-new { border-radius: 3px; }
-:root[data-paper="sailor"] .chat-acts .btn.primary, :root[data-paper="sailor"] .chat-list-btn[aria-expanded="true"] { box-shadow: 2px 2px 0 var(--ink); }
+:root[data-paper="sailor"] .chat-acts .btn.primary, :root[data-paper="sailor"] .chat-list-btn[aria-expanded="true"] { box-shadow: 2px 2px 0 color-mix(in srgb, var(--ink) 55%, transparent); }
 :root[data-paper="sailor"] .chat-acts .btn.primary:active { box-shadow: 0 0 0 var(--ink); transform: translate(2px, 2px); }
 :root[data-paper="sailor"] .chat-in { border-radius: 3px; background-image: repeating-linear-gradient(transparent 0 23px, color-mix(in srgb, #5b7fd6 14%, transparent) 23px 24px); background-position: 0 6px; }
 :root[data-paper="sailor"] .chat-gauge { height: 11px; border-radius: 1px; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink) 30%, transparent);
   background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--ink) 40%, transparent) 0 1px, transparent 1px 8px) left bottom / 100% 4px no-repeat,
     color-mix(in srgb, #fff3a8 25%, var(--surface)); }
 :root[data-paper="sailor"] .chat-gauge > i { border-radius: 0; background: color-mix(in srgb, #5b7fd6 55%, transparent); }
+:root[data-paper="sailor"] .chat-pickpop { border-radius: 3px; border-top: 4px double color-mix(in srgb, var(--ink) 45%, transparent); box-shadow: 3px 4px 0 color-mix(in srgb, var(--ink) 14%, transparent); }
 :root[data-paper="sailor"] .chat-list { border-radius: 3px; border-top: 4px double color-mix(in srgb, var(--ink) 60%, transparent); box-shadow: 3px 4px 0 color-mix(in srgb, var(--ink) 18%, transparent); }
 :root[data-paper="sailor"] .chat-li, :root[data-paper="sailor"] .chat-li-main { border-radius: 2px; }
-:root[data-paper="sailor"] .chat-li[aria-current="true"] { box-shadow: inset 4px 0 0 var(--accent); }
+:root[data-paper="sailor"] .chat-li[aria-current="true"] { box-shadow: inset 4px 0 0 color-mix(in srgb, var(--accent) 55%, transparent); }
 :root[data-paper="sailor"] .chat-msg.live .chat-text::after { width: 3px; background: var(--ink); }
 
 /* ---------- 古风：诗笺双线框、问 / 答朱砂小印、方正按钮、墨线 ---------- */
@@ -179,12 +220,15 @@ body.has-scene .side-right .chat-list { background-color: color-mix(in srgb, var
   --chat-kai: "LXGW WenKai TC", "KaiTi", "STKaiti", serif; }
 :root[data-paper="hanfu"] .chat-msg { border-radius: 1px; outline: 1px solid color-mix(in srgb, var(--accent) 22%, var(--line)); outline-offset: -5px; padding: 12px 16px 8px; }
 :root[data-paper="hanfu"] .chat-msg::after { content: "答"; position: absolute; right: 9px; top: 9px; width: 18px; height: 18px; display: grid; place-items: center;
-  font: 11px/1 var(--chat-kai); color: #fff; background: var(--accent); border-radius: 2px 1px 3px 1px; rotate: 6deg; }
-:root[data-paper="hanfu"] .chat-msg.user::after { content: "问"; background: color-mix(in srgb, var(--accent) 70%, #2b2622); rotate: -5deg; }
+  font: 11px/1 var(--chat-kai); color: #fff; background: color-mix(in srgb, var(--accent) 72%, var(--surface)); border-radius: 2px 1px 3px 1px; rotate: 6deg; }
+:root[data-paper="hanfu"] .chat-msg.user::after { content: "问"; background: color-mix(in srgb, var(--accent) 52%, var(--ink)); opacity: .82; rotate: -5deg; }
 :root[data-paper="hanfu"] .chat-who { padding-right: 24px; }
 :root[data-paper="hanfu"] .chat-who-n, :root[data-paper="hanfu"] .chat-title, :root[data-paper="hanfu"] .chat-li-t, :root[data-paper="hanfu"] .chat-empty-t { font-family: var(--chat-kai); }
 :root[data-paper="hanfu"] .chat-title::before { content: "谈"; width: 16px; height: 16px; display: grid; place-items: center; font: 10px/1 var(--chat-kai); color: #fff;
-  background: var(--accent); border-radius: 2px 1px 3px 1px; }
+  background: color-mix(in srgb, var(--accent) 72%, var(--surface)); border-radius: 2px 1px 3px 1px; }
+:root[data-paper="hanfu"] .chat-pick { border-radius: 999px; border-color: color-mix(in srgb, var(--ink) 18%, var(--line)); background: color-mix(in srgb, #efe3c8 24%, var(--surface));
+  letter-spacing: .04em; font-family: var(--chat-kai); }
+:root[data-paper="hanfu"] .chat-pick::before { width: 7px; height: 7px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, color-mix(in srgb, var(--ink) 40%, transparent), var(--ink)); opacity: .7; }
 :root[data-paper="hanfu"] .chat-acts .btn, :root[data-paper="hanfu"] .chat-macts .btn, :root[data-paper="hanfu"] .chat-list-btn,
 :root[data-paper="hanfu"] .chat-stash, :root[data-paper="hanfu"] .chat-list-new { border-radius: 1px; letter-spacing: .1em; }
 :root[data-paper="hanfu"] .chat-acts .btn.primary { border-radius: 3px 1px 4px 2px; box-shadow: inset 0 0 0 2px color-mix(in srgb, #fff 25%, transparent); }
@@ -192,9 +236,10 @@ body.has-scene .side-right .chat-list { background-color: color-mix(in srgb, var
 :root[data-paper="hanfu"] .chat-gauge { height: 3px; border-radius: 0; overflow: visible; background: color-mix(in srgb, var(--line-strong) 60%, transparent); }
 :root[data-paper="hanfu"] .chat-gauge > i { border-radius: 0 3px 3px 0; background: linear-gradient(90deg, color-mix(in srgb, var(--ink) 25%, transparent), var(--ink) 30%); }
 :root[data-paper="hanfu"] .chat-gauge > i::after { content: ""; position: absolute; right: -3px; top: -2px; width: 7px; height: 7px; border-radius: 50%; background: var(--ink); }
+:root[data-paper="hanfu"] .chat-pickpop { border-radius: 1px; outline: 1px solid var(--line-strong); outline-offset: -5px; padding: 12px 14px 14px; }
 :root[data-paper="hanfu"] .chat-list { border-radius: 1px; outline: 1px solid var(--line-strong); outline-offset: -5px; padding: 10px; }
 :root[data-paper="hanfu"] .chat-li, :root[data-paper="hanfu"] .chat-li-main { border-radius: 1px; }
-:root[data-paper="hanfu"] .chat-li[aria-current="true"] { background: transparent; box-shadow: inset 0 -2px 0 var(--accent); }
+:root[data-paper="hanfu"] .chat-li[aria-current="true"] { background: transparent; box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--accent) 60%, transparent); }
 :root[data-paper="hanfu"] .chat-forknote { border-style: solid; border-radius: 1px; border-width: 1px 0; }
 :root[data-paper="hanfu"] .chat-msg.live .chat-text::after { width: 7px; height: 7px; border-radius: 50%; vertical-align: 1px; background: var(--ink); }
 
@@ -207,20 +252,25 @@ body.has-scene .side-right .chat-list { background-color: color-mix(in srgb, var
 :root[data-paper="gothic"] .chat-msg.user { clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px); }
 :root[data-paper="gothic"] .chat-msg.ai { background-image: radial-gradient(ellipse at 50% 0, color-mix(in srgb, var(--accent) 14%, transparent), transparent 65%); }
 :root[data-paper="gothic"] .chat-who-n { letter-spacing: .1em; font-family: "Noto Serif SC", serif; }
-:root[data-paper="gothic"] .chat-who-n::before, :root[data-paper="gothic"] .chat-title::before { content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 7px 0 2px;
-  background: var(--accent); rotate: 45deg; box-shadow: 0 0 6px var(--accent); }
+:root[data-paper="gothic"] .chat-who-n::before, :root[data-paper="gothic"] .chat-title::before, :root[data-paper="gothic"] .chat-pick::before { content: ""; display: inline-block; width: 6px; height: 6px; margin: 0 7px 0 2px;
+  border-radius: 0; background: color-mix(in srgb, var(--accent) 70%, transparent); rotate: 45deg; box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 45%, transparent); }
+:root[data-paper="gothic"] .chat-pick { border-radius: 999px; outline: 1px dashed color-mix(in srgb, var(--accent) 30%, transparent); outline-offset: -4px;
+  background: linear-gradient(180deg, color-mix(in srgb, #3a1226 8%, var(--surface)), color-mix(in srgb, var(--accent) 10%, var(--surface))); }
+:root[data-paper="gothic"] .chat-pick::before { margin: 0 2px; }
 :root[data-paper="gothic"] .chat-title::before { width: 7px; height: 7px; margin: 0 2px; }
 :root[data-paper="gothic"] .chat-acts .btn, :root[data-paper="gothic"] .chat-macts .btn, :root[data-paper="gothic"] .chat-list-btn,
 :root[data-paper="gothic"] .chat-stash, :root[data-paper="gothic"] .chat-list-new, :root[data-paper="gothic"] .chat-forkchip { border-radius: 0; clip-path: var(--chat-cut-s); }
 :root[data-paper="gothic"] .chat-acts .btn.primary:hover { filter: brightness(1.15); }
 :root[data-paper="gothic"] .chat-in { border-radius: 0; clip-path: var(--chat-cut-s); }
 :root[data-paper="gothic"] .chat-gauge { height: 8px; border-radius: 0; clip-path: var(--chat-cut-s); background: color-mix(in srgb, #000 30%, var(--line-strong)); }
-:root[data-paper="gothic"] .chat-gauge > i { border-radius: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 45%, #000), var(--accent) 80%, #ffcf7a); }
+:root[data-paper="gothic"] .chat-gauge > i { border-radius: 0; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 25%, transparent), color-mix(in srgb, var(--accent) 60%, transparent) 80%, color-mix(in srgb, #ffcf7a 70%, transparent)); }
+:root[data-paper="gothic"] .chat-pickpop { border-radius: 0; outline: 1px dashed color-mix(in srgb, var(--accent) 40%, transparent); outline-offset: -6px; padding: 12px 14px 14px;
+  clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px); }
 :root[data-paper="gothic"] .chat-list { border-radius: 0; outline: 1px dashed color-mix(in srgb, var(--accent) 45%, transparent); outline-offset: -6px; padding: 10px;
   clip-path: polygon(12px 0, calc(100% - 12px) 0, 100% 12px, 100% calc(100% - 12px), calc(100% - 12px) 100%, 12px 100%, 0 calc(100% - 12px), 0 12px); }
 :root[data-paper="gothic"] .chat-li, :root[data-paper="gothic"] .chat-li-main { border-radius: 0; }
-:root[data-paper="gothic"] .chat-li[aria-current="true"] { background: transparent; box-shadow: inset 2px 0 0 var(--accent), inset 0 0 12px color-mix(in srgb, var(--accent) 22%, transparent); }
-:root[data-paper="gothic"] .chat-msg.live .chat-text::after { width: 3px; background: linear-gradient(#ffd27a, var(--accent)); box-shadow: 0 0 8px #ffb347; }
+:root[data-paper="gothic"] .chat-li[aria-current="true"] { background: transparent; box-shadow: inset 2px 0 0 color-mix(in srgb, var(--accent) 65%, transparent), inset 0 0 12px color-mix(in srgb, var(--accent) 16%, transparent); }
+:root[data-paper="gothic"] .chat-msg.live .chat-text::after { width: 3px; background: linear-gradient(color-mix(in srgb, #ffd27a 80%, transparent), color-mix(in srgb, var(--accent) 60%, transparent)); box-shadow: 0 0 8px color-mix(in srgb, #ffb347 55%, transparent); }
 
 /* ---------- 侦探：问讯笔录、Q.01 / A. 编号、打字机字体、警戒带 ---------- */
 :root[data-paper="detective"] .chat { counter-reset: chat-q; --chat-ai-bg: color-mix(in srgb, #fdf5d8 30%, var(--surface)); --chat-user-bg: var(--surface); --chat-line: var(--line-strong);
@@ -230,22 +280,27 @@ body.has-scene .side-right .chat-list { background-color: color-mix(in srgb, var
 :root[data-paper="detective"] .chat-msg.user::before { content: "Q." counter(chat-q, decimal-leading-zero); position: absolute; left: -1px; top: -15px; height: 15px; padding: 0 9px;
   border: 1px dashed var(--line-strong); border-bottom: 0; border-radius: 5px 5px 0 0; background: var(--chat-user-bg); font: 600 10px/14px var(--chat-type); letter-spacing: .14em; color: var(--muted); }
 :root[data-paper="detective"] .chat-msg.ai { padding-left: 20px; background-image: linear-gradient(90deg, transparent 8px, color-mix(in srgb, #c8333f 32%, transparent) 8px 9px, transparent 9px); }
-:root[data-paper="detective"] .chat-msg.ai .chat-who-n::before { content: "A."; margin-right: 6px; color: var(--accent); }
+:root[data-paper="detective"] .chat-msg.ai .chat-who-n::before { content: "A."; margin-right: 6px; color: color-mix(in srgb, var(--accent) 75%, var(--ink)); }
+:root[data-paper="detective"] .chat-pick { border-radius: 999px; border-style: dashed; border-color: var(--line-strong); background: color-mix(in srgb, #fdf5d8 26%, var(--surface)); }
+:root[data-paper="detective"] .chat-pick::before { content: "AI"; width: auto; height: auto; padding-right: 5px; border-radius: 0; background: none; border-right: 1px dashed var(--line-strong);
+  font: 600 9px/12px var(--chat-type); letter-spacing: .1em; color: var(--muted); }
 :root[data-paper="detective"] .chat-who, :root[data-paper="detective"] .chat-ctx, :root[data-paper="detective"] .chat-li-s, :root[data-paper="detective"] .chat-list-n,
 :root[data-paper="detective"] .chat-msg.user .chat-text { font-family: var(--chat-type); }
-:root[data-paper="detective"] .chat-title::before { content: "#"; width: auto; height: auto; background: none; font: 700 14px/1 var(--chat-type); color: var(--accent); }
+:root[data-paper="detective"] .chat-title::before { content: "#"; width: auto; height: auto; background: none; font: 700 14px/1 var(--chat-type); color: color-mix(in srgb, var(--accent) 75%, var(--ink)); }
 :root[data-paper="detective"] .chat-acts .btn, :root[data-paper="detective"] .chat-macts .btn, :root[data-paper="detective"] .chat-list-btn,
 :root[data-paper="detective"] .chat-stash, :root[data-paper="detective"] .chat-list-new { border-radius: 1px; letter-spacing: .06em; }
 :root[data-paper="detective"] .chat-acts .btn.primary { border-style: double; border-width: 3px; border-color: color-mix(in srgb, #fff 45%, var(--accent)); padding: 4px 11px; }
 :root[data-paper="detective"] .chat-in { border-radius: 1px; border-style: dashed; font-family: var(--chat-type); }
 :root[data-paper="detective"] .chat-gauge { height: 10px; border-radius: 0; background: transparent; border: 1px dashed var(--line-strong); }
-:root[data-paper="detective"] .chat-gauge > i { border-radius: 0; background: repeating-linear-gradient(-45deg, #e8c13a 0 5px, #2e2620 5px 10px); }
+:root[data-paper="detective"] .chat-gauge > i { border-radius: 0; background: repeating-linear-gradient(-45deg, color-mix(in srgb, #e8c13a 55%, transparent) 0 5px, color-mix(in srgb, var(--ink) 45%, transparent) 5px 10px); }
+:root[data-paper="detective"] .chat-pickpop { border-radius: 1px; border-style: dashed; padding-left: 18px;
+  background-image: linear-gradient(90deg, transparent 8px, color-mix(in srgb, #c8333f 26%, transparent) 8px 9px, transparent 9px); }
 :root[data-paper="detective"] .chat-list { border-radius: 1px; border-style: dashed;
   background-image: linear-gradient(90deg, transparent 8px, color-mix(in srgb, #c8333f 30%, transparent) 8px 9px, transparent 9px); padding-left: 16px; }
 :root[data-paper="detective"] .chat-list-h::before { content: "FILES"; flex: 0 0 auto; padding: 0 7px; border: 1px dashed var(--line-strong); border-radius: 4px 4px 0 0;
   font: 600 10px/15px var(--chat-type); letter-spacing: .2em; color: var(--muted); }
 :root[data-paper="detective"] .chat-li, :root[data-paper="detective"] .chat-li-main { border-radius: 1px; }
-:root[data-paper="detective"] .chat-li[aria-current="true"] { background: color-mix(in srgb, #f7e58c 45%, transparent); }
+:root[data-paper="detective"] .chat-li[aria-current="true"] { background: color-mix(in srgb, #f7e58c 32%, transparent); }
 :root[data-paper="detective"] .chat-msg.live .chat-text::after { width: .6em; height: 1.05em; background: var(--ink); opacity: .7; }
 
 /* ---------- 冒险者：委托板羊皮纸、木框图钉、任务叹号、经验条 ---------- */
@@ -254,10 +309,14 @@ body.has-scene .side-right .chat-list { background-color: color-mix(in srgb, var
 :root[data-paper="adventurer"] .chat-msg { border-width: 2px; border-radius: 6px; box-shadow: 3px 3px 0 color-mix(in srgb, var(--chat-wood) 30%, transparent); }
 :root[data-paper="adventurer"] .chat-msg.ai { margin-top: 6px; }
 :root[data-paper="adventurer"] .chat-msg.ai::after { content: ""; position: absolute; left: 50%; top: -6px; width: 10px; height: 10px; margin-left: -5px; border-radius: 50%;
-  background: var(--accent); box-shadow: inset -2px -2px 0 rgba(0, 0, 0, .25), 0 1px 2px rgba(0, 0, 0, .3); }
+  background: radial-gradient(circle at 35% 35%, color-mix(in srgb, var(--accent) 40%, #fff), color-mix(in srgb, var(--accent) 75%, var(--surface))); box-shadow: 0 1px 2px rgba(0, 0, 0, .22); }
 :root[data-paper="adventurer"] .chat-msg.user { border-style: dashed; border-radius: 12px 12px 3px 12px; }
 :root[data-paper="adventurer"] .chat-who-n::before, :root[data-paper="adventurer"] .chat-title::before { content: "!"; display: inline-grid; place-items: center; width: 15px; height: 15px; margin-right: 5px;
-  border-radius: 50%; background: var(--chat-quest); color: #3a2a18; font: 800 10px/1 var(--f-ui); box-shadow: 0 0 0 2px var(--chat-wood); vertical-align: 0; }
+  border-radius: 50%; background: color-mix(in srgb, var(--chat-quest) 55%, var(--surface)); color: #3a2a18; font: 800 10px/1 var(--f-ui);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--chat-wood) 60%, transparent); vertical-align: 0; }
+:root[data-paper="adventurer"] .chat-pick { border-radius: 999px; border: 2px solid color-mix(in srgb, var(--chat-wood) 45%, transparent); background: color-mix(in srgb, #e9d3a1 24%, var(--surface)); }
+:root[data-paper="adventurer"] .chat-pick::before { width: 8px; height: 8px; border-radius: 2px; rotate: 45deg;
+  background: linear-gradient(135deg, color-mix(in srgb, #8fd3c7 70%, #fff), color-mix(in srgb, #3f9c8e 60%, transparent)); }
 :root[data-paper="adventurer"] .chat-msg.user .chat-who-n::before { content: "?"; background: color-mix(in srgb, var(--chat-quest) 40%, var(--surface)); }
 :root[data-paper="adventurer"] .chat-title::before { width: 16px; height: 16px; margin: 0 2px; font-size: 11px; image-rendering: auto; }
 :root[data-paper="adventurer"] .chat-acts .btn, :root[data-paper="adventurer"] .chat-macts .btn, :root[data-paper="adventurer"] .chat-list-btn,
@@ -265,10 +324,11 @@ body.has-scene .side-right .chat-list { background-color: color-mix(in srgb, var
 :root[data-paper="adventurer"] .chat-acts .btn.primary, :root[data-paper="adventurer"] .chat-list-btn[aria-expanded="true"] { border: 2px solid var(--chat-wood); box-shadow: inset 0 2px 0 rgba(255, 255, 255, .25); }
 :root[data-paper="adventurer"] .chat-in { border-radius: 6px; border: 2px solid color-mix(in srgb, var(--chat-wood) 60%, var(--line-strong)); }
 :root[data-paper="adventurer"] .chat-gauge { height: 11px; border-radius: 3px; border: 2px solid var(--chat-wood); background: color-mix(in srgb, #000 22%, var(--line-strong)); }
-:root[data-paper="adventurer"] .chat-gauge > i { border-radius: 1px; background: repeating-linear-gradient(90deg, var(--chat-quest) 0 9px, color-mix(in srgb, var(--chat-quest) 60%, #000) 9px 11px); }
+:root[data-paper="adventurer"] .chat-gauge > i { border-radius: 1px; background: repeating-linear-gradient(90deg, color-mix(in srgb, var(--chat-quest) 62%, var(--surface)) 0 9px, color-mix(in srgb, var(--chat-wood) 40%, transparent) 9px 11px); }
+:root[data-paper="adventurer"] .chat-pickpop { border-radius: 8px; border: 2px solid color-mix(in srgb, var(--chat-wood) 70%, transparent); background-color: color-mix(in srgb, #e9d3a1 22%, var(--surface)); }
 :root[data-paper="adventurer"] .chat-list { border-radius: 6px; border: 2px solid var(--chat-wood); background-color: color-mix(in srgb, #e9d3a1 22%, var(--surface)); }
 :root[data-paper="adventurer"] .chat-li, :root[data-paper="adventurer"] .chat-li-main { border-radius: 5px; }
-:root[data-paper="adventurer"] .chat-li[aria-current="true"] { box-shadow: inset 0 0 0 2px var(--chat-wood); background: color-mix(in srgb, var(--chat-quest) 22%, transparent); }
+:root[data-paper="adventurer"] .chat-li[aria-current="true"] { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--chat-wood) 55%, transparent); background: color-mix(in srgb, var(--chat-quest) 15%, transparent); }
 :root[data-paper="adventurer"] .chat-msg.live .chat-text::after { width: 7px; height: 7px; vertical-align: 1px; background: var(--chat-wood); rotate: 45deg; }
 
 /* ================= 动效：只在完整动效下播 ================= */
@@ -344,10 +404,13 @@ body.has-scene .side-right .chat-list { background-color: color-mix(in srgb, var
 @keyframes chat-used-quest { 30% { transform: translateY(-5px); border-color: var(--chat-quest); } }
 
 /* 列表：展开、删掉时离开 */
-:root[data-motion="full"] .chat-list:not([hidden]) { animation: chat-list-in .2s ease; transform-origin: top left; }
+:root[data-motion="full"] .chat-list:not([hidden]), :root[data-motion="full"] .chat-pickpop:not([hidden]) { animation: chat-list-in .2s ease; transform-origin: top left; }
+:root[data-motion="full"] .chat-pickpop:not([hidden]) { transform-origin: top right; }
 @keyframes chat-list-in { from { opacity: 0; transform: translateY(-6px) scale(.97); } }
-:root[data-paper="hanfu"][data-motion="full"] .chat-list:not([hidden]) { animation: chat-open-unroll .35s ease-out; }
-:root[data-paper="gothic"][data-motion="full"] .chat-list:not([hidden]) { animation: chat-open-dark .4s ease-out; }
+:root[data-paper="hanfu"][data-motion="full"] .chat-list:not([hidden]), :root[data-paper="hanfu"][data-motion="full"] .chat-pickpop:not([hidden]) { animation: chat-open-unroll .35s ease-out; }
+:root[data-paper="gothic"][data-motion="full"] .chat-list:not([hidden]), :root[data-paper="gothic"][data-motion="full"] .chat-pickpop:not([hidden]) { animation: chat-open-dark .4s ease-out; }
+:root[data-paper="adventurer"][data-motion="full"] .chat-pickpop:not([hidden]) { animation: chat-in-drop .45s cubic-bezier(.3, 1.4, .5, 1); }
+:root[data-paper="magical"][data-motion="full"] .chat-pickpop:not([hidden]) { animation: chat-in-magic .4s cubic-bezier(.2, 1.5, .4, 1); }
 [data-motion="full"] .chat-li-out { pointer-events: none; animation: chat-li-out .26s ease-in forwards; }
 @keyframes chat-li-out { to { opacity: 0; transform: translateX(30px); } }
 :root[data-paper="magical"][data-motion="full"] .chat-li-out { animation-name: chat-li-pop; }
@@ -375,6 +438,8 @@ body.has-scene .side-right .chat-list { background-color: color-mix(in srgb, var
   .chat[data-mode="modal"] .chat-foot { padding: 8px 12px 12px; }
   .chat[data-mode="modal"] { height: calc(100vh - 120px); }
   .chat-stash-t { display: none; }
+  .chat-pick { max-width: 38%; padding: 0 8px; }
+  .chat-pick-lv { display: none; }
   .chat-in { min-height: 52px; }
   .chat-msg { max-width: 100%; }
 }

@@ -17,15 +17,15 @@
 /* ---------- 珠光纸：粉 → 紫 → 天蓝 → 薄荷 → 一道白光 → 杏色，斜着铺一整页，慢慢流过去；
    上面一层细珠光颗粒、零星星屑，纸里压着魔法阵的浮雕水印，右上角迎光一道高光。深色是黑珍珠：紫、玫瑰、孔雀绿 ---------- */
 :root[data-paper="magical"] {
-  --mg-i1: rgba(255, 166, 208, .30); --mg-i2: rgba(198, 168, 255, .26); --mg-i3: rgba(148, 212, 255, .24);
-  --mg-i4: rgba(162, 238, 220, .22); --mg-hi: rgba(255, 255, 255, .62); --mg-i5: rgba(255, 206, 176, .26);
-  --mg-core: color-mix(in srgb, var(--paper) 30%, transparent); --mg-rim: rgba(214, 92, 156, .16);
-  --mg-top: rgba(255, 255, 255, .85); --mg-bot: rgba(206, 110, 162, .34); }
+  --mg-i1: rgba(250, 214, 222, .14); --mg-i2: rgba(226, 216, 244, .12); --mg-i3: rgba(214, 228, 240, .10);
+  --mg-i4: rgba(222, 236, 226, .08); --mg-hi: rgba(255, 255, 255, .5); --mg-i5: rgba(250, 230, 210, .14);
+  --mg-core: color-mix(in srgb, var(--paper) 55%, transparent); --mg-rim: rgba(190, 140, 160, .10);
+  --mg-top: rgba(255, 255, 255, .7); --mg-bot: rgba(180, 140, 150, .18); }
 :root[data-paper="magical"][data-dark] {
-  --mg-i1: rgba(196, 70, 140, .20); --mg-i2: rgba(120, 82, 220, .20); --mg-i3: rgba(48, 150, 170, .17);
-  --mg-i4: rgba(70, 160, 130, .13); --mg-hi: rgba(214, 190, 255, .16); --mg-i5: rgba(200, 120, 160, .16);
+  --mg-i1: rgba(200, 160, 180, .07); --mg-i2: rgba(170, 160, 200, .07); --mg-i3: rgba(150, 170, 180, .05);
+  --mg-i4: rgba(150, 170, 160, .04); --mg-hi: rgba(230, 225, 240, .10); --mg-i5: rgba(200, 170, 170, .06);
   --mg-core: color-mix(in srgb, var(--paper) 34%, transparent); --mg-rim: rgba(0, 0, 0, .28);
-  --mg-top: rgba(236, 200, 255, .26); --mg-bot: rgba(0, 0, 0, .4); }
+  --mg-top: rgba(230, 225, 235, .12); --mg-bot: rgba(0, 0, 0, .4); }
 @property --mg-s { syntax: "<number>"; inherits: false; initial-value: 0; }
 :root[data-paper="magical"] body.has-scene .ws-body > .center::before {
   /* 一圈珠光的周期 980px，115° 方向上走一个周期 = 横移 980 / sin115° ≈ 1081px，循环时接得上 */

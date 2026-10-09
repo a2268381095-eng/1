@@ -436,7 +436,7 @@ async function flows(dist, fails) {
     del: getComputedStyle(document.querySelector('.ver-del')).color,
     list: getComputedStyle(document.querySelector('.side-right')).backgroundColor,
   }));
-  check(dark.bg === 'rgb(27, 21, 29)' && dark.del === 'rgb(255, 143, 162)' && (dark.list === 'rgb(23, 18, 25)' || /^color\(srgb 0\.0901961 0\.0705882 0\.0980392 \/ [\d.]+\)$/.test(dark.list)),
+  check(dark.bg === 'rgb(27, 27, 29)' && dark.del === 'rgb(255, 159, 177)' && (dark.list === 'rgb(24, 24, 26)' || /^color\(srgb 0\.0941176 0\.0941176 0\.101961 \/ [\d.]+\)$/.test(dark.list)),
     '深色模式跟着变（侧栏可以是半透明的同一种深色）：' + JSON.stringify(dark), fails);
   await page.emulateMedia({ colorScheme: 'light' });
   if (process.env.SHOT) await page.screenshot({ path: path.join(process.env.SHOT, 'versions-desktop.png') });
@@ -476,7 +476,7 @@ async function flows(dist, fails) {
   });
   check(box2.sw <= 390 && box2.left >= 0 && box2.right <= 390 && box2.width >= 380 && box2.ssw <= box2.scw && box2.restore <= 390, '手机：对比占满一屏，不横向溢出 ' + JSON.stringify(box2), fails);
   check(box2.cells.length === 2 && box2.cells.every((w) => w > 150), '手机上也是左右并排 ' + box2.cells.join(','), fails);
-  check(box2.panel === 'none' && box2.bg === 'rgb(27, 21, 29)' && box2.ins === 'rgb(127, 209, 168)', '深色：' + box2.bg + ' / ' + box2.ins, fails);
+  check(box2.panel === 'none' && box2.bg === 'rgb(27, 27, 29)' && box2.ins === 'rgb(134, 214, 178)', '深色：' + box2.bg + ' / ' + box2.ins, fails);
   if (process.env.SHOT) await m.page.screenshot({ path: path.join(process.env.SHOT, 'versions-mobile-compare.png') });
   await m.page.click('.ver-head .icon-btn[aria-label="返回"]');
   await m.page.waitForTimeout(200);

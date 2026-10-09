@@ -1,7 +1,7 @@
 /* sailor 这套的纸（写字页中间那张）。选择器用 :root[data-paper="sailor"] body.has-scene ... */
 /* 活页本的一页：左边一列打孔是真挖空的，透过孔看得见后面的教室；红色页边线、抬头双线；横格铺满整页，跟着字一起滚。
    右上角一颗金星贴纸，右下角是小恶魔随手画的尾巴。醒来时这页纸从上沿翻下来落平。 */
-:root[data-paper="sailor"] { --sl-rule: color-mix(in srgb, #5b7fd6 28%, transparent); --sl-margin: color-mix(in srgb, #c8333f 46%, transparent);
+:root[data-paper="sailor"] { --sl-rule: color-mix(in srgb, #5b7fd6 28%, transparent); --sl-margin: color-mix(in srgb, #e06f7e 46%, transparent);
   --sl-head: color-mix(in srgb, #3f63b8 46%, transparent); --sl-edge: color-mix(in srgb, #1f2a3d 12%, transparent); --sl-head-y: 58px; }
 :root[data-paper="sailor"][data-dark] { --sl-rule: color-mix(in srgb, #8fb0e0 17%, transparent); --sl-margin: color-mix(in srgb, #ff7a85 40%, transparent);
   --sl-head: color-mix(in srgb, #8fb0e0 36%, transparent); --sl-edge: color-mix(in srgb, #8fb0e0 14%, transparent); }

@@ -12,7 +12,7 @@ import { setupModal, renderSetup } from "./setup.js";
 import { levelPicker } from "./levels.js";
 import { listSamples, noteSampleUse, sampleBlock } from "../../core/samples.js";
 import { samplesModal } from "./samples.js";
-import { ctxSource, ctxText, lastCtx, noteCtx, BEFORE_SIZES } from "./context.js";
+import { ctxSource, ctxText, lastCtx, noteCtx, BEFORE_SIZES, CTX_NONE } from "./context.js";
 
 const skipThisSession = new Set();   // "功能|提供商|模型|提示词" 本次会话不再询问
 
@@ -34,6 +34,8 @@ const skipThisSession = new Set();   // "功能|提供商|模型|提示词" 本�
  *   reuse         上一次的选择（choice），给了就不再弹确认卡（「再出一版」用）
  *   prefer        确认卡先选好的组合 { providerId, model, creativity, thinking }（比如对话面板上选的），作者还能改
  *   temp          true：确认卡直接打开「临时写一个」，也不走「本次不再询问」
+ *   raw           true：没写提示词时把 input 原样当作这句话发出去（对话用）
+ *   ctx           「带上」区先勾哪些（{ before, prev, points, intro, people… }）；有 history 时默认什么都不带
  * 返回 { text, usage, stash, choice, results }（count > 1 时 results 是每一版）；取消或失败返回 null
  */
 export async function runAI(opts) {
@@ -80,9 +82,15 @@ const promptLabel = (p) => (p.group ? p.group + " / " : "") + p.name + (p.uses ?
 /** 把提示词和发送内容拼成最终要发的话 */
 function compose(promptText, opts, sampleText = "", context = "") {
   const vars = { ...(opts.vars || {}), 选中文本: opts.input || (opts.vars || {}).选中文本 || "" };
+  // 对话这类：没写提示词时，作者说的话原样发出去，不包成【原文】
+  if (opts.raw && !String(promptText || "").trim()) {
+    const parts = [context, sampleText ? sampleBlock(sampleText) : "", opts.input || ""].filter(Boolean);
+    return { text: parts.join("\n\n"), missing: [], autoAttach: false };
+  }
   const f = fillPrompt(promptText, vars);
   let text = context ? context + "\n\n" + f.text : f.text;
-  const autoAttach = opts.input && !f.used.includes("选中文本");
+  // 提示词里已经用变量放进了同样的内容（比如 {本章正文}），就不再附一遍
+  const autoAttach = opts.input && !f.used.includes("选中文本") && !f.used.some((n) => vars[n] === opts.input);
   if (sampleText) text += "\n\n" + sampleBlock(sampleText);
   if (autoAttach) text += `\n\n【原文】\n${opts.input}\n【/原文】`;
   return { text, missing: f.missing.filter((m) => m !== "选中文本" || !opts.input), autoAttach };
@@ -114,7 +122,8 @@ async function confirmCard(opts, prev = null) {
 
   const samples = await listSamples();
   const src = await ctxSource(opts);
-  const ctx = { ...(prev && prev.ctx ? prev.ctx : await lastCtx(opts.feature)) };
+  // 继续追问时前面已经带过了，默认不再带；opts.ctx 可以直接指定
+  const ctx = { ...(prev && prev.ctx ? prev.ctx : opts.ctx ? { ...CTX_NONE, ...opts.ctx } : (opts.history || []).length ? CTX_NONE : await lastCtx(opts.feature)) };
   ctx.people = [...(ctx.people || [])];
   return new Promise((resolve) => {
     let result = null;

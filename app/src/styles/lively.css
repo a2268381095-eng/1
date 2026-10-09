@@ -1,0 +1,64 @@
+/* 灵动的通用件：分段按钮是淡色轨道上的白胶囊，勾选是开关，滑块是渐变轨道加圆钮，卡片鼠标放上去会抬起。
+   颜色都从配色变量里取（--accent / --accent-2 / --grad / --glow / --tint），换配色跟着变；各套风格的形状在 themes.css 里另说。 */
+
+/* ---------- 分段按钮（设置页的 .st-seg；字体卡片 .st-fonts 除外） ---------- */
+.st-seg:not(.st-fonts) { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 7%, var(--side)); box-shadow: inset 0 1px 2px color-mix(in srgb, var(--ink) 8%, transparent); }
+.st-seg:not(.st-fonts) button { border: 0; background: transparent; color: var(--muted); border-radius: 999px; padding: 5px 14px;
+  transition: background-color .2s, color .2s, box-shadow .25s, transform .25s cubic-bezier(.3, 1.6, .5, 1); }
+.st-seg:not(.st-fonts) button:hover { background: color-mix(in srgb, var(--surface) 70%, transparent); color: var(--ink); }
+.st-seg:not(.st-fonts) button[aria-pressed="true"] { background: var(--surface); color: color-mix(in srgb, var(--accent) 85%, var(--ink)); font-weight: 600;
+  border: 0; box-shadow: 0 3px 10px -4px var(--glow), 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent); }
+[data-motion="full"] .st-seg:not(.st-fonts) button[aria-pressed="true"] { animation: seg-pick .35s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes seg-pick { from { transform: scale(.86); } }
+@media (max-width: 560px) { .st-seg:not(.st-fonts) { border-radius: 16px; } }
+
+/* ---------- 开关（设置页的勾选，以及任何 .check.switch） ---------- */
+.st-group .check input[type="checkbox"], .check.switch input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none; position: relative; flex: 0 0 auto; width: 38px; height: 22px; margin: 0; border-radius: 999px; cursor: pointer;
+  background: color-mix(in srgb, var(--muted) 30%, var(--side)); box-shadow: inset 0 1px 2px color-mix(in srgb, var(--ink) 15%, transparent);
+  transition: background .25s; }
+.st-group .check input[type="checkbox"]::before, .check.switch input[type="checkbox"]::before {
+  content: ""; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, .25); transition: transform .3s cubic-bezier(.3, 1.6, .5, 1), width .2s; }
+.st-group .check input[type="checkbox"]:checked, .check.switch input[type="checkbox"]:checked { background: var(--grad); }
+.st-group .check input[type="checkbox"]:checked::before, .check.switch input[type="checkbox"]:checked::before { transform: translateX(16px); }
+.st-group .check input[type="checkbox"]:active::before, .check.switch input[type="checkbox"]:active::before { width: 20px; }
+.st-group .check input[type="checkbox"]:checked:active::before, .check.switch input[type="checkbox"]:checked:active::before { transform: translateX(12px); }
+.st-group .check input[type="checkbox"]:focus-visible, .check.switch input[type="checkbox"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.st-group .check input[type="checkbox"]:disabled, .check.switch input[type="checkbox"]:disabled { opacity: .45; cursor: default; }
+
+/* ---------- 滑块：渐变填到当前值（--p 由 main.js 跟着值更新），圆钮带柔光 ---------- */
+input[type="range"] { appearance: none; -webkit-appearance: none; height: 22px; background: transparent; cursor: pointer; --p: 50%; }
+input[type="range"]::-webkit-slider-runnable-track { height: 6px; border-radius: 999px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 75%, #fff), var(--accent-2)) 0 0 / var(--p) 100% no-repeat, color-mix(in srgb, var(--muted) 22%, var(--side)); }
+input[type="range"]::-moz-range-track { height: 6px; border-radius: 999px; background: color-mix(in srgb, var(--muted) 22%, var(--side)); }
+input[type="range"]::-moz-range-progress { height: 6px; border-radius: 999px; background: linear-gradient(90deg, color-mix(in srgb, var(--accent) 75%, #fff), var(--accent-2)); }
+input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; margin-top: -6px; border-radius: 50%; background: #fff;
+  border: 2px solid var(--accent); box-shadow: 0 2px 8px -1px var(--glow); transition: transform .2s cubic-bezier(.3, 1.6, .5, 1); }
+input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #fff; border: 2px solid var(--accent); box-shadow: 0 2px 8px -1px var(--glow); }
+input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.15); }
+input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.25); }
+
+/* ---------- 卡片、配色块：抬起、柔光 ---------- */
+.st-pal { border-radius: 14px; transition: transform .25s cubic-bezier(.3, 1.6, .5, 1), box-shadow .25s, border-color .2s; }
+.st-pal .st-sw { border-radius: 8px; }
+.st-pal:hover { box-shadow: 0 8px 20px -10px var(--glow); border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+.st-pal[aria-pressed="true"] { box-shadow: 0 8px 22px -10px var(--glow), 0 0 0 2px color-mix(in srgb, var(--accent) 55%, transparent); }
+[data-motion="full"] .st-pal:hover, [data-motion="full"] .book-card:hover { transform: translateY(-2px); }
+.book-card { transition: transform .25s cubic-bezier(.3, 1.6, .5, 1), box-shadow .25s, border-color .2s; }
+.book-card:hover { box-shadow: 0 12px 28px -12px var(--glow); }
+.st-group { border-radius: 18px; }
+.st-jump .btn, .st-jump button { border-radius: 999px; }
+
+/* ---------- 各套风格保持自己的形状 ---------- */
+:root[data-palette="hanfu"] .st-seg:not(.st-fonts), :root[data-palette="hanfu"] .st-seg:not(.st-fonts) button { border-radius: 3px; }
+:root[data-palette="hanfu"] .st-pal, :root[data-palette="hanfu"] .st-group { border-radius: 3px; }
+:root[data-palette="gothic"] .st-seg:not(.st-fonts), :root[data-palette="gothic"] .st-seg:not(.st-fonts) button { border-radius: 0;
+  clip-path: polygon(4px 0, calc(100% - 4px) 0, 100% 4px, 100% calc(100% - 4px), calc(100% - 4px) 100%, 4px 100%, 0 calc(100% - 4px), 0 4px); }
+:root[data-palette="gothic"] .st-pal, :root[data-palette="gothic"] .st-group { border-radius: 0; }
+:root[data-palette="detective"] .st-seg:not(.st-fonts), :root[data-palette="detective"] .st-seg:not(.st-fonts) button { border-radius: 4px; }
+:root[data-palette="detective"] .st-pal { border-radius: 4px; }
+:root[data-palette="sailor"] .st-seg:not(.st-fonts) button[aria-pressed="true"] { box-shadow: 1px 2px 0 color-mix(in srgb, var(--ink) 30%, transparent); }
+:root[data-palette="adventurer"] .st-seg:not(.st-fonts) { border: 1.5px solid color-mix(in srgb, var(--wood, #8a5a32) 40%, transparent); }
+:root[data-palette="adventurer"] .st-pal { border-radius: 8px; }

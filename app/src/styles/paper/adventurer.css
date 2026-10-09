@@ -9,7 +9,7 @@
   --av-light: rgba(255, 248, 222, .42); --av-vig: rgba(120, 72, 24, .30);
   --av-burn: rgba(70, 36, 10, .55); --av-burn2: rgba(150, 96, 40, .0); }
 :root[data-paper="adventurer"][data-dark] {
-  --av-tint: rgba(110, 70, 30, .34); --av-tint2: rgba(80, 48, 18, .38);
+  --av-tint: rgba(70, 66, 60, .2); --av-tint2: rgba(52, 50, 46, .24);
   --av-light: rgba(255, 220, 160, .06); --av-vig: rgba(0, 0, 0, .40);
   --av-burn: rgba(0, 0, 0, .6); --av-burn2: rgba(0, 0, 0, 0); }
 
@@ -97,7 +97,7 @@
 
 /* 章名底下一道皮绳线，中间一颗红菱形 */
 :root[data-paper="adventurer"] body.has-scene .ch-head { padding-bottom: 10px;
-  background: linear-gradient(45deg, transparent 30%, #a63d2a 30% 70%, transparent 70%) center bottom 0 / 8px 8px no-repeat,
+  background: linear-gradient(45deg, transparent 30%, #d07a48 30% 70%, transparent 70%) center bottom 0 / 8px 8px no-repeat,
     linear-gradient(90deg, transparent, #8a5a32 12%, #8a5a32 88%, transparent) center bottom 3px / 100% 2px no-repeat; }
 
 /* ---------- 字数牌子：钉在木框里的一张委托单，四角铜钉 ---------- */
@@ -110,7 +110,7 @@
     radial-gradient(circle at 3px calc(100% - 3px), #ffe2a0 1px, #b8862e 1.6px 2.6px, transparent 3px), radial-gradient(circle at calc(100% - 3px) calc(100% - 3px), #ffe2a0 1px, #b8862e 1.6px 2.6px, transparent 3px); }
 .demon[data-style="adventurer"] .db-label { color: #3a2a18; letter-spacing: .05em; }
 /* 深色：牌子换成深色皮革，进度画在深底上 */
-:root[data-dark] .demon[data-style="adventurer"] .demon-badge { background: radial-gradient(ellipse at 30% 20%, rgba(255, 200, 130, .12), transparent 70%), #2a1e12; color: #f0deb4; border-color: #120a04; }
+:root[data-dark] .demon[data-style="adventurer"] .demon-badge { background: radial-gradient(ellipse at 30% 20%, rgba(255, 200, 130, .12), transparent 70%), #232220; color: #f0deb4; border-color: #120a04; }
 :root[data-dark] .demon[data-style="adventurer"] .db-label { color: #f0deb4; }
 :root[data-dark] .demon[data-style="adventurer"] .demon-badge.done .db-label { color: #ffd24a; }
 .demon[data-style="adventurer"] .demon-badge.done { border-color: #6b4410; box-shadow: 0 0 0 3px #f2b51c, 0 0 0 4px #6b4410, 3px 5px 0 4px rgba(40, 20, 6, .3); }
@@ -121,7 +121,7 @@
 /* ---------- 连击：RPG 的伤害数字。「连斩」是一块皮牌子，数字是黄色描黑边的斜体大字，
    每敲一下数字从下面弹上来、一道剑光斜着划过、右上角跳一个「HIT!」。
    200 橙；500 起变「暴击!」、背后炸开一团锯齿光；1000 红字、交叉两道剑光、整个在抖；2000「会心一击!」红白闪 ---------- */
-.demon[data-style="adventurer"] .demon-combo { --av-c: #fff1b8; --av-o: #3a1606; --av-hit: "HIT!"; --av-hc: #fff6d6; --av-ho: #a63d2a;
+.demon[data-style="adventurer"] .demon-combo { --av-c: #fff1b8; --av-o: #3a1606; --av-hit: "HIT!"; --av-hc: #fff6d6; --av-ho: #d07a48;
   left: -98px; top: 13%; gap: 1px; filter: drop-shadow(1px 2px 0 rgba(30, 12, 4, .35)); }
 .demon.near-left[data-style="adventurer"] .demon-combo { left: auto; right: -98px; }
 .demon[data-style="adventurer"] .demon-combo .dc-label { position: relative; z-index: 2; padding: 2px 9px 3px; font-size: 10px; line-height: 1.1; letter-spacing: .2em; text-indent: .2em;

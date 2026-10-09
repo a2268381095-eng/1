@@ -6,8 +6,8 @@
   --gt-tint: #ead6b0; --gt-tint-a: .5; --gt-burn: rgba(96, 52, 20, .3); --gt-line: #7d1f3c; --gt-line2: rgba(142, 42, 79, .55);
   --gt-glow: 255, 160, 70; --gt-glow-a: .42; --gt-rubric: #8e1f3c; }
 :root[data-paper="gothic"][data-dark] {
-  --gt-tint: #1c1120; --gt-tint-a: .35; --gt-burn: rgba(0, 0, 0, .55); --gt-line: #9e2a4a; --gt-line2: rgba(200, 192, 214, .42);
-  --gt-glow: 255, 150, 70; --gt-glow-a: .26; --gt-rubric: #ff7a9a; }
+  --gt-tint: #1b1b1c; --gt-tint-a: .35; --gt-burn: rgba(0, 0, 0, .55); --gt-line: #8d6a78; --gt-line2: rgba(200, 198, 204, .38);
+  --gt-glow: 255, 150, 70; --gt-glow-a: .26; --gt-rubric: #e597b6; }
 :root[data-paper="gothic"] body.has-scene .ws-body > .center { --gt-w: min(100%, calc(var(--text-width) + 120px)); }
 
 /* ---------- 纸：毛边遮罩（整张减掉四条边上剪掉的小口）+ 皮纹、霉斑、焦边 + 一层犊皮纸的暖色（跟着「背景透出」走） ---------- */
@@ -63,7 +63,7 @@
     0 0;
   background-repeat: no-repeat;
   transition: opacity 1.6s ease; }
-:root[data-paper="gothic"][data-dark] body.has-scene .ws-body > .center::after { filter: drop-shadow(0 0 3px rgba(224, 87, 127, .18)); }
+:root[data-paper="gothic"][data-dark] body.has-scene .ws-body > .center::after { filter: drop-shadow(0 0 3px rgba(229, 151, 182, .18)); }
 /* 烛光极慢地晃：一呼一吸里夹着两下小抖 */
 :root[data-paper="gothic"][data-motion="full"] body.has-scene .ws-body > .center::after { animation: gt-orn-in .6s ease-out backwards, gt-candle 9s steps(54) infinite; }
 @keyframes gt-orn-in { from { opacity: 0; } }
@@ -162,7 +162,7 @@
   margin: calc(var(--gt-d) / -2 - 15px) 0 0 calc(var(--gt-d) / -2 - 15px); pointer-events: none; opacity: 0; image-rendering: pixelated;
   background: var(--pa-bat) center top / var(--pa-bat-w) var(--pa-bat-h) no-repeat, var(--pa-bat) center bottom / var(--pa-bat-w) var(--pa-bat-h) no-repeat; transition: opacity .3s; }
 
-.demon[data-style="gothic"] .demon-combo[data-level="200"] { --gt-c: #e0577f; }
+.demon[data-style="gothic"] .demon-combo[data-level="200"] { --gt-c: #e597b6; }
 .demon[data-style="gothic"] .demon-combo[data-level="500"] { --gt-c: #ff3d6b; --gt-d: 118px; }
 .demon[data-style="gothic"] .demon-combo:is([data-level="1000"], [data-level="2000"]) { --gt-c: #ff2d55; --gt-d: 124px; --gt-face: rgba(120, 10, 34, .92); --gt-face2: rgba(214, 52, 78, .95); }
 .demon[data-style="gothic"] .demon-combo:is([data-level="500"], [data-level="1000"], [data-level="2000"]) .dc-num::before { opacity: 1; }

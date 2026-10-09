@@ -33,6 +33,10 @@ body.has-scene .ws-body > .center::before { content: ""; position: absolute; top
   -webkit-backdrop-filter: blur(var(--b-paper)) saturate(1.1); backdrop-filter: blur(var(--b-paper)) saturate(1.1);
   box-shadow: 0 10px 40px rgba(0, 0, 0, .16);
   transition: background-color 1.2s ease, -webkit-backdrop-filter 1.6s ease, backdrop-filter 1.6s ease, opacity 1.6s ease; }
+/* 书香气：纸这一块整体压低饱和度（纸后面透过来的画、纸上的珠光花纹都跟着变素），纸外面的画照旧 */
+body.has-scene .ws-body > .center::before { filter: saturate(var(--sheet-sat, .5)) sepia(.06); }
+:root[data-dark] body.has-scene .ws-body > .center::before { --sheet-sat: .3; filter: saturate(var(--sheet-sat)); }
+body.has-scene .ws-body > .center::after { filter: saturate(.7); }
 /* ::after 留给各套纸的装饰：把旧的底纹剪影规则（固定 144px 高、专注模式压暗）重置掉 */
 body.has-scene .ws-body > .center::after { content: none; height: auto; background: none; opacity: 1; }
 body.has-scene:not(.paper-rest) .ws.focus .ws-body > .center::after { opacity: 1; }

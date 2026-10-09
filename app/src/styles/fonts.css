@@ -1,0 +1,15 @@
+/* 打包的字体：assets/fonts/ → dist/fonts/（build.mjs 拷），不联网、桌面版都能用。CSS 内联在 index.html 里，路径相对 index.html。
+   都是 SIL OFL 1.1，许可证和字体放在一起。用 fontTools 转成 woff2 并取子集：GB2312 全部 + 《通用规范汉字表》8105 字
+   + 表里字对应的繁体 + 常用标点、拉丁、希腊、俄文、假名、注音、制表符和全角符号。子集外的生僻字落到字体栈后面的字体。
+   - 霞鹜文楷 LXGW WenKai v1.522 Regular（npm @nulijiazaizhon/lxgw-wenkai-webfont，上游 lxgw/LxgwWenKai）
+   - 悠哉字体 Yozai v0.868 Regular（npm openwrite-fonts，上游 lxgw/yozai-font）
+   - 小赖字体 Xiaolai SC v3.11 Regular（npm @fontpkg/xiaolai-sc，上游 lxgw/kose-font）
+   - 站酷小薇 ZCOOL XiaoWei v1.000（npm @expo-google-fonts/zcool-xiaowei，Google Fonts 版，本身只有 GB2312 的字）
+   粗体由浏览器加粗。 */
+@font-face { font-family: "LXGW WenKai"; src: url("fonts/lxgw-wenkai.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Yozai"; src: url("fonts/yozai.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Xiaolai SC"; src: url("fonts/xiaolai-sc.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "ZCOOL XiaoWei"; src: url("fonts/zcool-xiaowei.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+
+/* 古风这类装饰想用楷体时用这个（打包的霞鹜文楷在前，联网的繁体版和系统楷体垫后） */
+:root { --f-kai: "LXGW WenKai", "LXGW WenKai TC", "KaiTi", "STKaiti", serif; }

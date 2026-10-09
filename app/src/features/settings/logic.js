@@ -1,20 +1,34 @@
 // 设置界面用到的纯函数（不碰界面和数据库，node 里能直接测）。
 
-// 字体：id 和 main.js 的 applyLook 对应；自己上传的字体 id 就是 CSS 里的字体名
+// 字体：id 存在设置里（uiFont / textFont），main.js 的 applyLook 用 fontStack 取 CSS 字体栈；
+// 自己上传的字体 id 就是 CSS 里的字体名。
+// 带 file 的打包在 dist/fonts/ 里（@font-face 在 src/styles/fonts.css），不联网、桌面版都能用。
+// 「kai」原来是联网的「楷体」，现在换成打包的霞鹜文楷，id 不变，旧设置照样认。
+const SANS = '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif';
+const SERIF = '"Noto Serif SC", "Songti SC", "SimSun", serif';
 export const FONT_CHOICES = [
   { id: "system", name: "跟随系统", stack: '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif' },
-  { id: "serif", name: "宋体", stack: '"Noto Serif SC", "Songti SC", "SimSun", serif' },
-  { id: "sans", name: "黑体", stack: '"Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif' },
-  { id: "kai", name: "楷体", stack: '"LXGW WenKai TC", "KaiTi", "STKaiti", serif' },
-  { id: "kuaile", name: "快乐体", stack: '"ZCOOL KuaiLe", "Noto Sans SC", sans-serif' },
+  { id: "serif", name: "宋体", stack: SERIF },
+  { id: "sans", name: "黑体", stack: SANS },
+  { id: "kai", name: "霞鹜文楷", family: "LXGW WenKai", file: "lxgw-wenkai.woff2", stack: '"LXGW WenKai", "LXGW WenKai TC", "KaiTi", "STKaiti", serif' },
+  { id: "yozai", name: "悠哉字体", family: "Yozai", file: "yozai.woff2", stack: '"Yozai", "KaiTi", "STKaiti", ' + SANS },
+  { id: "xiaolai", name: "小赖字体", family: "Xiaolai SC", file: "xiaolai-sc.woff2", stack: '"Xiaolai SC", ' + SANS },
+  { id: "xiaowei", name: "站酷小薇", family: "ZCOOL XiaoWei", file: "zcool-xiaowei.woff2", stack: '"ZCOOL XiaoWei", ' + SERIF },
+  { id: "kuaile", name: "快乐体", stack: '"ZCOOL KuaiLe", ' + SANS },
 ];
 
 /** 可选的字体：内置的 + 自己上传的 */
 export function fontOptions(customFonts = []) {
   return [
     ...FONT_CHOICES,
-    ...(customFonts || []).map((f) => ({ id: f.id, name: f.name, stack: `"${f.id}", ${FONT_CHOICES[1].stack}`, custom: true })),
+    ...(customFonts || []).map((f) => ({ id: f.id, name: f.name, stack: `"${f.id}", ${SERIF}`, custom: true })),
   ];
+}
+
+/** 字体 id → CSS 字体栈；不认识的 id 当作上传的字体名 */
+export function fontStack(id) {
+  const f = FONT_CHOICES.find((o) => o.id === id);
+  return f ? f.stack : `"${id}", ${SERIF}`;
 }
 
 export const FONT_EXTS = ["ttf", "otf", "woff", "woff2"];

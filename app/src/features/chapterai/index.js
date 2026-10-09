@@ -11,29 +11,11 @@ import { introAI } from "./intro.js";
 
 const inBook = () => !!ws.book;
 
-// 章节列表多选时，多选条上加「AI 写摘要」「AI 简介」两个按钮（多选条每次重画，所以看着它，重画后补上）
-const watched = new WeakSet();
-function selBarButtons() {
-  const bar = document.querySelector(".ws .sel-bar");
-  if (!bar || watched.has(bar)) return;
-  watched.add(bar);
-  const fill = () => {
-    if (bar.hidden || bar.querySelector(".cai-sel")) return;
-    const sum = h("button.btn.small.cai-sel", { type: "button", title: "确认一次，逐章写摘要" }, "AI 写摘要");
-    sum.addEventListener("click", () => commands.run("chapter.summaryAI", { ids: ws.selectedIds() }));
-    const intro = h("button.btn.small.cai-sel", { type: "button", title: "用这几章写作品简介" }, "AI 简介");
-    intro.addEventListener("click", () => commands.run("book.introAI", { ids: ws.selectedIds() }));
-    const ghost = bar.querySelector(".btn.ghost");
-    if (ghost) ghost.before(sum, intro); else bar.append(sum, intro);
-  };
-  new MutationObserver(fill).observe(bar, { childList: true, attributes: true, attributeFilter: ["hidden"] });
-  fill();
-}
-
 export async function register() {
   wireNames();
-  bus.on("chapter:opened", selBarButtons);
-  bus.on("selection:changed", () => setTimeout(selBarButtons, 0));
+  // 章节列表多选时，多选条上的两个按钮
+  ws.addSelAction("AI 写摘要", (ids) => commands.run("chapter.summaryAI", { ids }), "确认一次，逐章写摘要");
+  ws.addSelAction("AI 简介", (ids) => commands.run("book.introAI", { ids }), "用这几章写作品简介");
 
   commands.register({
     id: "chapter.nameAI", title: "AI 起章名", keywords: "章名 起名 取名 标题 候选 想不出名字 AI",

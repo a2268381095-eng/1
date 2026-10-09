@@ -169,7 +169,7 @@ body.has-scene .pr-page-root .pr-tools, body.has-scene .pr-page-root .pr-info:no
 :root[data-paper="magical"] .pr-item.dragging { rotate: -1.5deg; scale: 1.02; box-shadow: 0 10px 30px color-mix(in srgb, var(--accent) 35%, transparent); }
 
 /* ---------- 水手服 · 活页本：小方角、抬头双线、横格、页边红线、贴纸按钮（错开的影子）、置顶贴胶带、热度是金星、出场像便签翻下来 ---------- */
-:root[data-paper="sailor"] :is(.pr-root, .pr-form-modal) { --pr-r: 4px; --pr-item-r: 2px; --pr-sl-ink: #1f2a3d; --pr-sl-red: #c8333f; --pr-sl-tape: rgba(91, 127, 214, .5); --pr-sl-tape2: rgba(91, 127, 214, .3);
+:root[data-paper="sailor"] :is(.pr-root, .pr-form-modal) { --pr-r: 4px; --pr-item-r: 2px; --pr-sl-ink: #1f2a3d; --pr-sl-red: #e06f7e; --pr-sl-tape: rgba(91, 127, 214, .5); --pr-sl-tape2: rgba(91, 127, 214, .3);
   --pr-sl-note: #fff6b3; --pr-sl-note-ink: #1f2a3d; }
 :root[data-paper="sailor"][data-dark] :is(.pr-root, .pr-form-modal) { --pr-sl-ink: #8fb0e0; --pr-sl-red: #ff7a85; --pr-sl-note: #403b1c; --pr-sl-note-ink: #f5eeb0; }
 :root[data-paper="sailor"] .pr-group { border-color: var(--line-strong); border-top: 3px double color-mix(in srgb, var(--ink) 50%, transparent);
@@ -212,7 +212,7 @@ body.has-scene .pr-page-root .pr-tools, body.has-scene .pr-page-root .pr-info:no
 :root[data-paper="sailor"] .pr-item.dragging { rotate: 1.5deg; box-shadow: 6px 7px 0 color-mix(in srgb, var(--pr-sl-ink) 22%, transparent); }
 
 /* ---------- 古风 · 宣纸：方角、朱砂内框、标题前一方朱印、签条式卡片（上下双线）、置顶盖「固」字印、热度是墨点、出场像卷轴展开 ---------- */
-:root[data-paper="hanfu"] :is(.pr-root, .pr-form-modal) { --pr-r: 2px; --pr-item-r: 1px; --pr-hf-verm: #b8432f; --pr-hf-kai: "LXGW WenKai TC", "KaiTi", "STKaiti", serif; }
+:root[data-paper="hanfu"] :is(.pr-root, .pr-form-modal) { --pr-r: 2px; --pr-item-r: 1px; --pr-hf-verm: #cf6b53; --pr-hf-kai: "LXGW WenKai TC", "KaiTi", "STKaiti", serif; }
 :root[data-paper="hanfu"][data-dark] :is(.pr-root, .pr-form-modal) { --pr-hf-verm: #d9705a; }
 :root[data-paper="hanfu"] .pr-group { border-color: var(--line-strong); outline: 1px solid color-mix(in srgb, var(--pr-hf-verm) 38%, transparent); outline-offset: -5px;
   padding: 12px 14px 14px; background-image: linear-gradient(158deg, color-mix(in srgb, #fffcf0 22%, transparent), transparent 40%); }
@@ -258,7 +258,7 @@ body.has-scene .pr-page-root .pr-tools, body.has-scene .pr-page-root .pr-info:no
 :root[data-paper="hanfu"] .pr-item.dragging { box-shadow: 0 8px 22px rgba(43, 38, 34, .22); border-color: var(--pr-hf-verm); }
 
 /* ---------- 哥特 · 魔典：切角、酒红虚线内框、四角包铁、标题前一枚十字、置顶是蜡封、热度是蜡烛（会晃）、出场从暗处浮出来 ---------- */
-:root[data-paper="gothic"] :is(.pr-root, .pr-form-modal) { --pr-r: 0; --pr-item-r: 0; --pr-gt-wine: #8e2a4f; --pr-gt-rubric: #8e1f3c;
+:root[data-paper="gothic"] :is(.pr-root, .pr-form-modal) { --pr-r: 0; --pr-item-r: 0; --pr-gt-wine: #a8679a; --pr-gt-rubric: #8e1f3c;
   --pr-gt-cut: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px); }
 :root[data-paper="gothic"][data-dark] :is(.pr-root, .pr-form-modal) { --pr-gt-wine: #c0446c; --pr-gt-rubric: #ff7a9a; }
 :root[data-paper="gothic"] .pr-group { border-color: color-mix(in srgb, var(--pr-gt-wine) 45%, var(--line)); outline: 1px dashed color-mix(in srgb, var(--pr-gt-wine) 42%, transparent); outline-offset: -6px;
@@ -275,7 +275,7 @@ body.has-scene .pr-page-root .pr-tools, body.has-scene .pr-page-root .pr-info:no
 :root[data-paper="gothic"] .pr-item:hover { box-shadow: inset 0 0 16px color-mix(in srgb, var(--pr-gt-wine) 26%, transparent); border-color: color-mix(in srgb, var(--pr-gt-wine) 60%, var(--line)); }
 :root[data-paper="gothic"] .pr-name { font-family: "Noto Serif SC", serif; }
 :root[data-paper="gothic"] .pr-item.pinned .pr-head::after { content: ""; flex: 0 0 auto; width: 12px; height: 12px; border-radius: 50% 46% 52% 48%;
-  background: radial-gradient(circle at 35% 35%, #e0577f, #8e2a4f 60%, #4a1426); box-shadow: 0 1px 2px rgba(0, 0, 0, .35); }
+  background: radial-gradient(circle at 35% 35%, #e597b6, #a8679a 60%, #4a1426); box-shadow: 0 1px 2px rgba(0, 0, 0, .35); }
 :root[data-paper="gothic"] .pr-root .btn, :root[data-paper="gothic"] .pr-feat, :root[data-paper="gothic"] .pr-search {
   border-radius: 0; clip-path: polygon(5px 0, calc(100% - 5px) 0, 100% 5px, 100% calc(100% - 5px), calc(100% - 5px) 100%, 5px 100%, 0 calc(100% - 5px), 0 5px); }
 :root[data-paper="gothic"] .pr-root .btn:focus-visible, :root[data-paper="gothic"] .pr-var:focus-visible, :root[data-paper="gothic"] .pr-search:focus-visible { outline-offset: -3px; }
@@ -372,7 +372,7 @@ body.has-scene .pr-page-root .pr-tools, body.has-scene .pr-page-root .pr-info:no
 :root[data-paper="adventurer"] .pr-item:hover { border-color: var(--pr-av-wood); }
 :root[data-paper="adventurer"][data-motion="full"] .pr-item:hover { rotate: -.6deg; translate: 0 -2px; }
 :root[data-paper="adventurer"] .pr-item.pinned::after { content: ""; position: absolute; left: 50%; top: -6px; width: 11px; height: 11px; margin-left: -5px; border-radius: 50%; pointer-events: none;
-  background: radial-gradient(circle at 35% 35%, #ff9a8a, #c8333f 55%, #6e1515); box-shadow: 0 2px 2px rgba(0, 0, 0, .35); }
+  background: radial-gradient(circle at 35% 35%, #ff9a8a, #e06f7e 55%, #6e1515); box-shadow: 0 2px 2px rgba(0, 0, 0, .35); }
 :root[data-paper="adventurer"] .pr-root .btn { border-radius: 6px; }
 :root[data-paper="adventurer"] .pr-root .btn.primary { border: 2px solid var(--pr-av-wood); box-shadow: inset 0 2px 0 rgba(255, 255, 255, .25); }
 :root[data-paper="adventurer"] .pr-act { color: color-mix(in srgb, var(--pr-av-wood) 75%, var(--ink)); }
@@ -394,7 +394,7 @@ body.has-scene .pr-page-root .pr-tools, body.has-scene .pr-page-root .pr-info:no
 :root[data-paper="adventurer"] .pr-empty-art i:nth-child(1) { left: 14px; top: 6px; width: 44px; height: 46px; border-radius: 3px; rotate: -3deg;
   background: linear-gradient(170deg, #f3e6c4, #e0c48e); border: 1px solid var(--pr-av-wood); }
 :root[data-paper="adventurer"] .pr-empty-art i:nth-child(2) { left: 31px; top: 1px; width: 11px; height: 11px; border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #ff9a8a, #c8333f 55%, #6e1515); box-shadow: 0 2px 2px rgba(0, 0, 0, .35); z-index: 1; }
+  background: radial-gradient(circle at 35% 35%, #ff9a8a, #e06f7e 55%, #6e1515); box-shadow: 0 2px 2px rgba(0, 0, 0, .35); z-index: 1; }
 :root[data-paper="adventurer"] .pr-empty-art i:nth-child(3) { left: 22px; top: 22px; width: 28px; height: 3px; background: color-mix(in srgb, var(--pr-av-wood) 60%, transparent);
   box-shadow: 0 7px 0 color-mix(in srgb, var(--pr-av-wood) 45%, transparent), 0 14px 0 color-mix(in srgb, var(--pr-av-wood) 30%, transparent); rotate: -3deg; }
 :root[data-paper="adventurer"][data-motion="full"] .pr-empty-art i:nth-child(1) { animation: pr-sway 3s ease-in-out infinite; transform-origin: 50% 0; }

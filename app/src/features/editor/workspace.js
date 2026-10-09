@@ -62,6 +62,8 @@ export const ws = {
   },
   /** 界面元素：center 正文区（可以往里放覆盖层，比如排版预览），right 右侧栏 */
   els: () => (els ? { center: els.view.querySelector(".center"), edHost: els.edHost, right: els.right, list: els.list } : null),
+  /** 章节多选条上加一个按钮（别的模块用）：label 文字，run(ids) 点了做什么，title 悬停说明 */
+  addSelAction(label, run, title = "") { selActions.push({ label, run, title }); if (els) renderSelBar(); },
   /** 重新读当前作品信息（设置里改了章节号、自动缩进等以后调用） */
   async reloadBook() { if (ws.book) { ws.book = await getBook(ws.book.id); renderList(); updateHead(); } },
 };
@@ -118,7 +120,7 @@ function buildLayout(app) {
   const topbar = h("header.topbar", {}, back, bookTitle, h("span.spacer"), undoBtn, redoBtn, h("span.tb-sep"),
     tb("search", "查找", "search.open", "查找替换（Ctrl+F）"), tb("format", "排版", "format.open", "一键排版"),
     tb("history", "历史", "versions.open", "本章历史版本"), tb("download", "导出", "io.export", "导出 txt / md"),
-    tb("box", label("暂存盒"), "stash.drawer", "这本书的 AI 结果"),
+    tb("box", label("暂存盒"), "stash.drawer", "这本书的 AI 结果"), tb("chat", "对话", "chat.new", "和 AI 聊聊（Ctrl+Shift+J）"),
     tb("focus", "专注", "focus.toggle", "专注模式（F11）"),
     h("span.tb-sep"), lookButton(), pointsBtn,
     h("button.icon-btn", { type: "button", title: label("设置"), "aria-label": label("设置"), onclick: () => nav.go("/settings/" + ws.book.id) }, icon("gear")));
@@ -291,6 +293,7 @@ function rangeSel(id) {
   renderList();
 }
 let lastSel = "";
+const selActions = [];
 function renderSelBar() {
   const n = ws.selected.size;
   const key = [...ws.selected].join(",");
@@ -300,6 +303,7 @@ function renderSelBar() {
   els.selBar.replaceChildren(h("span", {}, `已选 ${n} 章`), h("span.spacer"),
     h("button.btn.small", { type: "button", onclick: () => commands.run("format.open") }, "排版这几章"),
     h("button.btn.small", { type: "button", onclick: () => commands.run("io.export") }, "导出这几章"),
+    ...selActions.map((a) => h("button.btn.small", { type: "button", title: a.title, onclick: () => a.run(ws.selectedIds()) }, a.label)),
     h("button.btn.small.ghost", { type: "button", onclick: () => { ws.selected.clear(); renderList(); } }, "取消选择"));
 }
 

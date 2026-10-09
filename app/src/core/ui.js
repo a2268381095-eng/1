@@ -48,6 +48,7 @@ export const icon = (name) => {
     upload: "M12 16V4M7 9l5-5 5 5M4 20h16",
     box: "M4 8l8-4 8 4v9l-8 4-8-4zM4 8l8 4 8-4M12 12v9",
     prompt: "M5 4h14v12H10l-5 4V4zM9 9h6M9 12h4",
+    chat: "M3 5h12v8H8l-5 4V5zM9 16v1h7l4 3V10h-3",
     download: "M12 4v12M7 11l5 5 5-5M4 20h16",
     book: "M5 4h10a4 4 0 0 1 4 4v12H9a4 4 0 0 1-4-4V4zM5 16a4 4 0 0 1 4-4h10",
     flag: "M5 21V4h11l-2 4 2 4H5",
@@ -222,3 +223,19 @@ export function helpTip(text) {
 }
 
 export { escapeHtml };
+
+// 滑块：渐变填到当前值（lively.css 用 --p）。拖动时更新；新出现的滑块也补上
+function fillRange(el) {
+  const min = Number(el.min) || 0, max = Number(el.max) || 100, v = Number(el.value);
+  el.style.setProperty("--p", (((v - min) / (max - min || 1)) * 100).toFixed(1) + "%");
+}
+if (typeof document !== "undefined") {
+  document.addEventListener("input", (e) => { if (e.target instanceof HTMLInputElement && e.target.type === "range") fillRange(e.target); }, true);
+  new MutationObserver((list) => {
+    for (const m of list) for (const n of m.addedNodes) {
+      if (!(n instanceof Element)) continue;
+      if (n.matches('input[type="range"]')) fillRange(n);
+      n.querySelectorAll && n.querySelectorAll('input[type="range"]').forEach(fillRange);
+    }
+  }).observe(document.documentElement, { childList: true, subtree: true });
+}

@@ -51,12 +51,12 @@ export function patternURL(id, color, alpha) {
 }
 
 export const PALETTES = [
-  { id: "magical", name: "粉白魔法", style: "原稿·魔法少女", swatch: ["#fffdfa", "#f7dfea", "#b23f77"] },
-  { id: "sailor", name: "教室", style: "水手服", swatch: ["#fdfdfb", "#1f2a3d", "#c8333f"] },
-  { id: "hanfu", name: "宣纸墨色", style: "古风", swatch: ["#fbf8f1", "#2b2622", "#b8432f"] },
-  { id: "gothic", name: "暗夜魔典", style: "哥特", swatch: ["#19121b", "#8e2a4f", "#e0577f"] },
-  { id: "detective", name: "旧书房", style: "侦探", swatch: ["#fdfaf4", "#7a6c5e", "#2f6b5a"] },
-  { id: "adventurer", name: "冒险者公会", style: "异世界", swatch: ["#fcfbf3", "#4f6b2a", "#a63d2a"] },
+  { id: "magical", name: "粉白魔法", style: "原稿·魔法少女", swatch: ["#fffdfd", "#d0699b", "#a98ee0"] },
+  { id: "sailor", name: "教室", style: "水手服", swatch: ["#fdfdfc", "#e06f7e", "#f2a585"] },
+  { id: "hanfu", name: "宣纸墨色", style: "古风", swatch: ["#fdfaf4", "#cf6b53", "#e3a06f"] },
+  { id: "gothic", name: "暗夜魔典", style: "哥特", swatch: ["#1a1623", "#e597b6", "#b796e6"] },
+  { id: "detective", name: "旧书房", style: "侦探", swatch: ["#fdfcf8", "#3e9f94", "#5f9fd2"] },
+  { id: "adventurer", name: "冒险者公会", style: "异世界", swatch: ["#fdfcf5", "#de8650", "#e6b452"] },
 ];
 
 // 每套配色的小标记（当前章节、面板标题前面）：7×7 像素，用主色画

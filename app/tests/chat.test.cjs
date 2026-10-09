@@ -1,5 +1,5 @@
 // AI 对话：Ctrl+Shift+J 打开右侧栏面板、上下文长度实时显示、Ctrl+Enter 发送（不新建章节）、确认卡、流式回复、
-// 继续追问带上前面的对话、提示词时存「实际发送」、复制、插入正文和撤销（提示条 / Ctrl+Z）、从这里分叉（互不影响、撤销）、
+// 继续追问带上前面的对话、顶上的模型牌子（换模型和档位、记住、预选确认卡）、第一次打开「临时写一个」之后记住上次的提示词、用了提示词时存「实际发送」、复制、插入正文和撤销（提示条 / Ctrl+Z）、从这里分叉（互不影响、撤销）、
 // 对话列表切换 / 改标题 / 删除和撤销、新开对话彻底清空、出错把话放回输入框、中途停止留下已回来的部分、沿用模型不再确认、
 // 暂存盒就地打开和「继续追问」、草稿保留 / 丢弃、书架上用弹窗和 Ctrl+Z、六套风格形态不同、深色、手机宽度
 const { launch, newBook, getText, check } = require('./helpers.cjs');
@@ -48,7 +48,8 @@ const pause = (page, ms) => page.waitForTimeout(ms);
   console.log('打开');
   check(await page.$('.ws .topbar [data-cmd="chat.new"]') !== null, '写作界面顶栏有「对话」入口', fails);
   await page.keyboard.press('Control+Shift+J');
-  await page.waitForSelector('.side-right .chat');
+  await page.waitForSelector('.side-right .chat .chat-empty');
+  await page.waitForFunction(() => document.activeElement && document.activeElement.classList.contains('chat-in'));
   check((await page.textContent('.side-right .panel-head')).includes('AI 对话'), 'Ctrl+Shift+J 在右侧栏打开对话面板', fails);
   check(await page.$('.side-right .panel-head .icon-btn[aria-label="关闭"]') !== null, '面板右上角有关闭', fails);
   check(await page.$('.chat-empty') !== null && (await page.textContent('.chat-ask')).includes('发送'), '新对话是空的，按钮是「发送」', fails);
@@ -67,7 +68,8 @@ const pause = (page, ms) => page.waitForTimeout(ms);
   check(true, 'Ctrl+Enter 发送前弹确认卡', fails);
   check((await page.textContent('.ai-card')).includes('这次说的话'), '确认卡里列出「这次说的话」', fails);
   check(!(await page.textContent('.ai-est')).includes('带上前面'), '第一句没有历史', fails);
-  await confirmSend();   // 用提示词库里的「测试用」
+  check((await page.inputValue('.ai-card select[aria-label="提示词"]')) === '__temp', '第一次直接打开「临时写一个」（说的话就是提示词）', fails);
+  await confirmSend('pr-test');   // 这次挑提示词库里的「测试用」
   await aiDone(1);
   check((await page.$$eval('.ch-item', (e) => e.length)) === chBefore, 'Ctrl+Enter 不会新建章节', fails);
   const r1 = await page.textContent('.chat-msg.ai .chat-text');
@@ -81,6 +83,21 @@ const pause = (page, ms) => page.waitForTimeout(ms);
   check((await page.textContent('.chat-ask')).includes('继续追问'), '有了内容后按钮是「继续追问」', fails);
   check(await page.isVisible('.chat-reuse') && (await page.textContent('.chat-reuse')).includes('mock-small'), '出现「沿用 mock-small」选项（默认不勾）', fails);
 
+  // ---------------- 模型牌子：换档位、记住、预选确认卡 ----------------
+  console.log('模型牌子');
+  check((await page.textContent('.chat-pick')).includes('mock-small'), '顶上的牌子显示上一次用的模型', fails);
+  await page.click('.chat-pick');
+  await page.waitForSelector('.chat-pickpop:not([hidden]) .chat-pick-sel');
+  check((await page.inputValue('.chat-pick-sel')).endsWith('mock-small') && (await page.$$('.chat-pickpop .ai-lv')).length === 2, '点开能选模型、创意度、思考程度', fails);
+  await page.click('.chat-pickpop .ai-lv[data-kind="thinking"] .ai-lv-b[data-i="3"]');
+  await pause(page, 200);
+  check((await page.textContent('.chat-pick')).includes('细想'), '牌子上显示改过的档位：' + await page.textContent('.chat-pick'), fails);
+  const pf = await idb((db) => new Promise((res) => { const q = db.transaction(['kv']).objectStore('kv').get('chat:prefer'); q.onsuccess = () => res(q.result && q.result.value); }));
+  check(pf && pf.thinking === 3 && pf.model === 'mock-small' && pf.promptId === 'pr-test', '记住了模型、档位和上次的提示词', fails);
+  await page.keyboard.press('Escape');
+  await pause(page, 200);
+  check(await page.$('.chat-pickpop[hidden]') !== null && await page.$('.side-right .chat') !== null, 'Esc 收起牌子，面板还在', fails);
+
   // ---------------- 继续追问：带上前面的对话 ----------------
   console.log('继续追问');
   await page.fill('.chat-in', '再说一句。');
@@ -88,6 +105,8 @@ const pause = (page, ms) => page.waitForTimeout(ms);
   await page.waitForSelector('.ai-card');
   const est2 = await page.textContent('.ai-est');
   check(est2.includes('带上前面 2 条对话'), '继续追问带上前面的对话：' + est2, fails);
+  check((await page.inputValue('.ai-card select[aria-label="提示词"]')) === 'pr-test', '确认卡预选上次的提示词', fails);
+  check((await page.getAttribute('.ai-card .ai-lv[data-kind="thinking"]', 'data-level')) === '3', '确认卡预选牌子上的思考程度', fails);
   await confirmSend('__temp');
   await aiDone(2);
   cs = await chats();
@@ -273,12 +292,16 @@ const pause = (page, ms) => page.waitForTimeout(ms);
       const ai = getComputedStyle(document.querySelector('.chat-msg.ai')), aa = getComputedStyle(document.querySelector('.chat-msg.ai'), '::after');
       const us = getComputedStyle(document.querySelector('.chat-msg.user')), mk = getComputedStyle(document.querySelector('.chat-title'), '::before');
       const btn = getComputedStyle(document.querySelector('.chat-ask')), g = getComputedStyle(document.querySelector('.chat-gauge'));
+      const pk = getComputedStyle(document.querySelector('.chat-pick'), '::before');
       out[p] = [ai.borderRadius, ai.clipPath, aa.content, us.borderRadius, us.borderLeftWidth, mk.content, mk.width, mk.clipPath, btn.borderRadius, btn.clipPath, g.height].join('|');
+      out[p + '-pick'] = [pk.content, pk.width, pk.clipPath, pk.borderTopStyle, pk.transform, pk.rotate].join('|');
     }
     root.dataset.paper = was;
     return out;
   });
-  check(new Set(Object.values(sig)).size === 6, '六套风格的气泡、标记、按钮、上下文条形态各不相同', fails);
+  const kinds = (suffix) => new Set(Object.entries(sig).filter(([k]) => k.endsWith(suffix) === !!suffix || (!suffix && !k.includes('-'))).map(([, v]) => v)).size;
+  check(kinds('') === 6, '六套风格的气泡、标记、按钮、上下文条形态各不相同', fails);
+  check(kinds('-pick') === 6, '模型牌子的标记六套各不相同', fails);
   const shapes = await page.evaluate(() => {
     const root = document.documentElement, was = root.dataset.paper, wasM = root.dataset.motion, r = { btn: [], anim: [], msg: [] };
     root.dataset.motion = 'full';
