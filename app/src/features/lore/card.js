@@ -510,31 +510,32 @@ export function cardView(env, cardId, { quick: quickWanted = false } = {}) {
       const form = h("div.lr-log-form", {}, ta, h("div.row", {}, ch, h("span.spacer"), no, ok));
       let done = false;
       const api = { dirty: () => !done && !!ta.value.trim(), commit: () => write(), cancel: () => close() };
-      const close = () => { if (done) return; done = true; env.editing.delete(api); env.layers.delete(layer); layer.close(true); if (form.isConnected) form.replaceWith(btn); env.afterEdit(); };
+      const close = () => {
+        if (done) return;
+        done = true;
+        env.editing.delete(api);
+        layer.close(true);
+        if (form.isConnected) form.replaceWith(btn);
+        env.afterEdit();
+      };
       const write = async () => {
         const text = ta.value.trim();
         if (!text) { ta.focus(); return; }
         const chId = ch.value || null;
         close();
         const e = await save(`「${cur().name}」记一笔`, (x) => { x.log = [...(x.log || []), { id: uid("lg"), chapterId: chId, text, at: Date.now() }]; }, "log");
-        const first = S.log && S.log.querySelector(".lr-log-i");
-        flash(first, "lr-born");
+        flash(S.log && S.log.querySelector(".lr-log-i"), "lr-born");
         undoToast("记下了", e);
       };
-      const layer = h && null;
+      // 浮层栈：Esc 先收起这一小块（写了字的会问保留还是丢弃）
+      const layer = env.pushLayer({ isDirty: () => api.dirty(), onKeepDraft: () => write(), onClose: () => close() });
+      env.editing.add(api);
       ok.addEventListener("click", write);
       no.addEventListener("click", () => close());
       ta.addEventListener("keydown", (e) => { if (!composing(e) && e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); write(); } });
       btn.replaceWith(form);
       ta.focus();
-      // 浮层栈：Esc 先收起这一小块
-      const lyr = env.pushLayer({ isDirty: () => api.dirty(), onKeepDraft: () => write(), onClose: () => close() });
-      Object.defineProperty(api, "layer", { value: lyr });
-      env.editing.add(api);
-      // close() 里要关的那一层
-      layerRef = lyr;
     });
-    let layerRef = null;
     const list = h("ol.lr-log-list");
     [...(c.log || [])].reverse().forEach((g) => {
       const no = g.chapterId ? env.idxOf(g.chapterId) : 0;
