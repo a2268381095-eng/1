@@ -124,7 +124,8 @@ export async function renderSetup(root, opts = {}) {
       h("div.field", {}, h("span", {}, (p.custom ? "③" : "②") + " 拉取可用的模型"), h("div.row", {}, fetchBtn, modelFilter), modelSel),
       h("div.row", {}, testBtn, h("span.muted.small-note", {}, "会发一条很短的消息，花费不到一分钱"), h("span.spacer"), removeBtn),
       status,
-      paintSection({ p, id, conf, confNow, models: () => models, refreshCard: () => { cfg.providers[id] = conf; list.querySelector(`[data-id="${id}"]`).replaceWith(card(p)); }, onReady: opts.onPaintReady }),
+      paintSection({ p, id, conf, confNow, keyIn, models: () => models, onReady: opts.onPaintReady,
+        refreshCard: (fresh) => { cfg.providers[id] = fresh; list.querySelector(`[data-id="${id}"]`).replaceWith(card(p)); } }),
       h("p.muted.small-note", {}, "Key 只存在这台电脑上，不会上传到别处。")));
     (p.custom ? baseIn : keyIn).focus();
   }
@@ -136,7 +137,7 @@ export async function renderSetup(root, opts = {}) {
  * 「绘画」一段：绘画接口（OpenAI 图片接口 / Gemini 出图 / 不画图）+ 绘画模型（胶囊，能删；从模型列表里挑，或者手动填）。
  * 改了马上存进 providers[id].image；这一家还没测试过文字模型时也先把 Key 存上（ok 不变，文字那边照旧要测试）。
  */
-function paintSection({ p, id, conf, confNow, models, refreshCard, onReady }) {
+function paintSection({ p, id, conf, confNow, keyIn, models, refreshCard, onReady }) {
   const img = { api: (conf.image && conf.image.api) || defaultImageApi(id), models: [...((conf.image && conf.image.models) || [])] };
   const apiSel = h("select.select.ai-paint-api", { "aria-label": "绘画接口" }, ...IMAGE_APIS.map((a) => h("option", { value: a.id, selected: a.id === img.api }, a.name)));
   const chips = h("div.ai-paint-models", { role: "list", "aria-label": "绘画模型" });
@@ -157,7 +158,7 @@ function paintSection({ p, id, conf, confNow, models, refreshCard, onReady }) {
     if (!old.key && c.key) conf.key = c.key;
     await saveConfig(all);
     render();
-    refreshCard();
+    refreshCard(all.providers[id]);
     if (paintReady(all.providers[id]) && onReady) onReady(id);
   }
 
@@ -188,6 +189,7 @@ function paintSection({ p, id, conf, confNow, models, refreshCard, onReady }) {
   }
 
   apiSel.addEventListener("change", () => { img.api = apiSel.value; save(); });
+  keyIn.addEventListener("input", () => render());
   addIn.addEventListener("keydown", (e) => {
     if (e.key !== "Enter" || e.isComposing || e.keyCode === 229) return;
     e.preventDefault();
