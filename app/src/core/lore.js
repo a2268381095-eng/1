@@ -125,8 +125,10 @@ export async function getImage(id) {
   const r = await db.get("loreimg", id);
   return r ? r.data : null;
 }
-/** 清掉没有卡（包括回收站里的卡）用到的图。只在刚打开软件时跑：那时还没有撤销记录会用到旧图 */
+/** 清掉没有卡（包括回收站里的卡）用到的图。只在刚打开软件时跑：那时还没有撤销记录会用到旧图；这次已经改过设定就不清 */
+let touched = false;
 export async function sweepImages() {
+  if (touched) return 0;
   const imgs = await db.all("loreimg");
   if (!imgs.length) return 0;
   const used = new Set();
@@ -134,6 +136,7 @@ export async function sweepImages() {
   (await db.all("lore")).forEach((r) => r.type === "card" && note(r));
   (await db.all("trash")).forEach((t) => t.kind === "lore" && t.data && note(t.data.card));
   const gone = imgs.filter((i) => !used.has(i.id));
+  if (touched) return 0;
   if (gone.length) await db.tx(["loreimg"], (s) => gone.forEach((i) => s.loreimg.delete(i.id)));
   return gone.length;
 }
@@ -177,6 +180,7 @@ class Tx {
  * opts.silent：不推撤销（导入时用）
  */
 export function change(bookId, label, fn, opts = {}) {
+  touched = true;
   return serial(bookId, async () => {
     const t = new Tx(bookId);
     const result = await fn(t);

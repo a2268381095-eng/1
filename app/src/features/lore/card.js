@@ -14,7 +14,7 @@ import { popover, menu, editable, adder, chip, chapterSelect, undoToast, flash, 
 const modalOpen = () => !!document.querySelector(".modal-back");
 
 /** 给卡（或它的某套服装）换图。界面关了也照样存（AI 画完回来时可能已经关了） */
-export async function setCardImage(bookId, cardId, outfitId, src) {
+export async function setCardImage(bookId, cardId, outfitId, src, source = null) {
   let img;
   try { img = await readImage(src); }
   catch (e) { toast("这张图读不出来：" + (e.message || e)); return null; }
@@ -28,7 +28,7 @@ export async function setCardImage(bookId, cardId, outfitId, src) {
     if (!c) return;
     const o = outfitId && (c.outfits || []).find((x) => x.id === outfitId);
     if (o) o.img = rec; else c.img = rec;
-  });
+  }, { source });
   return entry;
 }
 
@@ -75,7 +75,7 @@ export function cardView(env, cardId, { quick: quickWanted = false } = {}) {
     };
     input.addEventListener("focus", reg);
     input.addEventListener("input", reg);
-    input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !composing(e)) { e.preventDefault(); done(); } });
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !composing(e)) { e.preventDefault(); e.stopPropagation(); done(); } });
     input.addEventListener("blur", () => setTimeout(() => { if (!modalOpen() && document.activeElement !== input) done(); }, 0));
   }
 
@@ -133,7 +133,7 @@ export function cardView(env, cardId, { quick: quickWanted = false } = {}) {
     const area = imageArea({
       cat, img: o ? o.img : c.img, label: o ? o.name || "这套服装" : "原形象", loadFull: getImage,
       onFile: async (f) => {
-        const e = await setCardImage(env.bookId, cardId, o ? o.id : null, f);
+        const e = await setCardImage(env.bookId, cardId, o ? o.id : null, f, env.source);
         if (!e) return;
         await env.reloadCard(cardId);
         redraw("img", "thumbs");
@@ -192,7 +192,7 @@ export function cardView(env, cardId, { quick: quickWanted = false } = {}) {
         await save(`「${cur().name}」加造型「${name}」`, (x) => { x.outfits = [...(x.outfits || []), o]; x.outfit = o.id; }, "img", "thumbs", "outfit");
         flash(S.outfit, "lr-born");
       };
-      input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !composing(e)) { e.preventDefault(); make(input.value); } });
+      input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !composing(e)) { e.preventDefault(); e.stopPropagation(); make(input.value); } });
       const quickNames = ["战斗装", "礼服", "便装", "伪装"].map((n) => { const b = h("button.lr-pick-chip", { type: "button" }, n); b.addEventListener("click", () => make(n)); return b; });
       const ok = h("button.btn.small.primary", { type: "button" }, "加上");
       ok.addEventListener("click", () => make(input.value));
@@ -347,7 +347,7 @@ export function cardView(env, cardId, { quick: quickWanted = false } = {}) {
       }
     };
     q.addEventListener("input", paintList);
-    q.addEventListener("keydown", (e) => { if (e.key === "Enter" && !composing(e)) { e.preventDefault(); const f = list.querySelector("button"); if (f) f.click(); } });
+    q.addEventListener("keydown", (e) => { if (e.key === "Enter" && !composing(e)) { e.preventDefault(); e.stopPropagation(); const f = list.querySelector("button"); if (f) f.click(); } });
     const clear = onClear && current ? h("button.btn.small.ghost", { type: "button" }, "清掉") : null;
     if (clear) clear.addEventListener("click", async () => { p.close(true); await onClear(); });
     const body = h("div.lr-pick", {}, h("div.lr-pick-head", {}, h("b", {}, title), clear), rel, q, list);
@@ -487,13 +487,14 @@ export function cardView(env, cardId, { quick: quickWanted = false } = {}) {
       });
       box.append(h("div.lr-row.lr-field", { "data-key": "f:" + f.id }, h("span.lr-fl", {}, f.name, f.hint ? h("small", {}, f.hint) : null), v));
     });
-    const addF = adder("字段", { placeholder: "比如 灵根属性、契约魔兽", env, cls: ".lr-add-field", onAdd: async (names) => {
+    const addF = adder("字段", { placeholder: "比如 灵根属性、契约魔兽", env, cls: ".lr-add-field", onAdd: async (names, keep) => {
       const cn = cat.name;
       const e = await env.updateMeta(`给「${cn}」加字段「${names.join("、")}」`, (m) => {
         const cc = m.cats.find((x) => x.id === cat.id);
         if (cc) names.forEach((n) => { if (!cc.fields.some((y) => y.name === n)) cc.fields.push({ id: uid("lf"), name: n.slice(0, 12), key: "", hint: "", long: false }); });
       });
       undoToast(`每张「${cn}」卡都多了「${names.join("、")}」`, e);
+      if (keep) setTimeout(() => { const btn = S.fields && S.fields.querySelector(".lr-add-field"); if (btn) btn.click(); }, 0);
     } });
     const manage = h("button.btn.small.ghost.lr-manage", { type: "button", title: "改名、排顺序、删字段" }, "管理字段");
     manage.addEventListener("click", () => catSettings(env, cat.id));
@@ -535,7 +536,7 @@ export function cardView(env, cardId, { quick: quickWanted = false } = {}) {
       env.editing.add(api);
       ok.addEventListener("click", write);
       no.addEventListener("click", () => close());
-      ta.addEventListener("keydown", (e) => { if (!composing(e) && e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); write(); } });
+      ta.addEventListener("keydown", (e) => { if (!composing(e) && e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); e.stopPropagation(); write(); } });
       btn.replaceWith(form);
       ta.focus();
     });

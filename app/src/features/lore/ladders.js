@@ -287,7 +287,7 @@ export function pasteLadder(env) {
   let done = false;
   m.el.classList.add("lr-paste-modal");
   ok = m.foot.querySelector(".btn.primary");
-  ta.addEventListener("keydown", (e) => { if (!composing(e) && e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); ok.click(); } });
+  ta.addEventListener("keydown", (e) => { if (!composing(e) && e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); e.stopPropagation(); ok.click(); } });
   refresh();
   setTimeout(() => (draft.text ? ta : name).focus(), 0);
 }

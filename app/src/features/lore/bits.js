@@ -141,7 +141,7 @@ export function editable(host, { get, save, long = false, placeholder = "", env,
     input.addEventListener("input", fit);
     input.addEventListener("keydown", (e) => {
       if (composing(e)) return;
-      if (e.key === "Enter" && (!long || e.ctrlKey || e.metaKey)) { e.preventDefault(); commit(); }
+      if (e.key === "Enter" && (!long || e.ctrlKey || e.metaKey)) { e.preventDefault(); e.stopPropagation(); commit(); }
     });
     // 点到别处就保存；弹出「保留草稿 / 丢弃」时不算
     input.addEventListener("blur", () => setTimeout(() => { if (!done && !modalOpen() && document.activeElement !== input) commit(); }, 0));
@@ -163,19 +163,20 @@ export function adder(label, { placeholder = "", onAdd, env, cls = "" }) {
     const input = h("input.lr-add-in", { placeholder: placeholder || label, maxlength: "60", "aria-label": label });
     let done = false;
     const close = () => { if (done) return; done = true; if (env) { env.editing.delete(api); env.layers.delete(layer); } if (input.isConnected) input.replaceWith(btn); if (env) env.afterEdit(); };
+    // 先收起再保存：改动马上能画出来；要接着写时调用方重画后再打开新的输入框
     const add = async (keepOpen) => {
       const list = input.value.split(/[、，,；;\n]+/).map((x) => x.trim()).filter(Boolean);
       input.value = "";
+      layer.close(true);
+      close();
       if (list.length) await onAdd(list, keepOpen);
-      // 整段重画了：接着写的新输入框由调用方打开
-      if (!input.isConnected || !keepOpen) { layer.close(true); close(); } else input.focus();
     };
     const api = { dirty: () => !done && !!input.value.trim(), commit: () => add(false), cancel: () => { layer.close(true); close(); } };
     const layer = pushLayer({ isDirty: () => api.dirty(), onKeepDraft: () => add(false), onClose: close });
     if (env) { env.layers.add(layer); env.editing.add(api); }
     input.addEventListener("keydown", (e) => {
       if (composing(e)) return;
-      if (e.key === "Enter") { e.preventDefault(); add(true); }
+      if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); add(true); }
     });
     input.addEventListener("blur", () => setTimeout(() => {
       if (done || modalOpen() || document.activeElement === input) return;

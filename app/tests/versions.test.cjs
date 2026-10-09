@@ -416,7 +416,7 @@ async function flows(dist, fails) {
   check(days.length === 4 && days[0] === '今天' && /月.*日 周/.test(days[3]), '面板里旧版本按天分组：' + days.join(' / '), fails);
   await page.click('.ver-item[data-i="0"]');
   await page.waitForSelector('.ver-overlay .ver-restore:not([disabled])');
-  await page.click('.ver-restore');
+  await page.$eval('.ver-restore', (b) => b.click());   // 小恶魔可能正站在按钮上（她能拖走），这里直接点
   await page.waitForTimeout(800);
   check((await getText(page)) === OP + '一二三', '合并过的旧版本也能恢复', fails);
   await page.waitForTimeout(400);

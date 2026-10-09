@@ -388,6 +388,35 @@ const pause = (page, ms) => page.waitForTimeout(ms);
   const got = await page.evaluate(async () => { const d = await window.__res; const s = await new Promise((res) => { const im = new Image(); im.onload = () => res([im.naturalWidth, im.naturalHeight]); im.src = d; }); return { same: d === window.__done, s }; });
   check(got.same && got.s[0] === got.s[1] && got.s[0] > 0, '用了的图交回给调用的模块（onDone 和返回值），是方形：' + got.s.join('×'), fails);
 
+  // ---------------- 新建作品时就做封面（作品还没存） ----------------
+  console.log('新建作品');
+  await page.evaluate(() => { location.hash = '#/'; });
+  await page.waitForSelector('.shelf');
+  await page.click('.shelf .topbar .btn.primary');
+  await page.waitForSelector('.book-form');
+  await page.fill('.book-form input.input >> nth=0', '雾港来信');
+  await page.fill('.book-form .book-author-in', '某某');
+  await page.click('.book-paint-btn');
+  await page.waitForSelector('.paint-modal .paint-chip');
+  lk = await locks();
+  check(lk[0] === '书名：《雾港来信》' && lk[1] === '作者：某某', '新建作品：锁着的是表单里正在填的书名、作者名', fails);
+  await page.fill('.paint-free-in', '雾里的港口');
+  await page.keyboard.press('Control+Enter');
+  await page.waitForSelector('.ai-img-card');
+  await send();
+  await page.waitForFunction(() => document.querySelectorAll('.paint-card.is-draft.st-done').length === 4, null, { timeout: 8000 });
+  await page.click('.paint-card.is-draft .paint-use-draft');
+  await page.waitForSelector('.paint-crop-frame');
+  await pause(page, 200);
+  await page.click('.paint-crop-use');
+  await page.waitForSelector('.toast:has-text("保存作品后生效")');
+  const prev = await page.$eval('.book-form .cover-prev', (i) => i.getAttribute('src'));
+  check(/^data:image\/jpeg/.test(prev), '新建作品：封面先放进表单的预览', fails);
+  await page.click('.modal:has(.book-form) .modal-foot .btn.primary');
+  await page.waitForSelector('.cm-content');
+  const nb = (await all('books')).find((b) => b.title === '雾港来信');
+  check(nb && nb.author === '某某' && nb.cover === prev, '「开始写」后新书带着作者名和这张封面', fails);
+
   check(errors.length === 0, '没有报错 ' + errors.join(' | '), fails);
   await browser.close();
   console.log(fails.length ? `失败 ${fails.length} 项` : '全部通过');

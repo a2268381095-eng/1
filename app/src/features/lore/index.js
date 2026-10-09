@@ -212,4 +212,7 @@ export async function register() {
   const here = () => onPage() && mineTop() && !typing();
   commands.register({ id: "lore.undo", title: "撤销", keywords: "撤回 后悔 删错了", hint: "撤销刚才在设定库里的改动", key: "Mod-z", when: () => here() && canLoreUndo(), run: () => runUndo() });
   commands.register({ id: "lore.redo", title: "重做", keywords: "重做 撤销错了", key: "Mod-Shift-z", when: () => here() && canLoreRedo(), run: () => runRedo() });
+
+  // 自动测试用（测试用假接口打开时才有）：直接调给别的模块用的命令
+  try { if (localStorage.getItem("xemoMock") === "1") window.__xemoLore = { run: (id, o) => commands.run(id, o) }; } catch (_) { /* 没有 localStorage 就算了 */ }
 }

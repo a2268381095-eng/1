@@ -36,7 +36,7 @@ function syncWs(bookId, patch) {
  * 打开绘画界面。opts：
  *   purpose   "cover" | "character" | "place" | "item"
  *   bookId    哪本书（新建作品还没存时可以不给）
- *   cardId    设定卡（角色、地点、物品时）；name 卡上的名字
+ *   cardId    设定卡（角色、地点、物品时）；outfitId 卡上的哪套服装；name 卡上的名字
  *   prompt    画面一栏先填上的话（比如角色卡的外貌）
  *   title / author / intro   封面时作品信息表单里正在填的（不给就读这本书的）
  *   cover     表单里现在的封面（新建作品时撤销用）
@@ -62,7 +62,8 @@ export async function openPaint(opts = {}) {
     try { const c = ((await commands.run("cards.list", { bookId })) || []).find((x) => x.id === opts.cardId); if (c) meta.name = c.name || ""; } catch (_) { /* 拿不到名字就不显示 */ }
   }
   const ref = purpose === "cover" ? bookId : opts.cardId || bookId;
-  const slot = `${bookId || "none"}:${purpose}:${opts.cardId || "-"}`;
+  // 草稿按「书、用途、卡（和卡上的哪套服装）」分开存
+  const slot = `${bookId || "none"}:${purpose}:${opts.cardId || "-"}${opts.outfitId ? "~" + opts.outfitId : ""}`;
   const dkey = "paint:draft:" + slot;
   let draft = null, lastFree = "";
   try { draft = await db.getKV(dkey, null); lastFree = await db.getKV("paint:lastfree:" + slot, ""); } catch (_) { draft = null; }
@@ -441,6 +442,7 @@ export async function openPaint(opts = {}) {
       if (!r) slots.forEach((s) => { if (s.state === "fail") removeItem(s); });
       renderGallery();
       if (r && r.images.length) {
+        goNote.textContent = "草稿用低画质，便宜；挑中的再出高清。";
         try { await db.setKV("paint:lastfree:" + slot, S.free); } catch (_) { /* 记不住上次写的不要紧 */ }
         if (step === "final") {
           picked.forEach((d) => { d.picked = false; redraw(d); });
@@ -452,6 +454,11 @@ export async function openPaint(opts = {}) {
     const startDrafts = () => paintBatch("draft");
     const startFinals = () => paintBatch("final");
     goBtn.addEventListener("click", startDrafts);
+    // 写画面时 Ctrl+Enter 直接出草稿
+    freeIn.addEventListener("keydown", (e) => {
+      if (e.isComposing || e.keyCode === 229) return;
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); startDrafts(); }
+    });
 
     // 放大看
     function zoomView(it) {
@@ -659,4 +666,3 @@ export async function openPaint(opts = {}) {
   });
 }
 
-export const paintOpen = () => !!current;

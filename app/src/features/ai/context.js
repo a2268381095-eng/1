@@ -22,7 +22,8 @@ export async function ctxSource(opts) {
   // 选区（或光标）前面的文字算「前文」；对着别的章调用时整章都算
   let at = full.length;
   if (ws.current && ws.current.id === id && ws.editor && ws.editor.view) at = ws.editor.view.state.selection.main.from;
-  const people = commands.get("cards.list") ? (await commands.run("cards.list", { bookId: ws.book.id })) || [] : null;
+  // 「人物」这一排只列人物卡（设定库里还有地点、物品……）
+  const people = commands.get("cards.list") ? ((await commands.run("cards.list", { bookId: ws.book.id })) || []).filter((c) => !c.kind || c.kind === "person") : null;
   return { id, ch, before: full.slice(0, at), prevList: ws.chapters.slice(Math.max(0, i - 5), i).reverse(), points: ch.points || [], intro: ws.book.intro || "", people };
 }
 
@@ -45,7 +46,7 @@ export async function ctxText(src, ctx) {
     parts.push(["本章前文", b]);
   }
   if (src.people && ctx.people && ctx.people.length) {
-    const t = await commands.run("cards.context", { bookId: ws.book.id, ids: ctx.people });
+    const t = await commands.run("cards.context", { bookId: ws.book.id, ids: ctx.people, chapterId: src.id });
     if (t) parts.push(["人物信息", t]);
   }
   const text = parts.map(([k, v]) => `【${k}】\n${v}\n【/${k}】`).join("\n\n");

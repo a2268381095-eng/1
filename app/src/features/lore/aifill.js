@@ -79,10 +79,16 @@ export async function runFill(env, cardId) {
 export function fromStash(env, cardId) {
   const card = env.cards.find((c) => c.id === cardId);
   if (!card) return;
-  commands.run("stash.drawer", {
+  // 弹窗打开（右侧栏正放着设定库，不能被换掉）；「拿来补全」后关掉抽屉，建议就在卡上
+  let drawer = null;
+  drawer = commands.run("stash.drawer", {
     feature: "cards", bookId: env.bookId, ref: cardId, title: card.name || "未命名",
-    useLabel: "拿来补全",
-    onUse: (row) => { if (row && row.text) show(env, cardId, row.text, "暂存盒里的"); },
+    useLabel: "拿来补全", modal: true,
+    onUse: (row) => {
+      if (!row || !row.text) return;
+      if (drawer && drawer.close) drawer.close(true);
+      show(env, cardId, row.text, "暂存盒里的");
+    },
   });
 }
 

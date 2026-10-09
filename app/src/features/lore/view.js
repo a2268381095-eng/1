@@ -29,6 +29,10 @@ export function mountLore(host, opts) {
   const cardHost = h("div.lr-cardhost", { hidden: true });
   root.append(listWrap, cardHost);
   host.append(root);
+  // 设定库里的输入框按 Ctrl+回车不要传到外面（外面是「新建章节」）
+  root.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey) && e.target.closest && e.target.closest("input, textarea, select")) e.stopPropagation();
+  });
 
   const env = {
     bookId: opts.bookId, mode: opts.mode, root, book: null, meta: null, cards: [], chapterList: [],
@@ -122,9 +126,13 @@ export function mountLore(host, opts) {
     cardHost.replaceChildren(entry.view.el);
     if (enter) {
       scrollEl.scrollTop = 0;
-      entry.view.el.classList.remove("lr-enter");
-      void entry.view.el.offsetWidth;
-      entry.view.el.classList.add("lr-enter");
+      const el = entry.view.el;
+      el.classList.remove("lr-enter");
+      void el.offsetWidth;
+      el.classList.add("lr-enter");
+      // 只在打开时演一次，之后重画不再重演
+      clearTimeout(el._lrEnterT);
+      el._lrEnterT = setTimeout(() => el.classList.remove("lr-enter"), 1000);
     }
     setTimeout(() => { const b = entry.view.el.querySelector(".lr-back"); if (b && enter) b.focus({ preventScroll: true }); }, 0);
   }
@@ -189,6 +197,27 @@ export function mountLore(host, opts) {
     const addCat = h("button.lr-tab.lr-tab-add", { type: "button", title: "新建分类", "aria-label": "新建分类" }, icon("plus"));
     addCat.addEventListener("click", async () => { const c = await newCategory(env); if (c) { env.tab = c.id; renderList(); } });
     tabs.append(addCat);
+    // 分类多了一行放不下：横着滚，两头淡出提示还有；滚轮也能横着滚
+    const edges = () => {
+      tabs.classList.toggle("more-l", tabs.scrollLeft > 4);
+      tabs.classList.toggle("more-r", tabs.scrollLeft + tabs.clientWidth < tabs.scrollWidth - 4);
+      env.tabsScroll = tabs.scrollLeft;
+    };
+    tabs.addEventListener("scroll", edges, { passive: true });
+    tabs.addEventListener("wheel", (e) => {
+      if (tabs.scrollWidth <= tabs.clientWidth || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      e.preventDefault();
+      tabs.scrollLeft += e.deltaY;
+    }, { passive: false });
+    requestAnimationFrame(() => {
+      if (!tabs.isConnected) return;
+      tabs.scrollLeft = env.tabsScroll || 0;
+      const act = tabs.querySelector('[aria-selected="true"]');
+      if (act && (act.offsetLeft < tabs.scrollLeft || act.offsetLeft + act.offsetWidth > tabs.scrollLeft + tabs.clientWidth)) {
+        tabs.scrollLeft = act.offsetLeft - (tabs.clientWidth - act.offsetWidth) / 2;
+      }
+      edges();
+    });
 
     if (env.tab === "sys") {
       listWrap.replaceChildren(tabs, renderSystem(env));
@@ -211,11 +240,14 @@ export function mountLore(host, opts) {
     if (gear) gear.addEventListener("click", () => catSettings(env, cat.id));
     const add = h("button.btn.small.primary.lr-new", { type: "button" }, icon("plus"), h("span", {}, cat ? "新建" + cat.name : "新建"));
     add.addEventListener("click", () => openNew(cat ? cat.id : null));
-    const tools = h("div.lr-tools", {}, h("div.lr-q-wrap", {}, icon("search"), q), emptyBtn, sort, look, gear, add);
+    const tools = h("div.lr-tools", {}, h("div.lr-tools-a", {}, h("div.lr-q-wrap", {}, icon("search"), q), add), h("div.lr-tools-b", {}, emptyBtn, sort, look, gear));
     newRow = h("div.lr-newrow", { hidden: true });
-    const items = h("div.lr-items." + (env.look === "list" ? "is-list" : "is-grid"), { role: "list" });
+    // 换分类、第一次打开时卡片依次落下来；搜索、筛选时不重演
+    const items = h("div.lr-items." + (env.look === "list" ? "is-list" : "is-grid") + (env.animTab !== env.tab + env.look ? ".anim" : ""), { role: "list" });
+    env.animTab = env.tab + env.look;
     listWrap.replaceChildren(tabs, tools, newRow, items);
     paintItems();
+    if (items.classList.contains("anim")) setTimeout(() => items.classList.remove("anim"), 900);
 
     function paintItems() {
       const all = env.cards.filter((c) => env.tab === "all" || c.cat === env.tab);
@@ -291,7 +323,7 @@ export function mountLore(host, opts) {
     newRow._layer = layer;
     ok.addEventListener("click", create);
     no.addEventListener("click", () => layer.close());
-    input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !composing(e)) { e.preventDefault(); create(); } });
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter" && !composing(e)) { e.preventDefault(); e.stopPropagation(); create(); } });
     flash(newRow, "lr-born");
     setTimeout(() => input.focus(), 0);
   }

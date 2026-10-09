@@ -1,7 +1,7 @@
 // 画图的统一入口：确认卡 → 几张一起画（画好一张显示一张）→ 记账 → 进暂存盒；出错给中文说明（和文字的 runAI 用同一张报错卡）。
 // 确认卡显示：绘画模型（按用过的次数排，默认上一次的）、尺寸、张数、画质、每张多少钱和总价、实际发送的提示词。
 // 没确认不发送；勾了「这个组合本次打开软件期间不再询问」的，同一个组合下次直接画。
-import { getConfig, saveConfig, paintProviders, providerOf, image, recordImage, imageCaps, pickSize, imageUnitPrice, aiError } from "../../core/ai.js";
+import { getConfig, saveConfig, paintProviders, image, recordImage, imageCaps, pickSize, imageUnitPrice, aiError } from "../../core/ai.js";
 import { addStash, FEATURES } from "../../core/stash.js";
 import { notePromptUse } from "../../core/prompts.js";
 import { db } from "../../core/db.js";
@@ -163,6 +163,10 @@ async function imageCard(o, prev = null) {
       const best = pickSize(caps, o.ratio || "3:4", step);
       sizeSel.replaceChildren(...caps.sizes.map((s) => h("option", { value: s.id }, sizeLabel(s, s.id === best && !caps.draftSize, o.ratio || "3:4"))),
         ...(caps.free ? [h("option", { value: "__free" }, "自己填……")] : []));
+      // 上次用的尺寸：比例和这次想要的一样近才沿用（这次要方形、上次是竖版时换成方形）
+      const [rw, rh] = String(o.ratio || "3:4").split(":").map(Number);
+      const off = (wh) => { const m = /^(\d+)[x:](\d+)$/.exec(wh || ""); return m ? Math.abs(Math.log(m[1] / m[2]) - Math.log((rw || 3) / (rh || 4))) : 9; };
+      if (keepSize && !caps.draftSize && off(keepSize) > off(best) + 0.01) keepSize = null;
       const free = caps.free && /^\d{2,5}x\d{2,5}$/.test(keepSize || "") && !caps.sizes.some((s) => s.id === keepSize);
       sizeSel.value = caps.sizes.some((s) => s.id === keepSize) ? keepSize : free ? "__free" : best;
       if (free) sizeIn.value = keepSize;
@@ -360,4 +364,3 @@ async function sendImages(o, c) {
   return { images: ok };
 }
 
-export { providerOf };
