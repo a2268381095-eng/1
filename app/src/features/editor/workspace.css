@@ -28,6 +28,8 @@
   .ch-head { padding: 18px 16px 0; }
 }
 .ws .topbar > * { flex-shrink: 0; }
+/* 顶栏按钮多了：中等宽度只留图标（鼠标停上去有说明，小恶魔也会讲） */
+@media (max-width: 1320px) and (min-width: 641px) { .ws .topbar .tb-t { display: none; } .ws .topbar .tool-btn { padding: 0 8px; } }
 .ws .topbar > .book-name { flex-shrink: 1; min-width: 40px; }
 
 .tb-sep { width: 1px; height: 18px; background: var(--line-strong); margin: 0 4px; }
