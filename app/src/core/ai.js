@@ -22,7 +22,7 @@ export const PROVIDERS = [
   { id: "custom", name: "自定义接口", protocol: "openai", base: "", custom: true, keyHint: "兼容 OpenAI 格式的接口地址和 Key" },
 ];
 // 测试用的假接口：localStorage.xemoMock = "1" 时出现，不联网，按固定规则回一段文字（自动测试用）
-const MOCK = { id: "mock", name: "测试用假接口", protocol: "mock", base: "mock://local", keyHint: "随便填", mock: true };
+const MOCK = { id: "mock", name: "测试用假接口", protocol: "mock", base: "mock://local", keyHint: "随便填", mock: true, balance: "mock" };
 const mockOn = () => { try { return localStorage.getItem("xemoMock") === "1"; } catch (_) { return false; } };
 export const allProviders = () => (mockOn() ? [...PROVIDERS, MOCK] : PROVIDERS);
 export const providerOf = (id) => allProviders().find((p) => p.id === id);
@@ -88,6 +88,7 @@ export async function listModels(providerId, conf) {
 export async function getBalance(providerId, conf) {
   const p = providerOf(providerId);
   if (!p || !p.balance || !conf || !conf.key) return null;
+  if (p.mock) return { amount: 8.88, currency: "USD" };
   const base = endpoint(p, conf);
   const res = await send(p, () => http(base + "/user/balance", { headers: headersFor(p, conf.key) }));
   const j = await res.json();

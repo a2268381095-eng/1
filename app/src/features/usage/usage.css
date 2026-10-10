@@ -1,0 +1,90 @@
+/* 用量与余额：余额一行一家，时间和作品筛选在一行，几块合计（「花了」最大），按天的柱子图（悬停看明细，能切成表格），按作品 / 功能 / 模型的表。
+   柱子细（最宽 24px）、顶上 4px 圆角、底边平；网格线一像素实线、很淡；字用正文的墨色和灰，不用柱子的颜色。 */
+.au-page-main { flex: 1 1 auto; min-height: 0; overflow: auto; padding: 18px 22px 30px; background: var(--bg); }
+.au-root { display: grid; gap: 16px; max-width: 1080px; margin: 0 auto; }
+.au-h { margin: 0; font-size: 14px; font-weight: 600; }
+.au-bal { display: grid; gap: 6px; padding: 14px 16px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); }
+.au-bal-row { display: grid; grid-template-columns: 9em auto 1fr auto; gap: 12px; align-items: center; padding: 4px 0; }
+.au-bal-row.none { grid-template-columns: 9em auto 1fr; }
+.au-bal-v { font-weight: 600; font-size: 16px; font-variant-numeric: tabular-nums; }
+.au-bal-row.none .au-bal-v { font-size: 13px; font-weight: 400; color: var(--muted); }
+.au-bal-t { font-size: 12px; color: var(--muted); }
+.au-bal-none { margin: 0; color: var(--muted); }
+[data-motion="full"] .au-bal-v.flash { animation: au-flash 1s ease-out; }
+@keyframes au-flash { 0% { color: var(--accent-text); transform: scale(1.12); } }
+.au-link { border: 0; background: transparent; padding: 0 4px; color: var(--accent-text); text-decoration: underline; cursor: pointer; font: inherit; }
+.au-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.au-seg { display: inline-flex !important; flex-wrap: nowrap; }
+.au-book { width: auto; max-width: 260px; height: 34px; }
+.au-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+.au-tile.hero { grid-column: span 2; }
+.au-tile { display: grid; gap: 4px; align-content: start; padding: 12px 14px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); }
+.au-tile-k { font-size: 12.5px; color: var(--muted); }
+.au-tile-v { font: 600 20px/1.2 var(--f-ui); color: var(--ink); font-variant-numeric: proportional-nums; }
+.au-tile.hero .au-tile-v { font-size: 30px; }
+.au-tile.hero { background: var(--tint); border-color: color-mix(in srgb, var(--accent) 22%, var(--line)); }
+.au-tile-s { font-size: 12px; color: var(--muted); }
+.au-warn { margin: 0; padding: 8px 12px; border-radius: 10px; background: var(--warn-soft); color: color-mix(in srgb, var(--warn) 80%, var(--ink)); font-size: 13px; }
+.au-chart { padding: 14px 16px 12px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); display: grid; gap: 12px; }
+.au-chart-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.au-chart-head .au-h { margin-right: auto; }
+.au-mseg { display: inline-flex !important; }
+.au-plot { position: relative; height: 220px; margin: 6px 0 22px 44px; }
+.au-grid { position: absolute; inset: 0; pointer-events: none; }
+.au-gl { position: absolute; left: 0; right: 0; height: 0; border-top: 1px solid var(--line); }
+.au-gl span { position: absolute; right: calc(100% + 8px); top: -8px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.au-bars { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 2px; align-items: end; }
+.au-col { position: relative; height: 100%; display: flex; align-items: flex-end; justify-content: center; border: 0; padding: 0; background: transparent; cursor: default; border-radius: 4px; }
+.au-col:hover, .au-col.on { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.au-col:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.au-bar { display: block; width: min(24px, 70%); min-height: 2px; background: var(--accent); border-radius: 4px 4px 0 0; transition: height .45s cubic-bezier(.3, 1.3, .5, 1), background-color .2s; }
+.au-col.on .au-bar { background: color-mix(in srgb, var(--accent) 80%, var(--ink)); }
+[data-motion="full"] .au-bar { animation: au-grow .6s cubic-bezier(.3, 1.3, .5, 1) both; transform-origin: bottom; }
+@keyframes au-grow { from { transform: scaleY(0); } }
+.au-x { position: absolute; left: 0; right: 0; top: calc(100% + 6px); display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 2px; font-size: 11px; color: var(--muted); }
+.au-x span { text-align: center; white-space: nowrap; overflow: visible; }
+.au-tip { position: absolute; top: -6px; z-index: 2; display: grid; gap: 2px; padding: 8px 10px; border-radius: 10px; background: var(--surface); border: 1px solid var(--line-strong); box-shadow: var(--shadow-s);
+  font-size: 12px; color: var(--muted); pointer-events: none; white-space: nowrap; transform: translateY(-100%); }
+.au-tip b { color: var(--ink); font-size: 12.5px; }
+.au-tip span:first-of-type { color: var(--ink); font-weight: 600; }
+.au-empty { margin: 0; color: var(--muted); font-size: 13px; padding: 20px 0; text-align: center; }
+.au-break { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.au-sec { padding: 14px 16px; border-radius: 16px; background: var(--surface); border: 1px solid var(--line); display: grid; gap: 8px; align-content: start; }
+.au-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.au-table th { text-align: right; font-weight: 400; color: var(--muted); font-size: 12px; padding: 4px 6px; border-bottom: 1px solid var(--line); }
+.au-table th:first-child { text-align: left; }
+.au-table td { padding: 6px; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); vertical-align: middle; }
+.au-table td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.au-name { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 16em; }
+.au-meter { display: block; height: 3px; margin-top: 4px; border-radius: 2px; background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.au-meter i { display: block; height: 100%; border-radius: 2px; background: var(--accent); }
+.au-note { margin: 0; font-size: 12px; color: var(--muted); line-height: 1.7; }
+
+/* 各套风格：合计块和图框的形态 */
+:root[data-palette="hanfu"] .au-tile, :root[data-palette="hanfu"] .au-chart, :root[data-palette="hanfu"] .au-sec, :root[data-palette="hanfu"] .au-bal { border-radius: 3px; }
+:root[data-palette="hanfu"] .au-tile.hero { box-shadow: inset 0 0 0 4px var(--tint), inset 0 0 0 5px color-mix(in srgb, var(--accent) 35%, transparent); }
+:root[data-palette="gothic"] .au-tile, :root[data-palette="gothic"] .au-chart, :root[data-palette="gothic"] .au-sec, :root[data-palette="gothic"] .au-bal { border-radius: 0;
+  clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px); }
+:root[data-palette="detective"] .au-tile, :root[data-palette="detective"] .au-chart, :root[data-palette="detective"] .au-sec, :root[data-palette="detective"] .au-bal { border-radius: 3px; }
+:root[data-palette="detective"] .au-tile-v, :root[data-palette="detective"] .au-bal-v { font-family: "Courier New", var(--f-ui); }
+:root[data-palette="sailor"] .au-tile { border-radius: 4px; box-shadow: 2px 3px 0 color-mix(in srgb, var(--ink) 10%, transparent); }
+:root[data-palette="adventurer"] .au-tile.hero { border: 3px solid var(--wood, #8a5a32); border-radius: 6px; }
+:root[data-palette="adventurer"] .au-bar { border-radius: 2px 2px 0 0; background: linear-gradient(var(--accent-2), var(--accent)); }
+:root[data-palette="magical"] .au-tile.hero { border-radius: 22px; }
+
+/* 写作界面状态栏的小胶囊 */
+.au-pill { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 10px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: inherit; font: inherit; font-size: 12px; cursor: pointer; margin-right: 8px;
+  transition: border-color .18s, color .18s; }
+.au-pill:hover { border-color: color-mix(in srgb, var(--accent) 40%, var(--line)); color: var(--accent-text); }
+.au-pill-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--grad); }
+.au-pill-t { color: var(--accent-text); }
+.au-pill-c { color: var(--muted); }
+@media (max-width: 720px) {
+  .au-pill-m, .au-pill-c { display: none; }
+  .au-tiles { grid-template-columns: 1fr 1fr; }
+  .au-tile.hero { grid-column: 1 / -1; }
+  .au-bal-row, .au-bal-row.none { grid-template-columns: 1fr auto; }
+  .au-bal-t { grid-column: 1 / -1; }
+  .au-page-main { padding: 12px; }
+  .au-plot { margin-left: 38px; }
+}

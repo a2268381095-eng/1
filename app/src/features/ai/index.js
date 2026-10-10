@@ -16,7 +16,8 @@ function renderAIView() {
   document.getElementById("app").replaceChildren(h("div.view.ai-view", {},
     h("header.topbar", {}, back, h("span.title", {}, "AI 接入"), h("span.spacer"),
       h("button.tool-btn", { type: "button", "data-cmd": "prompts.open", onclick: () => commands.run("prompts.open") }, icon("prompt"), "提示词库"),
-      h("button.tool-btn", { type: "button", "data-cmd": "stash.open", onclick: () => commands.run("stash.open") }, icon("box"), "暂存盒")),
+      h("button.tool-btn", { type: "button", "data-cmd": "stash.open", onclick: () => commands.run("stash.open") }, icon("box"), "暂存盒"),
+      h("button.tool-btn", { type: "button", "data-cmd": "usage.open", onclick: () => commands.run("usage.open") }, icon("chart"), "用量与余额")),
     h("main.ai-view-main", {}, h("p.muted.ai-lead", {}, "选一家，粘贴 Key，拉取模型，测试通过就能用。软件不预设模型和提示词，每次调用前都会让你确认。"), body)));
   renderSetup(body);
   // 文风样本也在这一页管
