@@ -20,6 +20,7 @@ import * as chapterai from "./chapterai/index.js";
 import * as lore from "./lore/index.js";
 import * as paint from "./paint/index.js";
 import * as names from "./names/index.js";
+import * as board from "./board/index.js";
 
 const PENDING = [
   ["search.open", "查找替换", "找字 替换 搜索", "Mod-f"],
@@ -39,7 +40,7 @@ function stubView(title) {
 }
 
 export async function registerFeatures() {
-  const mods = [search, format, versions, trash, io, settings, ai, prompts, rewrite, stash, chat, chapterai, paint, lore, names];
+  const mods = [search, format, versions, trash, io, settings, ai, prompts, rewrite, stash, chat, chapterai, paint, lore, names, board];
   for (const m of mods) {
     try { if (m && m.register) await m.register(); }
     catch (e) { console.error("功能模块启动失败", e); }

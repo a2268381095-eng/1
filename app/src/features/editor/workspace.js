@@ -62,6 +62,10 @@ export const ws = {
   },
   /** 界面元素：center 正文区（可以往里放覆盖层，比如排版预览），right 右侧栏 */
   els: () => (els ? { center: els.view.querySelector(".center"), edHost: els.edHost, right: els.right, list: els.list } : null),
+  /** 右侧栏（本章要点）上面加一块（别的模块用，比如分镜卡）：fn(right, chapter) 每次画侧栏时调用，自己往 right 里放东西 */
+  addSideBlock(fn) { sideBlocks.push(fn); if (els && !panelLayer) showPoints(); },
+  /** 重画右侧栏（没开别的面板时） */
+  refreshSide() { if (els && !panelLayer) showPoints(); },
   /** 章节多选条上加一个按钮（别的模块用）：label 文字，run(ids) 点了做什么，title 悬停说明 */
   addSelAction(label, run, title = "") { selActions.push({ label, run, title }); if (els) renderSelBar(); },
   /** 重新读当前作品信息（设置里改了章节号、自动缩进等以后调用） */
@@ -69,6 +73,7 @@ export const ws = {
 };
 
 let els = null;            // 界面元素
+const sideBlocks = [];      // 右侧栏上方的附加块
 let panelLayer = null;     // 当前打开的右侧面板
 let rightHidden = false;
 let focusLayer = null;
@@ -563,6 +568,7 @@ function showPoints() {
     renderList();
     if (points.length && points.every((p) => p.done) && !(before.length && before.every((p) => p.done))) bus.emit("points:all-done", { chapter: ws.current });
   });
+  if (ws.current) for (const fn of sideBlocks) { try { fn(els.right, ws.current); } catch (e) { console.error("侧栏附加块出错", e); } }
 }
 
 /**
