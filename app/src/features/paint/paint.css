@@ -650,3 +650,25 @@ canvas.paint-crop-prev { display: block; border-radius: 3px 7px 7px 3px; image-r
   .paint-acts-note { display: none; }
   .paint-acts .btn { flex: 1 1 auto; justify-content: center; }
 }
+
+/* 接着改：选一张图，写一句怎么改，带着这张图重画 */
+.paint-ask { display: grid; grid-template-columns: 96px 1fr; gap: 12px; align-items: start; padding: 12px; margin: 0 0 12px; border-radius: 14px;
+  background: var(--tint); border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line)); }
+.paint-ask[hidden] { display: none; }
+.paint-ask-pic { width: 96px; border-radius: 10px; object-fit: cover; aspect-ratio: 3 / 4; box-shadow: var(--shadow-s); }
+.paint-ask-main { display: grid; gap: 8px; min-width: 0; }
+.paint-ask-t { margin: 0; font-weight: 600; font-size: 14px; }
+.paint-ask-in { min-height: 3.2em; resize: vertical; }
+.paint-ask-tips { display: flex; flex-wrap: wrap; gap: 6px; }
+.paint-ask-tip { border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 2px 10px; font-size: 12.5px; cursor: pointer;
+  transition: border-color .18s, color .18s, transform .2s cubic-bezier(.3, 1.6, .5, 1); }
+.paint-ask-tip:hover { border-color: var(--accent); color: var(--accent-text); }
+[data-motion="full"] .paint-ask-tip:active { transform: scale(.94); }
+.paint-ask-foot { display: flex; align-items: center; gap: 8px; }
+.paint-ask-note { margin-right: auto; font-size: 12px; color: var(--muted); }
+.paint-card-ask { margin: 0; padding: 4px 10px 0; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+[data-motion="full"] .paint-ask:not([hidden]) { animation: paint-ask-in .3s cubic-bezier(.3, 1.4, .5, 1); }
+@keyframes paint-ask-in { from { opacity: 0; transform: translateY(-8px); } }
+:root[data-paper="hanfu"] .paint-ask, :root[data-paper="detective"] .paint-ask { border-radius: 3px; }
+:root[data-paper="gothic"] .paint-ask { border-radius: 0; clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px); }
+@media (max-width: 560px) { .paint-ask { grid-template-columns: 64px 1fr; } .paint-ask-pic { width: 64px; } }

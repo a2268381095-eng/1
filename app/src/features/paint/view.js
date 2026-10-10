@@ -143,7 +143,8 @@ export async function openPaint(opts = {}) {
     const gallery = h("div.paint-gallery", {}, empty, finalSec, draftSec);
     const cropBox = h("div.paint-cropview", { hidden: true });
     const acts = h("div.paint-acts");
-    const stage = h("div.paint-stage", {}, h("div.paint-stage-top", {}, steps), busyBar, gallery, cropBox, acts);
+    const askBox = h("div.paint-ask", { hidden: true, role: "group", "aria-label": "接着改" });
+    const stage = h("div.paint-stage", {}, h("div.paint-stage-top", {}, steps), busyBar, askBox, gallery, cropBox, acts);
 
     const root = h("div.paint", { "data-purpose": purpose }, side, stage);
     const stashBtn = h("button.tool-btn.paint-stash-btn", { type: "button", "data-cmd": "stash.drawer", title: `以前画的${P.short}图都在这里，能拿回来用` }, icon("box"), h("span.tb-t", {}, label("暂存盒")));
@@ -291,16 +292,51 @@ export async function openPaint(opts = {}) {
         pick.addEventListener("click", () => togglePick(it));
         const use = h("button.btn.small.ghost.paint-use-draft", { type: "button", title: "不出高清，直接拿草稿去裁剪" }, "直接用");
         use.addEventListener("click", () => enterCrop(it));
-        el.append(pick, h("div.paint-card-bar", {}, h("span.paint-card-no", {}, `草稿 ${it.n}`), h("span.spacer"), zoomBtn, use));
+        el.append(pick, h("div.paint-card-bar", {}, h("span.paint-card-no", {}, `草稿 ${it.n}`), h("span.spacer"), zoomBtn, askBtn(it), use));
       } else {
         const view = h("button.paint-card-img.paint-view", { type: "button", "aria-label": `高清 ${it.n}：放大看` }, img);
         view.addEventListener("click", () => zoomView(it));
         const use = h("button.btn.small.primary.paint-use-final", { type: "button" }, P.use === "设为封面" ? "用这张" : P.use);
         use.addEventListener("click", () => enterCrop(it));
-        el.append(view, h("div.paint-card-bar", {}, h("span.paint-card-no", {}, `高清 ${it.n}`), it.size ? h("span.paint-card-size", {}, `${it.w}×${it.h}`) : null, h("span.spacer"), zoomBtn, use));
+        if (it.ask) el.append(h("p.paint-card-ask", { title: it.ask }, "改：" + it.ask));
+        el.append(view, h("div.paint-card-bar", {}, h("span.paint-card-no", {}, `高清 ${it.n}`), it.size ? h("span.paint-card-size", {}, `${it.w}×${it.h}`) : null, h("span.spacer"), zoomBtn, askBtn(it), use));
       }
       return el;
     }
+    function askBtn(it) {
+      const b = h("button.btn.small.ghost.paint-ask-btn", { type: "button", title: "写一句怎么改，照这张接着画" }, "接着改");
+      b.addEventListener("click", () => openAsk(it));
+      return b;
+    }
+    const ASK_TIPS = purpose === "cover"
+      ? ["背景换成夜晚", "颜色更柔和", "人物大一点", "换个角度", "书名放到底部", "书名字体更清楚", "去掉多余的东西"]
+      : ["换个角度", "表情更柔和", "背景简单一点", "颜色更柔和", "换成全身", "去掉多余的东西"];
+    function openAsk(it) {
+      if (S.busy) { toast("正在画，画完再改"); return; }
+      const ta = h("textarea.textarea.paint-ask-in", { rows: 2, placeholder: "想怎么改？比如：背景换成夜晚，人物侧过脸。Ctrl+Enter 开始画", "aria-label": "怎么改" });
+      const tips = h("div.paint-ask-tips", {}, ...ASK_TIPS.map((t) => { const b = h("button.paint-ask-tip", { type: "button" }, t); b.addEventListener("click", () => { ta.value = ta.value.trim() ? ta.value.trim().replace(/[，,。]$/, "") + "，" + t : t; ta.focus(); }); return b; }));
+      const go = h("button.btn.primary.small", { type: "button" }, icon("brush"), "照这张改");
+      const no = h("button.btn.small.ghost", { type: "button" }, "不改了");
+      const run = async () => {
+        const t = ta.value.trim();
+        if (!t) { ta.focus(); toast("先写一句怎么改"); return; }
+        askBox.hidden = true;
+        const r = await paintBatch("final", { it, text: t });
+        if (!r) { askBox.hidden = false; }
+      };
+      go.addEventListener("click", run);
+      no.addEventListener("click", () => { askBox.hidden = true; askBox.replaceChildren(); });
+      ta.addEventListener("keydown", (e) => { if (e.isComposing || e.keyCode === 229) return; if ((e.ctrlKey || e.metaKey) && e.key === "Enter") { e.preventDefault(); run(); } if (e.key === "Escape") { e.stopPropagation(); no.click(); } });
+      askBox.replaceChildren(
+        h("img.paint-ask-pic", { src: it.dataUrl, alt: "" }),
+        h("div.paint-ask-main", {}, h("p.paint-ask-t", {}, `照「${it.kind === "draft" ? "草稿" : "高清"} ${it.n}」接着改`), ta, tips,
+          h("div.paint-ask-foot", {}, h("span.paint-ask-note", {}, "带着这张图一起发，画出来放在「高清」里。"), no, go)));
+      askBox.hidden = false;
+      askBox.scrollIntoView({ block: "nearest", behavior: motionFull() ? "smooth" : "auto" });
+      ta.focus();
+    }
+    const askPrompt = (text, base) => `在参考图的基础上修改：${text}。除了要改的地方，人物、构图、画风${purpose === "cover" ? "、书名和作者名" : ""}都尽量保持不变。\n\n${base}`;
+
     function redraw(it) {
       const old = it.el;
       it.el = cardEl(it);
@@ -391,12 +427,12 @@ export async function openPaint(opts = {}) {
     }
 
     /** 一次画几张：先放占位卡，画好一张换一张 */
-    async function paintBatch(step) {
+    async function paintBatch(step, ask = null) {
       if (S.busy || S.done) return null;
-      const picked = doneOf(S.drafts).filter((d) => d.picked);
+      const picked = ask ? [ask.it] : doneOf(S.drafts).filter((d) => d.picked);
       if (step === "final" && !picked.length) return null;
       const c = compose(step === "final" ? "final" : "draft");
-      if (!c.text.trim()) { toast("先写几句画面，或者勾几条常用要求"); freeIn.focus(); return null; }
+      if (!ask && !c.text.trim()) { toast("先写几句画面，或者勾几条常用要求"); freeIn.focus(); return null; }
       const ctrl = new AbortController();
       let slots = [];
       const list = step === "final" ? S.finals : S.drafts;
@@ -405,15 +441,15 @@ export async function openPaint(opts = {}) {
       const promptName = (S.prompts.find((p) => p.id === S.promptId) || {}).name || "";
       const r = await runImage({
         feature: "paint", bookId, ref, purpose, step,
-        prompt: c.text, promptFor: (ch) => compose(step, ch.useRef).text, promptId: S.promptId, promptName, missing: c.missing,
+        prompt: ask ? askPrompt(ask.text, c.text) : c.text, promptFor: (ch) => (ask ? askPrompt(ask.text, compose(step, ch.useRef).text) : compose(step, ch.useRef).text), promptId: S.promptId, promptName, missing: c.missing,
         ratio: S.ratio, count: 4, refImages: step === "final" ? picked.map((d) => d.dataUrl) : [],
-        title: `${P.short}${step === "final" ? "高清" : "草稿"}`, label: `${P.short}${step === "final" ? "高清" : "草稿"}`,
+        title: ask ? `${P.short}接着改：${ask.text}` : `${P.short}${step === "final" ? "高清" : "草稿"}`, label: ask ? `${P.short}接着改` : `${P.short}${step === "final" ? "高清" : "草稿"}`,
         signal: ctrl.signal,
         onStart: (n) => {
           clearSlots();
           setBusy(step, ctrl, n);
           const base = list.filter((x) => x.state === "done").length;
-          slots = [...Array(n)].map((_, i) => item(step === "final" ? "final" : "draft", { state: "wait", n: base + i + 1, i, from: step === "final" ? picked[i] && picked[i].key : null }));
+          slots = [...Array(n)].map((_, i) => item(step === "final" ? "final" : "draft", { state: "wait", n: base + i + 1, i, from: step === "final" ? picked[i] && picked[i].key : null, ask: ask ? ask.text : null }));
           // 新的一批放在最前面
           list.unshift(...slots);
           slots.forEach((s) => { s.el = cardEl(s); });
@@ -444,10 +480,11 @@ export async function openPaint(opts = {}) {
       if (r && r.images.length) {
         goNote.textContent = "草稿用低画质，便宜；挑中的再出高清。";
         try { await db.setKV("paint:lastfree:" + slot, S.free); } catch (_) { /* 记不住上次写的不要紧 */ }
-        if (step === "final") {
+        if (step === "final" && !ask) {
           picked.forEach((d) => { d.picked = false; redraw(d); });
           renderActs();
         }
+        if (ask) askBox.replaceChildren();
       }
       return r;
     }
